@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Incrementalist.Cmd
@@ -36,6 +38,9 @@ namespace Incrementalist.Cmd
                     return 0;
                 }
             }
+
+            var cmd = new RepositoryCommands(Directory.GetCurrentDirectory());
+            Console.WriteLine("Are we inside repository? {0}", cmd.HaveRepositoryInFolder);
 
             ResetTitle();
             return 0;
