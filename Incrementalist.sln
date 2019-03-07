@@ -17,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 		build.sh = build.sh
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Incrementalist.Console", "src\Incrementalist.Console\Incrementalist.Console.csproj", "{3676CB0B-131A-4E92-9CB8-9817547D2CE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Incrementalist.Cmd", "src\Incrementalist.Cmd\Incrementalist.Cmd.csproj", "{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,10 +37,10 @@ Global
 		{CAE7CA7C-0D0C-4FDA-BDE9-BE16A27343EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAE7CA7C-0D0C-4FDA-BDE9-BE16A27343EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAE7CA7C-0D0C-4FDA-BDE9-BE16A27343EF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3676CB0B-131A-4E92-9CB8-9817547D2CE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3676CB0B-131A-4E92-9CB8-9817547D2CE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3676CB0B-131A-4E92-9CB8-9817547D2CE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3676CB0B-131A-4E92-9CB8-9817547D2CE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
