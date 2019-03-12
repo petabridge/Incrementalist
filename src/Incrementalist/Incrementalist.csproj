@@ -3,13 +3,14 @@
 
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <Description>Library for running incremental, Git-based builds and tests in .NET and .NET Core.</Description>
   </PropertyGroup>
 
 
   <ItemGroup>
     <PackageReference Include="Libgit2Sharp" Version="0.26.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="3.0.0-beta4-final" />
   </ItemGroup>
 
 </Project>
