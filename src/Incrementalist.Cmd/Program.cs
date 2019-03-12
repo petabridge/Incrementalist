@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using LibGit2Sharp;
 
 namespace Incrementalist.Cmd
 {
@@ -39,8 +40,12 @@ namespace Incrementalist.Cmd
                 }
             }
 
-            var cmd = new RepositoryCommands(Directory.GetCurrentDirectory());
-            Console.WriteLine("Are we inside repository? {0}", cmd.HaveRepositoryInFolder);
+            var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
+            Console.WriteLine("Are we inside repository? {0}", insideRepo);
+            //if (insideRepo)
+            //{
+                Console.WriteLine("Repo base is located in {0}", Repository.Discover(Directory.GetCurrentDirectory()));
+            //}
 
             ResetTitle();
             return 0;
