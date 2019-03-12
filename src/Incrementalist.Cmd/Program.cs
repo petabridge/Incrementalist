@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Incrementalist.FileSystem;
+using Incrementalist.Git;
 using LibGit2Sharp;
 
 namespace Incrementalist.Cmd
@@ -46,8 +47,11 @@ namespace Incrementalist.Cmd
             //if (insideRepo)
             //{
             var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
-            
-                Console.WriteLine("Repo base is located in {0}", repoFolder);
+            var repository = new Repository(repoFolder);
+            Console.WriteLine("Repo base is located in {0}", repoFolder);
+
+            foreach(var file in DiffHelper.ChangedFiles(repository, "master"))
+                Console.WriteLine("Modified file: {0}", file);
             //}
             if (!string.IsNullOrEmpty(repoFolder))
             {
