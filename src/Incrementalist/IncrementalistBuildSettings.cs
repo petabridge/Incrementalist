@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Incrementalist
 {
@@ -7,10 +8,11 @@ namespace Incrementalist
     /// </summary>
     public class IncrementalistBuildSettings
     {
-        public IncrementalistBuildSettings(string targetBranch, string solutionFile)
+        public IncrementalistBuildSettings(string targetBranch, string solutionFile, IReadOnlyList<BuildStep> buildSteps)
         {
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
+            BuildSteps = buildSteps;
         }
 
         /// <summary>
@@ -23,5 +25,10 @@ namespace Incrementalist
         /// The current solution file for us to analyze inside this repository.
         /// </summary>
         public string SolutionFile { get; }
+
+        /// <summary>
+        /// The set of build steps to produce based on the changes in the diff set.
+        /// </summary>
+        public IReadOnlyList<BuildStep> BuildSteps { get; }
     }
 }
