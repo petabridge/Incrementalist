@@ -5,21 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Incrementalist.FileSystem;
 using Incrementalist.Git;
+using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 
 namespace Incrementalist.Cmd
 {
-    enum FileType
-    {
-        Code,
-        Project,
-        Solution,
-        Other
-    }
 
     class Program
     {
@@ -60,11 +53,11 @@ namespace Incrementalist.Cmd
             //if (insideRepo)
             //{
             var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
-            var repository = new Repository(repoFolder);
+            var repository = new Repository(repoFolder);            
             Console.WriteLine("Repo base is located in {0}", repoFolder);
             var workingFolder = Directory.GetParent(repoFolder).Parent;
 
-            var affectedFiles = DiffHelper.ChangedFiles(repository, "master").Select(x => Path.GetFullPath(x, workingFolder.FullName)).ToList();
+            var affectedFiles = DiffHelper.ChangedFiles(repository, "dev").Select(x => Path.GetFullPath(x, workingFolder.FullName)).ToList();
             foreach (var file in affectedFiles)
                 Console.WriteLine("Modified file: {0}", file);
             //}

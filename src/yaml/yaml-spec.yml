@@ -1,0 +1,10 @@
+# Incrementalist YAML specification
+
+# Used to specify source control options
+source:
+  targetBranch: master # we compare the working branch against this branch during 'git diff' operations
+
+solution: "" #The name of the Visual Studio solution file that needs to be analyzed
+
+build:
+  - step: stepName
