@@ -12,10 +12,9 @@ namespace Incrementalist.Git
     /// </summary>
     public static class DiffHelper
     {
-        public static IEnumerable<string> ChangedFiles(Repository repo, string targetBranch, string workingDirectory = null)
+        public static IEnumerable<string> ChangedFiles(Repository repo, string targetBranch)
         {
-            var finalDir = workingDirectory ?? Directory.GetCurrentDirectory();
-            return repo.Diff.Compare<TreeChanges>(repo.Branches[targetBranch].Tip.Tree, DiffTargets.Index).Select(x => Path.GetFullPath(x.Path));
+            return repo.Diff.Compare<TreeChanges>(repo.Branches[targetBranch].Tip.Tree, DiffTargets.Index).Select(x => Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, x.Path)));
         }
     }
 }
