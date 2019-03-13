@@ -19,6 +19,17 @@ namespace Incrementalist.Tests.Git
             Repository = new DisposableRepository();
         }
 
+        [Fact(DisplayName = "Detected files should report correct absolute path")]
+        public void Should_report_correct_path_for_diffed_files()
+        {
+            Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber").Commit("Fuberized file");
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
+            diffedFiles.Count.Should().Be(1);
+            var file = diffedFiles[0];
+            Path.GetFileName(file).Should().Be("fuber.txt");
+            file.Should().Be(Path.GetFullPath("fuber.txt", Repository.BasePath));
+        }
+
         [Fact(DisplayName = "Should detect files that have been added to git repo")]
         public void Should_detect_added_files_to_bare_Repo()
         {
