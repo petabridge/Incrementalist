@@ -79,7 +79,20 @@ namespace Incrementalist.Tests.Helpers
         {
             var filePath = Path.Combine(BasePath, fileName);
             File.WriteAllText(filePath, fileText);
-            Repository.Index.Add(fileName);
+            Commands.Stage(Repository, filePath);
+            return this;
+        }
+
+        /// <summary>
+        /// Delete an existing file from the repository.
+        /// </summary>
+        /// <param name="fileName">The name of the file to delete.</param>
+        /// <returns>The current <see cref="DisposableRepository"/>.</returns>
+        public DisposableRepository DeleteFile(string fileName)
+        {
+            var filePath = Path.Combine(BasePath, fileName);
+            File.Delete(fileName);
+            Commands.Remove(Repository, filePath);
             return this;
         }
 
