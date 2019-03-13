@@ -1,6 +1,4 @@
-﻿using Incrementalist.ProjectSystem;
-
-namespace Incrementalist
+﻿namespace Incrementalist.ProjectSystem
 {
     /// <summary>
     /// Run this step for all affected projects

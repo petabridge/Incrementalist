@@ -53,7 +53,7 @@ namespace Incrementalist.Cmd
             //if (insideRepo)
             //{
             var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
-            var repository = new Repository(repoFolder);
+            var repository = new Repository(repoFolder);            
             Console.WriteLine("Repo base is located in {0}", repoFolder);
             var workingFolder = Directory.GetParent(repoFolder).Parent;
 
