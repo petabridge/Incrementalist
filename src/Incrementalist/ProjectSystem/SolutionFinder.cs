@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
-namespace Incrementalist.FileSystem
+namespace Incrementalist.ProjectSystem
 {
     /// <summary>
     /// Used to look for .sln files in a given directory.

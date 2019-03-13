@@ -5,21 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Incrementalist.FileSystem;
 using Incrementalist.Git;
+using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 
 namespace Incrementalist.Cmd
 {
-    enum FileType
-    {
-        Code,
-        Project,
-        Solution,
-        Other
-    }
 
     class Program
     {
