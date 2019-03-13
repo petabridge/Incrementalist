@@ -15,15 +15,15 @@ namespace Incrementalist.Git
         /// Find the repository and the full path of the base directory.
         /// </summary>
         /// <param name="targetDirectory">Optional. The directory to search inside of. Defaults to <see cref="Directory.GetCurrentDirectory"/> otherwise.</param>
-        /// <returns>A tuple containing the repository, the base directory (parent directory of the .git folder,) and a boolean flag indicating whether or not
+        /// <returns>A tuple containing the repository and a boolean flag indicating whether or not
         /// the search was successful.</returns>
-        public (Repository repo, string baseDirectory, bool foundRepo) FindRepository(string targetDirectory = null)
+        public static (Repository repo, bool foundRepo) FindRepository(string targetDirectory = null)
         {
             var repoPath = Repository.Discover(targetDirectory ?? Directory.GetCurrentDirectory());
             if (string.IsNullOrEmpty(repoPath))
-                return (null, null, false);
+                return (null, false);
 
-            return (new Repository(repoPath), Directory.GetParent(repoPath).Parent.FullName, true);
+            return (new Repository(repoPath), true);
         }
     }
 }
