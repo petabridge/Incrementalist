@@ -64,7 +64,7 @@ namespace Incrementalist.Cmd
             Console.WriteLine("Repo base is located in {0}", repoFolder);
             var workingFolder = Directory.GetParent(repoFolder).Parent;
 
-            var affectedFiles = DiffHelper.ChangedFiles(repository, "master").Select(x => Path.GetFullPath(x, workingFolder.FullName)).ToList();
+            var affectedFiles = DiffHelper.ChangedFiles(repository, "dev").Select(x => Path.GetFullPath(x, workingFolder.FullName)).ToList();
             foreach (var file in affectedFiles)
                 Console.WriteLine("Modified file: {0}", file);
             //}
