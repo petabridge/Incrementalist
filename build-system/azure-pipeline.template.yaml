@@ -2,6 +2,7 @@ parameters:
   name: ''
   vmImage: ''
   scriptFileName: ''
+  scriptArgs: 'all'
   timeoutInMinutes: 120
 
 jobs:
@@ -15,11 +16,19 @@ jobs:
         submodules: recursive  # set to 'true' for a single level of submodules or 'recursive' to get submodules of submodules
         persistCredentials: true
       # Linux or macOS
-      - bash: ${{ parameters.scriptFileName }}
+      - task: Bash@3 
+        displayName: ${{ parameters.scriptFileName }}
+        inputs:
+          filePath: ${{ parameters.scriptFileName }}
+          arguments: ${{ parameters.scriptArgs }}
         continueOnError: true
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
       # Windows
-      - script: ${{ parameters.scriptFileName }}
+      - task: BatchScript@1
+        displayName: ${{ parameters.scriptFileName }}
+        inputs:
+          filename: ${{ parameters.scriptFileName }}
+          arguments: ${{ parameters.scriptArgs }}
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishTestResults@2

@@ -18,4 +18,5 @@ jobs:
   parameters:
     name: Ubuntu
     vmImage: 'ubuntu-16.04'
-    scriptFileName: ./build.sh all
+    scriptFileName: ./build.sh
+    scriptArgs: all
