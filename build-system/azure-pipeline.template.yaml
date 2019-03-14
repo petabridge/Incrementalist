@@ -1,0 +1,36 @@
+parameters:
+  name: ''
+  vmImage: ''
+  scriptFileName: ''
+  timeoutInMinutes: 120
+
+jobs:
+	- job: ${{ parameters.name }}
+    timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    steps:
+      - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+        clean: false  # whether to fetch clean each time
+        submodules: recursive  # set to 'true' for a single level of submodules or 'recursive' to get submodules of submodules
+        persistCredentials: true
+      # Linux or macOS
+      - bash: ${{ parameters.scriptFileName }}
+        arguments: all
+        continueOnError: true
+        condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
+      # Windows
+      - batch: ${{ parameters.scriptFileName }}
+        arguments: all
+        continueOnError: true
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - task: PublishTestResults@2
+        inputs:
+          testRunner: VSTest
+          testResultsFiles: '**/*.trx' #TestResults folder usually
+          testRunTitle: ${{ parameters.name }}
+          mergeTestResults: true
+      - script: 'echo 1>&2'
+        failOnStderr: true
+        displayName: 'If above is partially succeeded, then fail'
+        condition: eq(variables['Agent.JobStatus'], 'SucceededWithIssues')
