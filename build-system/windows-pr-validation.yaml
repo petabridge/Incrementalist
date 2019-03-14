@@ -14,7 +14,7 @@ pr:
 name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
 jobs:
-- template: build/azure-pipeline.template.yml
+- template: build/azure-pipeline.template.yaml
   parameters:
     name: Windows
     vmImage: 'vs2017-win2016'

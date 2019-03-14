@@ -14,7 +14,7 @@ pr:
     include: [ dev, master ] # branch names which will trigger a build
 
 jobs:
-- template: azure-pipeline.template.yml
+- template: azure-pipeline.template.yaml
   parameters:
     name: Ubuntu
     vmImage: 'ubuntu-16.04'
