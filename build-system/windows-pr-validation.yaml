@@ -18,5 +18,5 @@ jobs:
   parameters:
     name: Windows
     vmImage: 'vs2017-win2016'
-    scriptFileName: build.cmd all
+    scriptFileName: build.cmd
     scriptArgs: all
