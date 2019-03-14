@@ -16,12 +16,10 @@ jobs:
         persistCredentials: true
       # Linux or macOS
       - bash: ${{ parameters.scriptFileName }}
-        arguments: all
         continueOnError: true
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
       # Windows
-      - batch: ${{ parameters.scriptFileName }}
-        arguments: all
+      - script: ${{ parameters.scriptFileName }}
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishTestResults@2
