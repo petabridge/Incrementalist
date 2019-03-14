@@ -1,23 +1,22 @@
 # Pull request validation for Windows against the `dev` and `master` branches
 # See https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema for reference
-
-pool:
-  vmImage: vs2017-win2016
-  demands: Cmd
+trigger:
+  branches:
+    include:
+      - dev
+      - master
 
 pr:
   autoCancel: true # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
   branches:
     include: [ dev, master ] # branch names which will trigger a build
 
-steps:
-- checkout: self  # self represents the repo where the initial Pipelines YAML file was found
-  clean: false  # whether to fetch clean each time
-  submodules: recursive  # set to 'true' for a single level of submodules or 'recursive' to get submodules of submodules
-  persistCredentials: true
+name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
-- task: BatchScript@1
-  displayName: 'Run script build.cmd'
-  inputs:
-    filename: build.cmd
-    arguments: all
+jobs:
+- template: azure-pipeline.template.yaml
+  parameters:
+    name: Windows
+    vmImage: 'vs2017-win2016'
+    scriptFileName: build.cmd
+    scriptArgs: all
