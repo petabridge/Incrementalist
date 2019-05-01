@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.CodeAnalysis.MSBuild;
+using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Incrementalist.Cmd.Commands
 {
@@ -13,21 +13,30 @@ namespace Incrementalist.Cmd.Commands
     /// </summary>
     public sealed class EmitDependencyGraphTask
     {
-        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILO)
+        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger)
         {
             Settings = settings;
             _workspace = workspace;
+            Logger = logger;
+            _cts = new CancellationTokenSource();
         }
 
         private readonly MSBuildWorkspace _workspace;
+        private readonly CancellationTokenSource _cts;
 
         public BuildSettings Settings { get; }
 
-        
+        public ILogger Logger { get; }
 
-        public async Task<string> Run()
+        public async Task<IEnumerable<string>> Run()
         {
-            var solution = new GatherAllFilesInSolutionCmd()
+            // start the cancellation timer.
+            _cts.CancelAfter(Settings.TimeoutDuration);
+            var loadSln = new LoadSolutionCmd(Logger, _workspace, _cts.Token);
+            var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
+            var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
+            var affectedFiles = await filterFilesCmd.Process(getFilesCmd.Process(loadSln.Process(Task.FromResult(Settings.SolutionFile))));
+            return affectedFiles.Keys;
         }
     }
 }

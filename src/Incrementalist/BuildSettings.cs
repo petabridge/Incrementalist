@@ -11,12 +11,13 @@ namespace Incrementalist
     {
         public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
 
-        public BuildSettings(string targetBranch, string solutionFile, TimeSpan? timeoutDuration = null)
+        public BuildSettings(string targetBranch, string solutionFile, string workingDirectory, TimeSpan? timeoutDuration = null)
         {
             Contract.Requires(targetBranch != null);
             Contract.Requires(solutionFile != null);
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
+            WorkingDirectory = workingDirectory;
             TimeoutDuration = timeoutDuration ?? DefaultTimeout;
         }
 
@@ -30,6 +31,11 @@ namespace Incrementalist
         /// The current solution file for us to analyze inside this repository.
         /// </summary>
         public string SolutionFile { get; }
+
+        /// <summary>
+        /// The folder Incrementalist will be working from.
+        /// </summary>
+        public string WorkingDirectory { get; }
 
         /// <summary>
         /// The length of time we're going to allow this Incrementalist operation to run
