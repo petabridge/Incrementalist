@@ -8,7 +8,7 @@ namespace Incrementalist
     /// </summary>
     public class IncrementalistBuildSettings
     {
-        public IncrementalistBuildSettings(string targetBranch, string solutionFile, IReadOnlyList<BuildStep> buildSteps)
+        public IncrementalistBuildSettings(string targetBranch, string solutionFile, IReadOnlyList<IBuildCommand> buildSteps)
         {
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
@@ -29,6 +29,6 @@ namespace Incrementalist
         /// <summary>
         /// The set of build steps to produce based on the changes in the diff set.
         /// </summary>
-        public IReadOnlyList<BuildStep> BuildSteps { get; }
+        public IReadOnlyList<IBuildCommand> BuildSteps { get; }
     }
 }
