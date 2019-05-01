@@ -25,6 +25,11 @@ namespace Incrementalist.ProjectSystem.Cmds
         protected override async Task<IEnumerable<string>> ProcessImpl(Task<Dictionary<string, SlnFile>> previousTask)
         {
             var affectedSlnFiles = await previousTask;
+
+            // bail out early if we don't have any affected projects
+            if(affectedSlnFiles.Count == 0)
+                return new List<string>();
+
             var ds = _solution.GetProjectDependencyGraph();
 
             // NOTE: what happens if the SLN file is modified? Return everything?
@@ -32,7 +37,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
 
-            var longestGraph = graphs.OrderByDescending(x => x.Value.Count).First();
+            var longestGraph = graphs.OrderByDescending(x => x.Value.Count).FirstOrDefault();
 
             var results = new HashSet<string> {_solution.GetProject(longestGraph.Key).FilePath};
             foreach (var p in longestGraph.Value)
