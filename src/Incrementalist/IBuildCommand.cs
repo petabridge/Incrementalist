@@ -6,10 +6,10 @@ namespace Incrementalist
     /// <summary>
     /// An Incrementalist build instruction.
     /// </summary>
-    public interface IBuildCommand
+    public interface IBuildCommand<TIn, TOut>
     {
         string Name { get; }
 
-        Task<object> Process(Task<object> previousTask);
+        Task<TOut> Process(Task<TIn> previousTask);
     }
 }

@@ -12,7 +12,7 @@ namespace Incrementalist.Cmd
     /// <summary>
     /// Load a VS <see cref="Solution"/> from file and analyze its contents.
     /// </summary>
-    public sealed class LoadSolutionCmd : BuildCommandBase
+    public sealed class LoadSolutionCmd : BuildCommandBase<string, Solution>
     {
         private readonly MSBuildWorkspace _workspace;
         private readonly Progress<ProjectLoadProgress> _progress;
@@ -26,7 +26,7 @@ namespace Incrementalist.Cmd
             });
         }
 
-        protected override async Task<object> ProcessImpl(Task<object> previousTask)
+        protected override async Task<Solution> ProcessImpl(Task<string> previousTask)
         {
             var slnObject = await previousTask;
             Contract.Assert(slnObject is string fileName && !string.IsNullOrEmpty(fileName), $"Expected previous task to return a " +

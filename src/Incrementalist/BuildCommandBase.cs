@@ -8,7 +8,7 @@ namespace Incrementalist
     /// <summary>
     /// Abstract base class with built-in logging support and templating
     /// </summary>
-    public abstract class BuildCommandBase : IBuildCommand
+    public abstract class BuildCommandBase<TIn, TOut> : IBuildCommand<TIn, TOut>
     {
         protected BuildCommandBase(string name, ILogger logger, CancellationToken cancellationToken)
         {
@@ -23,7 +23,7 @@ namespace Incrementalist
 
         public string Name { get; }
 
-        public async Task<object> Process(Task<object> previousTask)
+        public async Task<TOut> Process(Task<TIn> previousTask)
         {
             Logger.LogDebug("[{0}] - Entered Task", Name);
 
@@ -48,6 +48,6 @@ namespace Incrementalist
             }
         }
 
-        protected abstract Task<object> ProcessImpl(Task<object> previousTask);
+        protected abstract Task<TOut> ProcessImpl(Task<TIn> previousTask);
     }
 }

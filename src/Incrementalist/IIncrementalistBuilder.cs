@@ -10,29 +10,29 @@ namespace Incrementalist
     /// Used to build all of the <see cref="IBuildCommand"/>s into a
     /// linear execution graph.
     /// </summary>
-    public interface IIncrementalistBuilder<TOutput>
-    {
-        BuildSettings Settings { get; }
+    //public interface IIncrementalistBuilder<TOutput>
+    //{
+    //    BuildSettings Settings { get; }
 
-        ILogger Logger { get; }
+    //    ILogger Logger { get; }
 
-        IEnumerable<string> ExecutionPlan { get; }
+    //    IEnumerable<string> ExecutionPlan { get; }
 
-        IIncrementalistBuilder<TOutput> WithSettings(BuildSettings settings);
+    //    IIncrementalistBuilder<TOutput> WithSettings(BuildSettings settings);
 
-        IIncrementalistBuilder<TOutput> WithLogger(ILogger logger);
+    //    IIncrementalistBuilder<TOutput> WithLogger(ILogger logger);
 
-        IIncrementalistBuilder<TOutput> Next(IBuildCommand cmd);
+    //    IIncrementalistBuilder<TOutput> Next(IBuildCommand cmd);
 
-        /// <summary>
-        /// Validates the setup prior to execution.
-        /// </summary>
-        void Validate();
+    //    /// <summary>
+    //    /// Validates the setup prior to execution.
+    //    /// </summary>
+    //    void Validate();
 
-        /// <summary>
-        /// Runs the commands
-        /// </summary>
-        /// <returns>The output from the final task in the build chain.</returns>
-        Task<TOutput> Run();
-    }
+    //    /// <summary>
+    //    /// Runs the commands
+    //    /// </summary>
+    //    /// <returns>The output from the final task in the build chain.</returns>
+    //    Task<TOutput> Run();
+    //}
 }

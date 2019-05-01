@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.Contracts;
+﻿using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -9,7 +10,7 @@ namespace Incrementalist.ProjectSystem.Cmds
     /// <summary>
     /// Gathers all of the files in a solution and categorizes them.
     /// </summary>
-    public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase
+    public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase<Solution, Dictionary<string, SlnFile>>
     {
         private readonly string _workingDirectory;
 
@@ -18,7 +19,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             _workingDirectory = workingDirectory;
         }
 
-        protected override async Task<object> ProcessImpl(Task<object> previousTask)
+        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Solution> previousTask)
         {
             var slnObject = await previousTask;
             Contract.Assert(slnObject is Solution s && s != null, $"Expected previous task to return a Solution object, but found {slnObject} instead.");

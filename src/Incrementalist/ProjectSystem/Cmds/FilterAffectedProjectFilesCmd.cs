@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.Git;
@@ -12,22 +13,21 @@ namespace Incrementalist.ProjectSystem.Cmds
     /// Filter the previously discovered <see cref="SlnFile"/>s by whether or not
     /// they were touched via the GitDiff.
     /// </summary>
-    public sealed class FilterByAffectedFilesCmd : BuildCommandBase
+    public sealed class FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<string, SlnFile>, Dictionary<string, SlnFile>>
     {
         private readonly string _targetGitBranch;
         private readonly string _workingDirectory;
 
-        public FilterByAffectedFilesCmd(ILogger logger, CancellationToken cancellationToken, string workingDirectory, string targetGitBranch) 
+        public FilterAffectedProjectFilesCmd(ILogger logger, CancellationToken cancellationToken, string workingDirectory, string targetGitBranch) 
             : base("FilterSlnFilesByGitDiff", logger, cancellationToken)
         {
             _workingDirectory = workingDirectory;
             _targetGitBranch = targetGitBranch;
         }
 
-        protected override async Task<object> ProcessImpl(Task<object> previousTask)
+        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Dictionary<string, SlnFile>> previousTask)
         {
             var fileDictObj = await previousTask;
-            Contract.Assert(fileDictObj is Dictionary<string, SlnFile>, $"Expected Dictionary<string, SlnFile>, but found [{fileDictObj}] instead.");
 
             var fileDict = (Dictionary<string, SlnFile>) fileDictObj;
 
@@ -46,6 +46,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             var newDict = new Dictionary<string, SlnFile>();
             foreach (var file in affectedFiles)
             {
+                Logger.LogDebug("Affected file: {0}", file);
                 // this file is in the solution
                 if (fileDict.ContainsKey(file))
                 {
