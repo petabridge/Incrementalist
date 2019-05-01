@@ -57,8 +57,7 @@ namespace Incrementalist.Cmd
 
             var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
             Console.WriteLine("Are we inside repository? {0}", insideRepo);
-            //if (insideRepo)
-            //{
+  
             var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
             var repository = new Repository(repoFolder);
             Console.WriteLine("Repo base is located in {0}", repoFolder);
@@ -86,11 +85,6 @@ namespace Incrementalist.Cmd
 
             ResetTitle();
             return 0;
-        }
-
-        private static void ProgressOnProgressChanged(object sender, ProjectLoadProgress e)
-        {
-            Console.WriteLine("{0} {1} {2}", e.ElapsedTime, e.Operation, e.FilePath);
         }
     }
 }
