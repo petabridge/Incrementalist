@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Libgit2Sharp" Version="0.26.0" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.0.0-beta4-final" />
   </ItemGroup>
 
 </Project>
