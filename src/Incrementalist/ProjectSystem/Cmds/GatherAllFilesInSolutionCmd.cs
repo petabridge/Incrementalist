@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Text;
+﻿using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
-namespace Incrementalist.ProjectSystem
+namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
     /// Gathers all of the files in a solution and categorizes them.

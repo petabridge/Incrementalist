@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 using Incrementalist.Git;
 using Microsoft.Extensions.Logging;
 
-namespace Incrementalist.ProjectSystem
+namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
     /// Filter the previously discovered <see cref="SlnFile"/>s by whether or not
     /// they were touched via the GitDiff.
     /// </summary>
-    public sealed class FilterByAffectedFiles : BuildCommandBase
+    public sealed class FilterByAffectedFilesCmd : BuildCommandBase
     {
         private readonly string _targetGitBranch;
         private readonly string _workingDirectory;
 
-        public FilterByAffectedFiles(ILogger logger, CancellationToken cancellationToken, string workingDirectory, string targetGitBranch) 
+        public FilterByAffectedFilesCmd(ILogger logger, CancellationToken cancellationToken, string workingDirectory, string targetGitBranch) 
             : base("FilterSlnFilesByGitDiff", logger, cancellationToken)
         {
             _workingDirectory = workingDirectory;

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Incrementalist.ProjectSystem
+namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <inheritdoc />
     /// <summary>

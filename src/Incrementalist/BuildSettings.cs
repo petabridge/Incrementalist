@@ -1,18 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 
 namespace Incrementalist
 {
     /// <summary>
     /// The settings used for this execution of incremental build analysis.
     /// </summary>
-    public class IncrementalistBuildSettings
+    public class BuildSettings
     {
-        public IncrementalistBuildSettings(string targetBranch, string solutionFile, IReadOnlyList<IBuildCommand> buildSteps)
+        public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
+
+        public BuildSettings(string targetBranch, string solutionFile, TimeSpan? timeoutDuration = null)
         {
+            Contract.Requires(targetBranch != null);
+            Contract.Requires(solutionFile != null);
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
-            BuildSteps = buildSteps;
+            TimeoutDuration = timeoutDuration ?? DefaultTimeout;
         }
 
         /// <summary>
@@ -27,8 +32,9 @@ namespace Incrementalist
         public string SolutionFile { get; }
 
         /// <summary>
-        /// The set of build steps to produce based on the changes in the diff set.
+        /// The length of time we're going to allow this Incrementalist operation to run
+        /// prior to cancelling it.
         /// </summary>
-        public IReadOnlyList<IBuildCommand> BuildSteps { get; }
+        public TimeSpan TimeoutDuration { get; }
     }
 }
