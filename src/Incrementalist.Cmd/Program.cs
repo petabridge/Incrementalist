@@ -52,14 +52,13 @@ namespace Incrementalist.Cmd
                 }
             }
 
-            var logger = new ConsoleLogger("Incrementalist", (s, level) => { return level >= LogLevel.Debug; }, false);
+            var logger = new ConsoleLogger("Incrementalist", (s, level) => { return level >= LogLevel.Information; }, false);
             
 
             var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
             Console.WriteLine("Are we inside repository? {0}", insideRepo);
   
             var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
-            var repository = new Repository(repoFolder);
             Console.WriteLine("Repo base is located in {0}", repoFolder);
             var workingFolder = Directory.GetParent(repoFolder).Parent;
 

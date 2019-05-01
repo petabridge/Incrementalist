@@ -22,7 +22,7 @@ namespace Incrementalist.Cmd
             _workspace = workspace;
             _progress = new Progress<ProjectLoadProgress>(p =>
             {
-                Logger.LogInformation("[{0}][{1}] - {2} [{3}]", p.ElapsedTime, p.Operation, p.FilePath, p.TargetFramework);
+                Logger.LogTrace("[{0}][{1}] - {2} [{3}]", p.ElapsedTime, p.Operation, p.FilePath, p.TargetFramework);
             });
         }
 
