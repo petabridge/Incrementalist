@@ -33,10 +33,14 @@ namespace Incrementalist.Cmd.Commands
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
             var loadSln = new LoadSolutionCmd(Logger, _workspace, _cts.Token);
+            var slnFile = await loadSln.Process(Task.FromResult(Settings.SolutionFile));
+
+
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
-            var affectedFiles = await filterFilesCmd.Process(getFilesCmd.Process(loadSln.Process(Task.FromResult(Settings.SolutionFile))));
-            return affectedFiles.Keys;
+            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, slnFile);
+            var affectedFiles = await createDependencyGraph.Process(filterFilesCmd.Process(getFilesCmd.Process(Task.FromResult(slnFile))));
+            return affectedFiles;
         }
     }
 }
