@@ -1,15 +1,17 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright © 2017 Your Company</Copyright>
-    <Authors>Your Authors</Authors>
+    <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
+    <Authors>Petabridge</Authors>
     <VersionPrefix>0.1.0</VersionPrefix>
     <PackageReleaseNotes>First release</PackageReleaseNotes>
     <PackageIconUrl>
+      https://petabridge.com/images/logo.png
     </PackageIconUrl>
     <PackageProjectUrl>
+      https://github.com/petabridge/Incrementalist
     </PackageProjectUrl>
-    <PackageLicenseUrl>
-    </PackageLicenseUrl>
+    <License>
+    </License>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
