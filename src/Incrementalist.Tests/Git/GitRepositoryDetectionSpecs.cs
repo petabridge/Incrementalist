@@ -1,10 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GitRepositoryDetectionSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using FluentAssertions;
 using Incrementalist.Git;
 using Incrementalist.Tests.Helpers;
 using Xunit;
+using LibGit2Sharp;
 
 namespace Incrementalist.Tests.Git
 {
@@ -13,6 +18,11 @@ namespace Incrementalist.Tests.Git
         public GitRepositoryDetectionSpecs()
         {
             Repository = new DisposableRepository();
+        }
+
+        public void Dispose()
+        {
+            Repository?.Dispose();
         }
 
         public DisposableRepository Repository { get; }
@@ -26,11 +36,6 @@ namespace Incrementalist.Tests.Git
             // note: due to what I believe is native interop here, the Repository.Info.WorkingDirectory
             // string appears to have an extra null terminator at the end
             results.repo.Info.WorkingDirectory.Should().Contain(Repository.BasePath.Trim());
-        }
-
-        public void Dispose()
-        {
-            Repository?.Dispose();
         }
     }
 }

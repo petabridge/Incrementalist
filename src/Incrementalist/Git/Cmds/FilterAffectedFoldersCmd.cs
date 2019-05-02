@@ -14,11 +14,12 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist.Git.Cmds
 {
     /// <summary>
-    /// Filters all of the unique folders that contain affected files
+    ///     Filters all of the unique folders that contain affected files
     /// </summary>
     public sealed class FilterAffectedFoldersCmd : BuildCommandBase<IEnumerable<string>, IEnumerable<string>>
     {
-        public FilterAffectedFoldersCmd(ILogger logger, CancellationToken cancellationToken) : base("FilterAffectedFiles", logger, cancellationToken)
+        public FilterAffectedFoldersCmd(ILogger logger, CancellationToken cancellationToken) : base(
+            "FilterAffectedFiles", logger, cancellationToken)
         {
         }
 
