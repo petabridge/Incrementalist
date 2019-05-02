@@ -3,7 +3,7 @@
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
     <VersionPrefix>0.1.0</VersionPrefix>
-    <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <PackageReleaseNotes>First production release of Incrementalist, which you can install as a .NET Core global tool.</PackageReleaseNotes>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
     </PackageIconUrl>
