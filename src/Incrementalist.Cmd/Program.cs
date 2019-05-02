@@ -1,27 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommandLine;
 using Incrementalist.Cmd.Commands;
-using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using Microsoft.Extensions.Options;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Incrementalist.Cmd
 {
-    class Program
+    internal class Program
     {
-        private static string _originalTitle = null;
+        private static string _originalTitle;
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         private static void SetTitle()
@@ -39,7 +40,7 @@ namespace Incrementalist.Cmd
                 Console.Title = _originalTitle; // reset the console window title back
         }
 
-        static async Task<int> Main(string[] args)
+        private static async Task<int> Main(string[] args)
         {
             SetTitle();
 
@@ -81,17 +82,12 @@ namespace Incrementalist.Cmd
                 var workingFolder = Directory.GetParent(repoFolder).Parent;
 
 
-
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
                     if (options.ListFolders)
-                    {
                         await AnalyzeFolderDiff(options, workingFolder, logger);
-                    }
                     else
-                    {
                         await AnaylzeSolutionDIff(options, workingFolder, logger);
-                    }
                 }
 
                 return 0;
@@ -121,16 +117,10 @@ namespace Incrementalist.Cmd
 
             var msBuild = MSBuildWorkspace.Create();
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
-            {
                 await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
-            }
             else
-            {
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
-                {
                     await ProcessSln(options, sln, workingFolder, msBuild, logger);
-                }
-            }
         }
 
         private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
@@ -149,13 +139,9 @@ namespace Incrementalist.Cmd
         {
 // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
-            {
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
-            }
             else
-            {
                 Console.WriteLine(affectedFilesStr);
-            }
         }
     }
 }

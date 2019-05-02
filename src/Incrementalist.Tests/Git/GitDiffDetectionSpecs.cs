@@ -1,8 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GitDiffDetectionSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FluentAssertions;
 using Incrementalist.Git;
 using Incrementalist.Tests.Helpers;
@@ -12,28 +18,23 @@ namespace Incrementalist.Tests.Git
 {
     public class GitDiffDetectionSpecs : IDisposable
     {
-        public DisposableRepository Repository { get; }
-
         public GitDiffDetectionSpecs()
         {
             Repository = new DisposableRepository();
         }
 
-        [Fact(DisplayName = "Detected files should report correct absolute path")]
-        public void Should_report_correct_path_for_diffed_files()
+        public void Dispose()
         {
-            Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber").Commit("Fuberized file");
-            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            diffedFiles.Count.Should().Be(1);
-            var file = diffedFiles[0];
-            Path.GetFileName(file).Should().Be("fuber.txt");
-            file.Should().Be(Path.GetFullPath("fuber.txt", Repository.BasePath));
+            Repository?.Dispose();
         }
+
+        public DisposableRepository Repository { get; }
 
         [Fact(DisplayName = "Should detect files that have been added to git repo")]
         public void Should_detect_added_files_to_bare_Repo()
         {
-            Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber").Commit("Fuberized file");
+            Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber")
+                .Commit("Fuberized file");
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
             diffedFiles.Count.Should().Be(1);
             var file = diffedFiles[0];
@@ -81,9 +82,16 @@ namespace Incrementalist.Tests.Git
             diffedFiles.Count.Should().Be(0);
         }
 
-        public void Dispose()
+        [Fact(DisplayName = "Detected files should report correct absolute path")]
+        public void Should_report_correct_path_for_diffed_files()
         {
-            Repository?.Dispose();
+            Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber")
+                .Commit("Fuberized file");
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
+            diffedFiles.Count.Should().Be(1);
+            var file = diffedFiles[0];
+            Path.GetFileName(file).Should().Be("fuber.txt");
+            file.Should().Be(Path.GetFullPath("fuber.txt", Repository.BasePath));
         }
     }
 }

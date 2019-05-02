@@ -1,7 +1,11 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ComputeDependencyGraphCmd.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -10,14 +14,15 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
-    /// Computes the longest dependency graph from all of the affected files
-    /// and emits a topologically sorted set of project file names to be used during testing.
+    ///     Computes the longest dependency graph from all of the affected files
+    ///     and emits a topologically sorted set of project file names to be used during testing.
     /// </summary>
     public sealed class ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<string, SlnFile>, IEnumerable<string>>
     {
         private readonly Solution _solution;
 
-        public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, Solution solution) : base("ResolveSlnDependencyGraph", logger, cancellationToken)
+        public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, Solution solution) : base(
+            "ResolveSlnDependencyGraph", logger, cancellationToken)
         {
             _solution = solution;
         }
@@ -27,7 +32,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             var affectedSlnFiles = await previousTask;
 
             // bail out early if we don't have any affected projects
-            if(affectedSlnFiles.Count == 0)
+            if (affectedSlnFiles.Count == 0)
                 return new List<string>();
 
             var ds = _solution.GetProjectDependencyGraph();
@@ -40,10 +45,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             var longestGraph = graphs.OrderByDescending(x => x.Value.Count).FirstOrDefault();
 
             var results = new HashSet<string> {_solution.GetProject(longestGraph.Key).FilePath};
-            foreach (var p in longestGraph.Value)
-            {
-                results.Add(_solution.GetProject(p).FilePath);
-            }
+            foreach (var p in longestGraph.Value) results.Add(_solution.GetProject(p).FilePath);
 
             return results;
         }

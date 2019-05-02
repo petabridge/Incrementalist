@@ -1,11 +1,17 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="StartupData.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Diagnostics;
 using System.Text;
 
 namespace Incrementalist.Cmd
 {
     /// <summary>
-    /// Used for printing startup messages and help.
+    ///     Used for printing startup messages and help.
     /// </summary>
     internal static class StartupData
     {

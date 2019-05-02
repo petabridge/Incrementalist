@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="FilterAffectedProjectFilesCmd.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,22 +14,25 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
-    /// Filter the previously discovered <see cref="SlnFile"/>s by whether or not
-    /// they were touched via the GitDiff.
+    ///     Filter the previously discovered <see cref="SlnFile" />s by whether or not
+    ///     they were touched via the GitDiff.
     /// </summary>
-    public sealed class FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<string, SlnFile>, Dictionary<string, SlnFile>>
+    public sealed class
+        FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<string, SlnFile>, Dictionary<string, SlnFile>>
     {
         private readonly string _targetGitBranch;
         private readonly string _workingDirectory;
 
-        public FilterAffectedProjectFilesCmd(ILogger logger, CancellationToken cancellationToken, string workingDirectory, string targetGitBranch) 
+        public FilterAffectedProjectFilesCmd(ILogger logger, CancellationToken cancellationToken,
+            string workingDirectory, string targetGitBranch)
             : base("FilterSlnFilesByGitDiff", logger, cancellationToken)
         {
             _workingDirectory = workingDirectory;
             _targetGitBranch = targetGitBranch;
         }
 
-        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Dictionary<string, SlnFile>> previousTask)
+        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(
+            Task<Dictionary<string, SlnFile>> previousTask)
         {
             var fileDictObj = await previousTask;
 
@@ -46,10 +55,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             {
                 Logger.LogDebug("Affected file: {0}", file);
                 // this file is in the solution
-                if (fileDict.ContainsKey(file))
-                {
-                    newDict[file] = fileDict[file];
-                }
+                if (fileDict.ContainsKey(file)) newDict[file] = fileDict[file];
             }
 
             return newDict;
