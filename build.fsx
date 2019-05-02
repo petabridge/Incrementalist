@@ -14,9 +14,9 @@ let product = "Incrementalist"
 let configuration = "Release"
 
 // Metadata used when signing packages and DLLs
-let signingName = "My Library"
-let signingDescription = "My REALLY COOL Library"
-let signingUrl = "https://signing.is.cool/"
+let signingName = "Incrementalist"
+let signingDescription = "Tool for generating incremental build data from Git diffs and Roslyn."
+let signingUrl = "https://github.com/petabridge/Incrementalist"
 
 // Read release notes and version
 let solutionFile = FindFirstMatchingFile "*.sln" __SOURCE_DIRECTORY__  // dynamically look up the solution
