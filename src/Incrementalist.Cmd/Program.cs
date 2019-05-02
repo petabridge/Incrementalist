@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using CommandLine;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
@@ -42,48 +43,119 @@ namespace Incrementalist.Cmd
         {
             SetTitle();
 
-            if (args.Length >= 1)
+            SlnOptions options = null;
+            var result = Parser.Default.ParseArguments<SlnOptions>(args).MapResult(r =>
             {
-                if (args[0].ToLowerInvariant().Equals("help"))
-                {
-                    StartupData.ShowHelp();
-                    ResetTitle();
-                    return 0;
-                }
+                options = r;
+                return 0;
+            }, _ => 1);
+
+            if (result != 0)
+            {
+                ResetTitle();
+                return result;
             }
 
-            var logger = new ConsoleLogger("Incrementalist", (s, level) => { return level >= LogLevel.Information; }, false);
-            
+            var exitCode = await RunIncrementalist(options);
 
-            var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
-            Console.WriteLine("Are we inside repository? {0}", insideRepo);
-  
-            var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
-            Console.WriteLine("Repo base is located in {0}", repoFolder);
-            var workingFolder = Directory.GetParent(repoFolder).Parent;
+            ResetTitle();
+            return exitCode;
+        }
 
+        private static async Task<int> RunIncrementalist(SlnOptions options)
+        {
+            var logger = new ConsoleLogger("Incrementalist",
+                (s, level) => level >= (options.Verbose ? LogLevel.Debug : LogLevel.Information), false);
+
+            try
+            {
+                var pwd = Directory.GetCurrentDirectory();
+                var insideRepo = Repository.IsValid(pwd);
+                if (!insideRepo)
+                {
+                    logger.LogError("Current path {0} is not located inside any known Git repository.", pwd);
+                    return -2;
+                }
+
+                var repoFolder = Repository.Discover(pwd);
+                var workingFolder = Directory.GetParent(repoFolder).Parent;
+
+
+
+                if (!string.IsNullOrEmpty(repoFolder))
+                {
+                    if (options.ListFolders)
+                    {
+                        await AnalyzeFolderDiff(options, workingFolder, logger);
+                    }
+                    else
+                    {
+                        await AnaylzeSolutionDIff(options, workingFolder, logger);
+                    }
+                }
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error encountered during execution of Incrementalist.");
+                return -1;
+            }
+        }
+
+        private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        {
+            var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName);
+            var emitTask = new EmitAffectedFoldersTask(settings, logger);
+            var affectedFiles = await emitTask.Run();
+
+            var affectedFilesStr = string.Join(",", affectedFiles);
+
+            HandleAffectedFiles(options, affectedFilesStr);
+        }
+
+        private static async Task AnaylzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        {
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
 
             var msBuild = MSBuildWorkspace.Create();
-            
-            if (!string.IsNullOrEmpty(repoFolder))
+            if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
-
+                await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
+            }
+            else
+            {
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
                 {
-                    var settings = new BuildSettings("dev", sln, workingFolder.FullName);
-                    var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-                    var affectedFiles = await emitTask.Run();
-                    foreach (var file in affectedFiles)
-                    {
-                        logger.LogInformation("{0}", file);
-                    }
+                    await ProcessSln(options, sln, workingFolder, msBuild, logger);
                 }
             }
+        }
 
-            ResetTitle();
-            return 0;
+        private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
+            MSBuildWorkspace msBuild, ILogger logger)
+        {
+            var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName);
+            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
+            var affectedFiles = await emitTask.Run();
+
+            var affectedFilesStr = string.Join(",", affectedFiles);
+
+            HandleAffectedFiles(options, affectedFilesStr);
+        }
+
+        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr)
+        {
+// Check to see if we're planning on writing out to the file system or not.
+            if (!string.IsNullOrEmpty(options.OutputFile))
+            {
+                File.WriteAllText(options.OutputFile, affectedFilesStr);
+            }
+            else
+            {
+                Console.WriteLine(affectedFilesStr);
+            }
         }
     }
 }
