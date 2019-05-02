@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using CommandLine;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
@@ -42,22 +43,33 @@ namespace Incrementalist.Cmd
         {
             SetTitle();
 
-            if (args.Length >= 1)
+            SlnOptions options = null;
+            var result = Parser.Default.ParseArguments<SlnOptions>(args).MapResult(r =>
             {
-                if (args[0].ToLowerInvariant().Equals("help"))
-                {
-                    StartupData.ShowHelp();
-                    ResetTitle();
-                    return 0;
-                }
+                options = r;
+                return 0;
+            }, _ => 1);
+
+            if (result != 0)
+            {
+                ResetTitle();
+                return result;
             }
 
+            var exitCode = await RunIncrementalist(options);
+
+            ResetTitle();
+            return exitCode;
+        }
+
+        private static async Task<int> RunIncrementalist(SlnOptions options)
+        {
             var logger = new ConsoleLogger("Incrementalist", (s, level) => { return level >= LogLevel.Information; }, false);
-            
+
 
             var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
             Console.WriteLine("Are we inside repository? {0}", insideRepo);
-  
+
             var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
             Console.WriteLine("Repo base is located in {0}", repoFolder);
             var workingFolder = Directory.GetParent(repoFolder).Parent;
@@ -66,10 +78,9 @@ namespace Incrementalist.Cmd
             MSBuildLocator.RegisterDefaults();
 
             var msBuild = MSBuildWorkspace.Create();
-            
+
             if (!string.IsNullOrEmpty(repoFolder))
             {
-
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
                 {
                     var settings = new BuildSettings("dev", sln, workingFolder.FullName);
@@ -81,9 +92,6 @@ namespace Incrementalist.Cmd
                     }
                 }
             }
-
-            ResetTitle();
-            return 0;
         }
     }
 }

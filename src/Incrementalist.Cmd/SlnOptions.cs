@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Text;
+using CommandLine;
+
+namespace Incrementalist.Cmd
+{
+
+    public sealed class SlnOptions
+    {
+        [Option('s', "sln", HelpText ="The name of the Solution file to be analyzed by Incrementalist.", Required = false)]
+        public string SolutionFilePath { get; set; }
+
+        [Option('f', "file", HelpText = "If specified, writes the output to the named file.", Required = false)]
+        public string OutputFile { get; set; }
+
+        [Option('l', "folders-only", HelpText = "List affected folders instead of .NET projects", Required = false)]
+        public bool ListFolders { get; set; }
+
+        [Option(
+            Default = false,
+            HelpText = "Prints out extensive debug logs during operation.")]
+        public bool Verbose { get; set; }
+    }
+}
