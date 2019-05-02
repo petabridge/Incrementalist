@@ -80,44 +80,81 @@ namespace Incrementalist.Cmd
                 var repoFolder = Repository.Discover(pwd);
                 var workingFolder = Directory.GetParent(repoFolder).Parent;
 
-                // Locate and register the default instance of MSBuild installed on this machine.
-                MSBuildLocator.RegisterDefaults();
 
-                var msBuild = MSBuildWorkspace.Create();
 
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
-                    if (!string.IsNullOrEmpty(options.SolutionFilePath))
+                    if (options.ListFolders)
                     {
-
+                        await AnalyzeFolderDiff(options, workingFolder, logger);
                     }
-
-                    foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
+                    else
                     {
-                        var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName);
-                        var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-                        var affectedFiles = await emitTask.Run();
-
-                        var affectedFilesStr = string.Join(",", affectedFiles);
-
-                        // Check to see if we're planning on writing out to the file system or not.
-                        if (!string.IsNullOrEmpty(options.OutputFile))
-                        {
-                            File.WriteAllText(options.OutputFile, affectedFilesStr);
-                        }
-                        else
-                        {
-                            Console.WriteLine(affectedFilesStr);
-                        }
+                        await AnaylzeSolutionDIff(options, workingFolder, logger);
                     }
                 }
 
                 return 0;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError(ex, "Error encountered during execution of Incrementalist.");
                 return -1;
+            }
+        }
+
+        private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        {
+            var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName);
+            var emitTask = new EmitAffectedFoldersTask(settings, logger);
+            var affectedFiles = await emitTask.Run();
+
+            var affectedFilesStr = string.Join(",", affectedFiles);
+
+            HandleAffectedFiles(options, affectedFilesStr);
+        }
+
+        private static async Task AnaylzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        {
+            // Locate and register the default instance of MSBuild installed on this machine.
+            MSBuildLocator.RegisterDefaults();
+
+            var msBuild = MSBuildWorkspace.Create();
+            if (!string.IsNullOrEmpty(options.SolutionFilePath))
+            {
+                await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
+            }
+            else
+            {
+                foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
+                {
+                    await ProcessSln(options, sln, workingFolder, msBuild, logger);
+                }
+            }
+        }
+
+        private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
+            MSBuildWorkspace msBuild, ILogger logger)
+        {
+            var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName);
+            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
+            var affectedFiles = await emitTask.Run();
+
+            var affectedFilesStr = string.Join(",", affectedFiles);
+
+            HandleAffectedFiles(options, affectedFilesStr);
+        }
+
+        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr)
+        {
+// Check to see if we're planning on writing out to the file system or not.
+            if (!string.IsNullOrEmpty(options.OutputFile))
+            {
+                File.WriteAllText(options.OutputFile, affectedFilesStr);
+            }
+            else
+            {
+                Console.WriteLine(affectedFilesStr);
             }
         }
     }
