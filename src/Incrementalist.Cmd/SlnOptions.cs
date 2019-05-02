@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-using CommandLine;
+﻿using CommandLine;
 
 namespace Incrementalist.Cmd
 {
@@ -17,6 +13,9 @@ namespace Incrementalist.Cmd
 
         [Option('l', "folders-only", HelpText = "List affected folders instead of .NET projects", Required = false)]
         public bool ListFolders { get; set; }
+
+        [Option('b', "branch", HelpText = "The git branch to compare against. i.e. the `dev` or the `master` branch.", Required = true, Default = "dev")]
+        public string GitBranch { get; set; }
 
         [Option(
             Default = false,

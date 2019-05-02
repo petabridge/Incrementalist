@@ -64,17 +64,20 @@ namespace Incrementalist.Cmd
 
         private static async Task<int> RunIncrementalist(SlnOptions options)
         {
-            var logger = new ConsoleLogger("Incrementalist", (s, level) => { return level >= LogLevel.Information; }, false);
+            var logger = new ConsoleLogger("Incrementalist",
+                (s, level) => level >= (options.Verbose ? LogLevel.Debug : LogLevel.Information), false);
 
             try
             {
-                var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
+                var pwd = Directory.GetCurrentDirectory();
+                var insideRepo = Repository.IsValid(pwd);
                 if (!insideRepo)
                 {
-                    logger.LogError("Current path {0} is not located inside any known Git repository.", Directory.GetCurrentDirectory());
+                    logger.LogError("Current path {0} is not located inside any known Git repository.", pwd);
                     return -2;
                 }
-                var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
+
+                var repoFolder = Repository.Discover(pwd);
                 var workingFolder = Directory.GetParent(repoFolder).Parent;
 
                 // Locate and register the default instance of MSBuild installed on this machine.
@@ -84,14 +87,27 @@ namespace Incrementalist.Cmd
 
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
+                    if (!string.IsNullOrEmpty(options.SolutionFilePath))
+                    {
+
+                    }
+
                     foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
                     {
-                        var settings = new BuildSettings("dev", sln, workingFolder.FullName);
+                        var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName);
                         var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
                         var affectedFiles = await emitTask.Run();
-                        foreach (var file in affectedFiles)
+
+                        var affectedFilesStr = string.Join(",", affectedFiles);
+
+                        // Check to see if we're planning on writing out to the file system or not.
+                        if (!string.IsNullOrEmpty(options.OutputFile))
                         {
-                            logger.LogInformation("{0}", file);
+                            File.WriteAllText(options.OutputFile, affectedFilesStr);
+                        }
+                        else
+                        {
+                            Console.WriteLine(affectedFilesStr);
                         }
                     }
                 }
