@@ -4,13 +4,14 @@
     <Authors>Petabridge</Authors>
     <VersionPrefix>0.1.0</VersionPrefix>
     <PackageReleaseNotes>First production release of Incrementalist, which you can install as a .NET Core global tool.</PackageReleaseNotes>
+    <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
     </PackageIconUrl>
     <PackageProjectUrl>
       https://github.com/petabridge/Incrementalist
     </PackageProjectUrl>
-    <LicenseUrl>https://github.com/petabridge/Incrementalist/blob/dev/LICENSE</LicenseUrl>
+    <PackageLicenseUrl>https://cmd.petabridge.com/articles/install/license.html</PackageLicenseUrl>
     <License>
                                        Apache License
                            Version 2.0, January 2004
