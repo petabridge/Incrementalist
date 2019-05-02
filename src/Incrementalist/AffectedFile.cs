@@ -1,11 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// -----------------------------------------------------------------------
+// <copyright file="AffectedFile.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 
 namespace Incrementalist
 {
     /// <summary>
-    /// The types of files that can be detected automatically by Roslyn.
+    ///     The types of files that can be detected automatically by Roslyn.
     /// </summary>
     public enum FileType
     {
@@ -18,7 +22,7 @@ namespace Incrementalist
 
 
     /// <summary>
-    /// Used to document a file that was affected by the current commit.
+    ///     Used to document a file that was affected by the current commit.
     /// </summary>
     public sealed class AffectedFile : IEquatable<AffectedFile>
     {
@@ -30,17 +34,17 @@ namespace Incrementalist
         }
 
         /// <summary>
-        /// The absolute path to the file.
+        ///     The absolute path to the file.
         /// </summary>
         public string Path { get; }
 
         /// <summary>
-        /// The type of file detected in the diff.
+        ///     The type of file detected in the diff.
         /// </summary>
         public FileType FileType { get; }
 
         /// <summary>
-        /// The name of the affected project.
+        ///     The name of the affected project.
         /// </summary>
         public string Project { get; }
 
@@ -48,7 +52,8 @@ namespace Incrementalist
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return string.Equals(Path, other.Path) && FileType == other.FileType && string.Equals(Project, other.Project);
+            return string.Equals(Path, other.Path) && FileType == other.FileType &&
+                   string.Equals(Project, other.Project);
         }
 
         public override bool Equals(object obj)
@@ -62,7 +67,7 @@ namespace Incrementalist
         {
             unchecked
             {
-                var hashCode = (Path != null ? Path.GetHashCode() : 0);
+                var hashCode = Path != null ? Path.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (int) FileType;
                 hashCode = (hashCode * 397) ^ (Project != null ? Project.GetHashCode() : 0);
                 return hashCode;

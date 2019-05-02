@@ -1,22 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GitRunner.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.IO;
-using System.Text;
 using LibGit2Sharp;
 
 namespace Incrementalist.Git
 {
     /// <summary>
-    /// Used to run all of the commands needed to execute a query.
+    ///     Used to run all of the commands needed to execute a query.
     /// </summary>
     public sealed class GitRunner
     {
         /// <summary>
-        /// Find the repository and the full path of the base directory.
+        ///     Find the repository and the full path of the base directory.
         /// </summary>
-        /// <param name="targetDirectory">Optional. The directory to search inside of. Defaults to <see cref="Directory.GetCurrentDirectory"/> otherwise.</param>
-        /// <returns>A tuple containing the repository and a boolean flag indicating whether or not
-        /// the search was successful.</returns>
+        /// <param name="targetDirectory">
+        ///     Optional. The directory to search inside of. Defaults to
+        ///     <see cref="Directory.GetCurrentDirectory" /> otherwise.
+        /// </param>
+        /// <returns>
+        ///     A tuple containing the repository and a boolean flag indicating whether or not
+        ///     the search was successful.
+        /// </returns>
         public static (Repository repo, bool foundRepo) FindRepository(string targetDirectory = null)
         {
             var repoPath = Repository.Discover(targetDirectory ?? Directory.GetCurrentDirectory());

@@ -1,17 +1,20 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="EmitAffectedFoldersTask.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.Git;
 using Incrementalist.Git.Cmds;
-using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Cmd.Commands
 {
     /// <summary>
-    /// List all of the folders affected by the current set of git commits
+    ///     List all of the folders affected by the current set of git commits
     /// </summary>
     public class EmitAffectedFoldersTask
     {

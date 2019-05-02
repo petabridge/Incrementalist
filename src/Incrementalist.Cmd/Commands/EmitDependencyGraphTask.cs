@@ -1,18 +1,28 @@
-﻿using System.Collections.Generic;
+﻿// -----------------------------------------------------------------------
+// <copyright file="EmitDependencyGraphTask.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Incrementalist.Cmd.Commands
 {
     /// <summary>
-    /// Used to emit an entire dependency graph based on which files in
-    /// a solution were affected.
+    ///     Used to emit an entire dependency graph based on which files in
+    ///     a solution were affected.
     /// </summary>
     public sealed class EmitDependencyGraphTask
     {
+        private readonly CancellationTokenSource _cts;
+
+        private readonly MSBuildWorkspace _workspace;
+
         public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger)
         {
             Settings = settings;
@@ -20,9 +30,6 @@ namespace Incrementalist.Cmd.Commands
             Logger = logger;
             _cts = new CancellationTokenSource();
         }
-
-        private readonly MSBuildWorkspace _workspace;
-        private readonly CancellationTokenSource _cts;
 
         public BuildSettings Settings { get; }
 
@@ -37,9 +44,12 @@ namespace Incrementalist.Cmd.Commands
 
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
-            var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
+            var filterFilesCmd =
+                new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
             var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, slnFile);
-            var affectedFiles = await createDependencyGraph.Process(filterFilesCmd.Process(getFilesCmd.Process(Task.FromResult(slnFile))));
+            var affectedFiles =
+                await createDependencyGraph.Process(
+                    filterFilesCmd.Process(getFilesCmd.Process(Task.FromResult(slnFile))));
             return affectedFiles;
         }
     }

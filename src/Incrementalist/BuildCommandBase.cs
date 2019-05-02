@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="BuildCommandBase.cs" company="Petabridge, LLC">
+//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -6,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist
 {
     /// <summary>
-    /// Abstract base class with built-in logging support and templating
+    ///     Abstract base class with built-in logging support and templating
     /// </summary>
     public abstract class BuildCommandBase<TIn, TOut> : IBuildCommand<TIn, TOut>
     {
