@@ -14,18 +14,18 @@ variables:
   - group: signingSecrets #create this group with SECRET variables `signingUsername` and `signingPassword`
   - group: nugetKeys #create this group with SECRET variables `nugetKey`
   - name: githubConnectionName
-    value: yourConnection #replace this
+    value: Petabridge
   - name: projectName
-    value: yourProjectName #replace this
+    value: Incrementalist
   - name: githubRepositoryName
-    value: yourOrganization/yourRepo #replace this
+    value: petabridge/Incrementalist
 
 steps:
 - task: BatchScript@1
   displayName: 'FAKE Build'
   inputs:
     filename: build.cmd
-    arguments: 'All SignClientUser=$(signingUsername) SignClientSecret=$(signingPassword) nugetpublishurl=https://www.nuget.org/api/v2/package nugetkey=$(nugetKey)'
+    arguments: 'All SignClientUser=$(signingUsername) SignClientSecret=$(signingPassword) nugetpublishurl=https://www.nuget.org/api/v2/package nugetkey=$(incrementalistKey)'
 
 - task: GitHubRelease@0
   displayName: 'GitHub release (create)'
