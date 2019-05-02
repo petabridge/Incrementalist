@@ -66,31 +66,42 @@ namespace Incrementalist.Cmd
         {
             var logger = new ConsoleLogger("Incrementalist", (s, level) => { return level >= LogLevel.Information; }, false);
 
-
-            var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
-            Console.WriteLine("Are we inside repository? {0}", insideRepo);
-
-            var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
-            Console.WriteLine("Repo base is located in {0}", repoFolder);
-            var workingFolder = Directory.GetParent(repoFolder).Parent;
-
-            // Locate and register the default instance of MSBuild installed on this machine.
-            MSBuildLocator.RegisterDefaults();
-
-            var msBuild = MSBuildWorkspace.Create();
-
-            if (!string.IsNullOrEmpty(repoFolder))
+            try
             {
-                foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
+                var insideRepo = Repository.IsValid(Directory.GetCurrentDirectory());
+                if (!insideRepo)
                 {
-                    var settings = new BuildSettings("dev", sln, workingFolder.FullName);
-                    var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-                    var affectedFiles = await emitTask.Run();
-                    foreach (var file in affectedFiles)
+                    logger.LogError("Current path {0} is not located inside any known Git repository.", Directory.GetCurrentDirectory());
+                    return -2;
+                }
+                var repoFolder = Repository.Discover(Directory.GetCurrentDirectory());
+                var workingFolder = Directory.GetParent(repoFolder).Parent;
+
+                // Locate and register the default instance of MSBuild installed on this machine.
+                MSBuildLocator.RegisterDefaults();
+
+                var msBuild = MSBuildWorkspace.Create();
+
+                if (!string.IsNullOrEmpty(repoFolder))
+                {
+                    foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
                     {
-                        logger.LogInformation("{0}", file);
+                        var settings = new BuildSettings("dev", sln, workingFolder.FullName);
+                        var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
+                        var affectedFiles = await emitTask.Run();
+                        foreach (var file in affectedFiles)
+                        {
+                            logger.LogInformation("{0}", file);
+                        }
                     }
                 }
+
+                return 0;
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, "Error encountered during execution of Incrementalist.");
+                return -1;
             }
         }
     }
