@@ -50,10 +50,10 @@ namespace Incrementalist.ProjectSystem
                         document.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
                         document.Project.Id))
                 .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First()).ToList()
-                .Concat(sln.Projects.ToDictionary(x => Path.GetFullPath(x.FilePath),
-                    x => new SlnFile(FileType.Project, x.Id)))
-                .Concat(new Dictionary<string, SlnFile>
-                    {{Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null)}});
+                .Concat(sln.Projects.Select(x => new KeyValuePair<string, SlnFile>(Path.GetFullPath(x.FilePath), new SlnFile(FileType.Project, x.Id)))
+                .Concat(new []{new KeyValuePair<string, SlnFile>
+
+                        (Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null))}));
 
             // need to de-duplicate
             var finalFiles = new Dictionary<string, SlnFile>();

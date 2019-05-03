@@ -70,7 +70,7 @@ namespace Incrementalist.Cmd
 
             try
             {
-                var pwd = Directory.GetCurrentDirectory();
+                var pwd = options.WorkingDirectory ?? Directory.GetCurrentDirectory();
                 var insideRepo = Repository.IsValid(pwd);
                 if (!insideRepo)
                 {
