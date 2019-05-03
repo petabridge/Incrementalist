@@ -44,17 +44,25 @@ namespace Incrementalist.ProjectSystem
         /// <returns>A flattened list of all files inside the solution.</returns>
         public static Dictionary<string, SlnFile> AllSolutionFiles(Solution sln, string workingFolder)
         {
-            return sln.Projects.SelectMany(x => x.Documents)
+            var allPossibleFiles = sln.Projects.SelectMany(x => x.Documents)
                 .GroupBy(x => x.FilePath,
                     document => new SlnFile(
                         document.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
                         document.Project.Id))
-                .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First())
-                .Concat(sln.Projects.ToDictionary(x => Path.GetFullPath(x.FilePath),
-                    x => new SlnFile(FileType.Project, x.Id)))
-                .Concat(new Dictionary<string, SlnFile>
-                    {{Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null)}})
-                .ToDictionary(x => x.Key, x => x.Value);
+                .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First()).ToList()
+                .Concat(sln.Projects.Select(x => new KeyValuePair<string, SlnFile>(Path.GetFullPath(x.FilePath), new SlnFile(FileType.Project, x.Id)))
+                .Concat(new []{new KeyValuePair<string, SlnFile>
+
+                        (Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null))}));
+
+            // need to de-duplicate
+            var finalFiles = new Dictionary<string, SlnFile>();
+            foreach (var file in allPossibleFiles)
+            {
+                finalFiles[file.Key] = file.Value;
+            }
+
+            return finalFiles;
         }
     }
 }
