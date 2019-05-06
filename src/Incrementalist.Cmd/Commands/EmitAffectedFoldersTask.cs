@@ -36,6 +36,19 @@ namespace Incrementalist.Cmd.Commands
             // load the git repository
             var repoResult = GitRunner.FindRepository(Settings.WorkingDirectory);
 
+            if (!repoResult.foundRepo)
+            {
+                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", Settings.WorkingDirectory);
+                return new List<string>();
+            }
+
+            // validate the target branch
+            if (!DiffHelper.HasBranch(repoResult.repo, Settings.TargetBranch))
+            {
+                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", Settings.TargetBranch);
+                return new List<string>();
+            }
+
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
             var listAllFilesCmd = new ListAffectedFilesCmd(Logger, _cts.Token, Settings.TargetBranch);
