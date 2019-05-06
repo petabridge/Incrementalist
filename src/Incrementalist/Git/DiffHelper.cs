@@ -24,7 +24,7 @@ namespace Incrementalist.Git
 
         public static bool HasBranch(Repository repo, string targetBranch)
         {
-            return repo.Branches.Any(x => x.CanonicalName.Equals(targetBranch));
+            return repo.Branches.Any(x => x.FriendlyName.Equals(targetBranch));
         }
     }
 }
