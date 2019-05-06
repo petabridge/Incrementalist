@@ -5,11 +5,13 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommandLine;
 using Incrementalist.Cmd.Commands;
+using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
 using Microsoft.Build.Locator;
@@ -81,6 +83,21 @@ namespace Incrementalist.Cmd
 
                 var repoFolder = Repository.Discover(pwd);
                 var workingFolder = Directory.GetParent(repoFolder).Parent;
+
+                var repoResult = GitRunner.FindRepository(workingFolder.FullName);
+
+                if (!repoResult.foundRepo)
+                {
+                    Console.WriteLine("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
+                    return -3;
+                }
+
+                // validate the target branch
+                if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
+                {
+                    Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                    return -4;
+                }
 
 
                 if (!string.IsNullOrEmpty(repoFolder))

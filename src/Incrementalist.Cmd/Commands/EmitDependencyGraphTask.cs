@@ -42,23 +42,6 @@ namespace Incrementalist.Cmd.Commands
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
 
-            /*
-             * Validate the Git repository
-             */
-            var repoResult = GitRunner.FindRepository(Settings.WorkingDirectory);
-            if (!repoResult.foundRepo)
-            {
-                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", Settings.WorkingDirectory);
-                return new List<string>();
-            }
-
-            // validate the target branch
-            if (!DiffHelper.HasBranch(repoResult.repo, Settings.TargetBranch))
-            {
-                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", Settings.TargetBranch);
-                return new List<string>();
-            }
-
             var loadSln = new LoadSolutionCmd(Logger, _workspace, _cts.Token);
             var slnFile = await loadSln.Process(Task.FromResult(Settings.SolutionFile));
 
