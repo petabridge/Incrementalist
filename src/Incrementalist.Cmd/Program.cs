@@ -78,6 +78,7 @@ namespace Incrementalist.Cmd
                     return -2;
                 }
 
+
                 var repoFolder = Repository.Discover(pwd);
                 var workingFolder = Directory.GetParent(repoFolder).Parent;
 
@@ -137,7 +138,7 @@ namespace Incrementalist.Cmd
 
         private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr)
         {
-// Check to see if we're planning on writing out to the file system or not.
+            // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             else
