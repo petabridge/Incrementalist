@@ -41,9 +41,15 @@ namespace Incrementalist.ProjectSystem.Cmds
             var repoResult = GitRunner.FindRepository(_workingDirectory);
             if (!repoResult.foundRepo)
             {
-                var errMsg = $"Unable to find suitable git repository starting in directory {_workingDirectory}";
-                Logger.LogError(errMsg);
-                throw new InvalidOperationException(errMsg);
+                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", _workingDirectory);
+                return new Dictionary<string, SlnFile>();
+            }
+
+            // validate the target branch
+            if (!DiffHelper.HasBranch(repoResult.repo, _targetGitBranch))
+            {
+                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", _targetGitBranch);
+                return new Dictionary<string, SlnFile>();
             }
 
             var repo = repoResult.repo;

@@ -21,5 +21,10 @@ namespace Incrementalist.Git
             return repo.Diff.Compare<TreeChanges>(repo.Branches[targetBranch].Tip.Tree, DiffTargets.Index)
                 .Select(x => Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, x.Path)));
         }
+
+        public static bool HasBranch(Repository repo, string targetBranch)
+        {
+            return repo.Branches.Any(x => x.FriendlyName.Equals(targetBranch));
+        }
     }
 }
