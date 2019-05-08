@@ -24,6 +24,9 @@ namespace Incrementalist.Cmd
             Required = true, Default = "dev")]
         public string GitBranch { get; set; }
 
+        [Option('d', "dir", HelpText = "Specify the working directory explicitly. Defaults to using the current working directory.")]
+        public string WorkingDirectory { get; set; }
+
         [Option(
             Default = false,
             HelpText = "Prints out extensive debug logs during operation.")]

@@ -7,6 +7,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Incrementalist.Git;
+using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
@@ -39,6 +41,7 @@ namespace Incrementalist.Cmd.Commands
         {
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
+
             var loadSln = new LoadSolutionCmd(Logger, _workspace, _cts.Token);
             var slnFile = await loadSln.Process(Task.FromResult(Settings.SolutionFile));
 

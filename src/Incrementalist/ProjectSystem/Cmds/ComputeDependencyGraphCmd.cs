@@ -37,7 +37,12 @@ namespace Incrementalist.ProjectSystem.Cmds
 
             var ds = _solution.GetProjectDependencyGraph();
 
-            // NOTE: what happens if the SLN file is modified? Return everything?
+            // Special case: if the solution itself is modified, return all projects
+            if (affectedSlnFiles.ContainsKey(_solution.FilePath))
+            {
+                return _solution.Projects.Select(x => x.FilePath);
+            }
+
             var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Distinct().ToList();
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
