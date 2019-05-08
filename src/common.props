@@ -3,7 +3,11 @@
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
     <VersionPrefix>0.1.1</VersionPrefix>
-    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.0.
+Addresses the following issues:
+1. [Error: head projectId cannot be null](https://github.com/petabridge/Incrementalist/issues/31)
+2. [Bug: System.ArgumentException: An item with the same key has already been added.](https://github.com/petabridge/Incrementalist/issues/27)
+3. [Need to validate that the Head branch exists](https://github.com/petabridge/Incrementalist/issues/28)</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
