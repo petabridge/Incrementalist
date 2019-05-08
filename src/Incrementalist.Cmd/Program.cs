@@ -96,6 +96,11 @@ namespace Incrementalist.Cmd
                 if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                 {
                     Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                    Console.WriteLine("[Debug] Here are all of the currently known branches in this repository");
+                    foreach (var b in repoResult.repo.Branches)
+                    {
+                        Console.WriteLine(b.FriendlyName);
+                    }
                     return -4;
                 }
 
