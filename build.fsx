@@ -120,8 +120,8 @@ Target "IntegrationTests" <| fun _ ->
 
     let runSingleProject project =
         
-        let folderOnlyArgs = sprintf "run --project %s --no-build -- -b dev -l" project
-        let slnArgs = sprintf "run --project %s --no-build -- -b dev" project
+        let folderOnlyArgs = sprintf "run --project %s -c %s --no-build -- -b dev -l" project configuration
+        let slnArgs = sprintf "run --project %s -c %s --no-build -- -b dev" project configuration
 
         let execWithArgs args =
             let result = ExecProcess(fun info ->
