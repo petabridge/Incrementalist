@@ -95,15 +95,20 @@ namespace Incrementalist.Cmd
                 // validate the target branch
                 if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                 {
-                    Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
-                    Console.WriteLine("[Debug] Here are all of the currently known branches in this repository");
-                    foreach (var b in repoResult.repo.Branches)
+                    // workaround common CI server issues and check to see if this same branch is located
+                    // under "origin/{branchname}"
+                    options.GitBranch = $"origin/{options.GitBranch}";
+                    if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                     {
-                        Console.WriteLine(b.FriendlyName);
+                        Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                        Console.WriteLine("[Debug] Here are all of the currently known branches in this repository");
+                        foreach (var b in repoResult.repo.Branches)
+                        {
+                            Console.WriteLine(b.FriendlyName);
+                        }
+                        return -4;
                     }
-                    return -4;
                 }
-
 
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
