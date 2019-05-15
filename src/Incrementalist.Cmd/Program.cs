@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommandLine;
@@ -131,11 +132,11 @@ namespace Incrementalist.Cmd
         {
             var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName);
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
-            var affectedFiles = await emitTask.Run();
+            var affectedFiles = (await emitTask.Run()).ToList();
 
             var affectedFilesStr = string.Join(",", affectedFiles);
 
-            HandleAffectedFiles(options, affectedFilesStr);
+            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
         }
 
         private static async Task AnaylzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
@@ -156,18 +157,28 @@ namespace Incrementalist.Cmd
         {
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName);
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-            var affectedFiles = await emitTask.Run();
+            var affectedFiles = (await emitTask.Run()).ToList();
 
             var affectedFilesStr = string.Join(",", affectedFiles);
 
-            HandleAffectedFiles(options, affectedFilesStr);
+            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
         }
 
-        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr)
+        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount)
         {
+            if (affectedFilesCount == 0)
+            {
+                Console.WriteLine("No changes detected by Incrementalist when analyzing {0}.", options.ListFolders ? "repository folders" : "solution");
+                return;
+            }
+
             // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
+            {
+                Console.WriteLine("Detected {0} affected {1} - writing out to {2}", affectedFilesCount, options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
+            }
+
             else
                 Console.WriteLine(affectedFilesStr);
         }

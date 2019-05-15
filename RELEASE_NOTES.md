@@ -1,6 +1,4 @@
-#### 0.1.2 May 08 2019 ####
-Bugfix release for Incrementalist v0.1.1.
+#### 0.1.3 May 15 2019 ####
+Bugfix release for Incrementalist v0.1.2.
 
-Addresses the following issues:
-
-1. [Workaround CI mangling of Git branches](https://github.com/petabridge/Incrementalist/pull/39)
+Added more verbose logging when no changes are detected.
