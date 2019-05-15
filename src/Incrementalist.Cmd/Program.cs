@@ -168,7 +168,7 @@ namespace Incrementalist.Cmd
         {
             if (affectedFilesCount == 0)
             {
-                Console.WriteLine("No changes detected by Incrementalist when analyizing {0}.", options.ListFolders ? "repository folders" : "solution");
+                Console.WriteLine("No changes detected by Incrementalist when analyzing {0}.", options.ListFolders ? "repository folders" : "solution");
                 return;
             }
 
