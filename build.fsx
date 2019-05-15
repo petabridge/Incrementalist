@@ -8,6 +8,7 @@ open System.Text
 open Fake
 open Fake.DotNetCli
 open Fake.DocFxHelper
+open System.IO
 
 // Information about the project for Nuget and Assembly info files
 let product = "Incrementalist"
@@ -38,6 +39,7 @@ let output = __SOURCE_DIRECTORY__  @@ "bin"
 let outputTests = __SOURCE_DIRECTORY__ @@ "TestResults"
 let outputPerfTests = __SOURCE_DIRECTORY__ @@ "PerfResults"
 let outputNuGet = output @@ "nuget"
+
 
 Target "Clean" (fun _ ->
     ActivateFinalTarget "KillCreatedProcesses"
@@ -120,8 +122,8 @@ Target "IntegrationTests" <| fun _ ->
 
     let runSingleProject project =
         
-        let folderOnlyArgs = sprintf "run --project %s -c %s --no-build -- -b dev -l" project configuration
-        let slnArgs = sprintf "run --project %s -c %s --no-build -- -b dev" project configuration
+        let folderOnlyArgs = sprintf "run --project %s -c %s --no-build -- -b dev -l -f %s" project configuration (outputTests @@ "incrementalist-affected-folders.txt")
+        let slnArgs = sprintf "run --project %s -c %s --no-build -- -b dev -f %s" project configuration (outputTests @@ "incrementalist-affected-files.txt")
 
         let execWithArgs args =
             let result = ExecProcess(fun info ->
