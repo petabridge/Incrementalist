@@ -2,10 +2,9 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.1.2</VersionPrefix>
-    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.1.
-Addresses the following issues:
-1. [Workaround CI mangling of Git branches](https://github.com/petabridge/Incrementalist/pull/39)</PackageReleaseNotes>
+    <VersionPrefix>0.1.3</VersionPrefix>
+    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.2.
+Added more verbose logging when no changes are detected.</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
