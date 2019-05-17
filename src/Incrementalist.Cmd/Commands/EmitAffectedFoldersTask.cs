@@ -31,7 +31,7 @@ namespace Incrementalist.Cmd.Commands
 
         public ILogger Logger { get; }
 
-        public async Task<IEnumerable<string>> Run()
+        public async Task<Dictionary<string, ICollection<string>>> Run()
         {
             // load the git repository
             var repoResult = GitRunner.FindRepository(Settings.WorkingDirectory);
@@ -39,14 +39,14 @@ namespace Incrementalist.Cmd.Commands
             if (!repoResult.foundRepo)
             {
                 Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", Settings.WorkingDirectory);
-                return new List<string>();
+                return new Dictionary<string, ICollection<string>>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repoResult.repo, Settings.TargetBranch))
             {
                 Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", Settings.TargetBranch);
-                return new List<string>();
+                return new Dictionary<string, ICollection<string>>();
             }
 
             // start the cancellation timer.
