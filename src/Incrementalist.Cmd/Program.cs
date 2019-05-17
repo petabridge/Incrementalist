@@ -132,9 +132,9 @@ namespace Incrementalist.Cmd
         {
             var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName);
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
-            var affectedFiles = (await emitTask.Run()).ToList();
+            var affectedFiles = (await emitTask.Run());
 
-            var affectedFilesStr = string.Join(",", affectedFiles);
+            var affectedFilesStr = string.Join(",", affectedFiles.Keys);
 
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
         }
@@ -159,7 +159,8 @@ namespace Incrementalist.Cmd
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
             var affectedFiles = (await emitTask.Run()).ToList();
 
-            var affectedFilesStr = string.Join(",", affectedFiles);
+            var affectedFilesStr =
+                string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
 
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
         }
