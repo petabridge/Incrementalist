@@ -43,6 +43,11 @@ namespace Incrementalist.ProjectSystem.Cmds
                 return new Dictionary<string, ICollection<string>>(){ {_solution.FilePath, _solution.Projects.Select(x => x.FilePath).ToList() } };
             }
 
+            string GetProjectFilePath(ProjectId project)
+            {
+                return _solution.GetProject(project).FilePath;
+            }
+
             var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Distinct().ToList();
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
@@ -61,16 +66,22 @@ namespace Incrementalist.ProjectSystem.Cmds
                 var results = new HashSet<string> { _solution.GetProject(root).FilePath };
                 foreach (var p in graph)
                 {
-                    results.Add(_solution.GetProject(p).FilePath);
+                    results.Add(GetProjectFilePath(p));
                 }
 
                 return results;
             }
 
-            var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs))
-                .ToDictionary(x => _solution.GetProject(x.Key).FilePath, y => PrepareProjectPaths(y.Key, y.Value));
+            var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs));
 
-            return independentGraphs;
+            // idempotently filter out duplicates - same projectID can show up multiple times for a multi-target build
+            var finalResultSet = new Dictionary<string, ICollection<string>>();
+            foreach (var r in independentGraphs)
+            {
+                finalResultSet[GetProjectFilePath(r.Key)] = PrepareProjectPaths(r.Key, r.Value);
+            }                
+
+            return finalResultSet;
         }
     }
 }
