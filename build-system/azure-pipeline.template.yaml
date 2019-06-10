@@ -37,6 +37,17 @@ jobs:
           testResultsFiles: '**/*.trx' #TestResults folder usually
           testRunTitle: ${{ parameters.name }}
           mergeTestResults: true
+      - task: CopyFiles@2
+        displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+        inputs:
+        Contents: |
+          /home/vsts/work/1/s/TestResults/incrementalist-affected-folders.txt
+          /home/vsts/work/1/s/TestResults/incrementalist-affected-files.txt
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      - task: PublishBuildArtifacts@1
+        inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: incrementalist-affected-files
       - script: 'echo 1>&2'
         failOnStderr: true
         displayName: 'If above is partially succeeded, then fail'
