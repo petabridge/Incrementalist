@@ -43,11 +43,11 @@ jobs:
           Contents: |
             /home/vsts/work/1/s/TestResults/incrementalist-affected-folders.txt
             /home/vsts/work/1/s/TestResults/incrementalist-affected-files.txt
-        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
       - task: PublishBuildArtifacts@1
         inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: incrementalist-affected-files
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: incrementalist-affected-files
       - script: 'echo 1>&2'
         failOnStderr: true
         displayName: 'If above is partially succeeded, then fail'
