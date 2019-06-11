@@ -38,7 +38,7 @@ jobs:
           testRunTitle: ${{ parameters.name }}
           mergeTestResults: true
       - task: CopyFiles@2
-        displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+        displayName: Linux- Copy Files
         inputs:
           Contents: |
             /home/vsts/work/1/s/TestResults/incrementalist-affected-folders.txt
@@ -46,7 +46,7 @@ jobs:
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
       - task: CopyFiles@2
-        displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+        displayName: Windows- Copy Files 
         inputs:
           Contents: |
             D:\a\1\s\TestResults\incrementalist-affected-folders.txt
