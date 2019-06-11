@@ -44,6 +44,15 @@ jobs:
             /home/vsts/work/1/s/TestResults/incrementalist-affected-folders.txt
             /home/vsts/work/1/s/TestResults/incrementalist-affected-files.txt
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
+      - task: CopyFiles@2
+        displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+        inputs:
+          Contents: |
+            D:\a\1\s\TestResults\incrementalist-affected-folders.txt
+            D:\a\1\s\TestResults\incrementalist-affected-files.txt
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
