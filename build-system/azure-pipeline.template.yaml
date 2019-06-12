@@ -38,21 +38,12 @@ jobs:
           testRunTitle: ${{ parameters.name }}
           mergeTestResults: true
       - task: CopyFiles@2
-        displayName: Linux- Copy Files
+        displayName: Copy affected files
         inputs:
           Contents: |
-            **/TestResults/incrementalist-affected-folders.txt
-            **/TestResults/incrementalist-affected-files.txt
+            **/incrementalist-affected-folders.txt
+            **/incrementalist-affected-files.txt
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
-        condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
-      - task: CopyFiles@2
-        displayName: Windows- Copy Files 
-        inputs:
-          Contents: |
-            **\TestResults\incrementalist-affected-folders.txt
-            **\TestResults\incrementalist-affected-files.txt
-          TargetFolder: '$(Build.ArtifactStagingDirectory)'
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
