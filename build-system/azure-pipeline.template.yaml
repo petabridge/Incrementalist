@@ -41,16 +41,16 @@ jobs:
         displayName: Linux- Copy Files
         inputs:
           Contents: |
-            /home/vsts/work/1/s/TestResults/incrementalist-affected-folders.txt
-            /home/vsts/work/1/s/TestResults/incrementalist-affected-files.txt
+            **/TestResults/incrementalist-affected-folders.txt
+            **/TestResults/incrementalist-affected-files.txt
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
         condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
       - task: CopyFiles@2
         displayName: Windows- Copy Files 
         inputs:
           Contents: |
-            D:\a\1\s\TestResults\incrementalist-affected-folders.txt
-            D:\a\1\s\TestResults\incrementalist-affected-files.txt
+            **\TestResults\incrementalist-affected-folders.txt
+            **\TestResults\incrementalist-affected-files.txt
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishBuildArtifacts@1
