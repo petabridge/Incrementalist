@@ -1,4 +1,4 @@
-#### 0.1.5 May 17 2019 ####
+#### 0.1.5 August 30 2019 ####
 Bugfix release for Incrementalist v0.1.4
 
 Fixed [Bug: doesn't detect that project has changed when embedded resource has been modified](https://github.com/petabridge/Incrementalist/issues/56).
