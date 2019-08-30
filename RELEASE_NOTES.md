@@ -1,17 +1,6 @@
-#### 0.1.4 May 17 2019 ####
-Bugfix release for Incrementalist v0.1.3
+#### 0.1.5 May 17 2019 ####
+Bugfix release for Incrementalist v0.1.4
 
-Fixed [MSBuild graph issue where two unrelated changes in the same branch could overwrite each other in the Incrementalist output](https://github.com/petabridge/Incrementalist/issues/49).
+Fixed [Bug: doesn't detect that project has changed when embedded resource has been modified](https://github.com/petabridge/Incrementalist/issues/56).
 
-In the event of three concurrent MSBuild dependency graphs like these:
-
-[A modified] Project A --> B --> C
-[B modified] Project B --> C
-[D modified] Project D --> E
-
-In Incrementalist 0.1.3, you'd only see this graph: `Project A --> B --> C` because it was the longest and "covered" all of the other graphs. In Incrementalist 0.1.4 you'll now see the following build output:
-
-Project A --> B --> C
-Project D --> E
-
-Each line represents its own independent graph, uncovered by any of the other graphs detected in the topology of the MSBuild solution.
+As it turns out, Roslyn isn't able to detect non-code files embedded as resources into projects - so we search to see if any modified files are contained in the same folder as solution projects and we'll now mark the project as updated in the event that it contains a modified file.
