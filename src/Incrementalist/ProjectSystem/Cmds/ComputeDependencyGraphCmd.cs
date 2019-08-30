@@ -35,6 +35,19 @@ namespace Incrementalist.ProjectSystem.Cmds
             if (affectedSlnFiles.Count == 0)
                 return new Dictionary<string, ICollection<string>>();
 
+            /*
+             * Special case: in instances where the project files themselves are modified,
+             * we there might be multiple ProjectIds in the case of a multi-targeted solution.
+             * 
+             * We have to gather up each unique project file separately in this case.
+             */
+            var additionalProjectIds = new List<ProjectId>();
+            if(affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
+            {
+                foreach(var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
+                    additionalProjectIds.AddRange(_solution.Projects.Where(x => x.FilePath.Equals(proj.Key)).Select(x => x.Id));
+            }
+
             var ds = _solution.GetProjectDependencyGraph();
 
             // Special case: if the solution itself is modified, return all projects
@@ -48,7 +61,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                 return _solution.GetProject(project).FilePath;
             }
 
-            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Distinct().ToList();
+            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Concat(additionalProjectIds).Distinct().ToList();
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
 
