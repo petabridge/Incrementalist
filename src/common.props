@@ -2,11 +2,9 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.1.6</VersionPrefix>
-    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.4-v0.1.5
-Fixed [Bug: doesn't detect that project has changed when embedded resource has been modified](https://github.com/petabridge/Incrementalist/issues/56).
-As it turns out, Roslyn isn't able to detect non-code files embedded as resources into projects - so we search to see if any modified files are contained in the same folder as solution projects and we'll now mark the project as updated in the event that it contains a modified file.
-Fixed [issue with detecting transitive dependencies in multi-targeted builds](https://github.com/petabridge/Incrementalist/issues/55).</PackageReleaseNotes>
+    <VersionPrefix>0.1.7</VersionPrefix>
+    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.6
+Fixed [Bug: in multi-targeted projects, only one "project" contains the dependency graph.](https://github.com/petabridge/Incrementalist/issues/63). This will make it easier for Incrementalist to detect changes that occur inside multi-targeted projects.</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
