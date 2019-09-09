@@ -74,7 +74,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                     .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
             }
 
-            ICollection<string> PrepareProjectPaths(ProjectId root, ICollection<ProjectId> graph)
+            ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
             {
                 var results = new HashSet<string> { _solution.GetProject(root).FilePath };
                 foreach (var p in graph)
@@ -91,7 +91,22 @@ namespace Incrementalist.ProjectSystem.Cmds
             var finalResultSet = new Dictionary<string, ICollection<string>>();
             foreach (var r in independentGraphs)
             {
-                finalResultSet[GetProjectFilePath(r.Key)] = PrepareProjectPaths(r.Key, r.Value);
+                var projectPath = GetProjectFilePath(r.Key);
+                /*
+                 * BUGFIX for https://github.com/petabridge/Incrementalist/issues/63
+                 *
+                 */
+                if (finalResultSet.ContainsKey(projectPath))
+                {
+                    var exitingPaths = finalResultSet[projectPath];
+                    var newPaths = PrepareProjectPaths(r.Key, r.Value);
+                    finalResultSet[projectPath] = exitingPaths.Concat(newPaths).Distinct().ToList();
+                }
+                else
+                {
+                    finalResultSet[projectPath] = PrepareProjectPaths(r.Key, r.Value);
+                }
+                
             }                
 
             return finalResultSet;
