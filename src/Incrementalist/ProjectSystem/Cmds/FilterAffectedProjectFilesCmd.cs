@@ -86,7 +86,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                 
                 // special case - if affected file was imported to some projects, need to mark importing project as affected
                 if (projectImports.ContainsKey(file))
-                {
+                { 
                     // Mark all dependant as affected
                     projectImports[file].DependantProjects.ForEach(dependentProject => newDict[dependentProject.Path] = dependentProject.File);
                 }
