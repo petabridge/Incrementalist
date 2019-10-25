@@ -49,19 +49,18 @@ namespace Incrementalist.ProjectSystem
         /// </summary>
         /// <param name="projectFiles">List of project files with their paths</param>
         /// <returns>Doctionary of imported files with their paths</returns>
-        public static Dictionary<string, ImportedFile> FindProjectImports(List<KeyValuePair<string, SlnFile>> projectFiles)
+        public static Dictionary<string, ImportedFile> FindProjectImports(IEnumerable<SlnFileWithPath> projectFiles)
         {
             var imports = new ConcurrentDictionary<string, HashSet<SlnFileWithPath>>();
             
-            Parallel.ForEach(projectFiles, projectFileInfo =>
+            Parallel.ForEach(projectFiles, projectFile =>
             {
-                var (projectPath, projectFile) = (projectFileInfo.Key, projectFileInfo.Value);
-                if (projectFile.FileType != FileType.Project)
+                if (projectFile.File.FileType != FileType.Project)
                     return;
 
-                var xmlDoc = ParseXmlDocument(projectPath);
+                var xmlDoc = ParseXmlDocument(projectFile.Path);
                 
-                var projectDir = Path.GetDirectoryName(projectPath);
+                var projectDir = Path.GetDirectoryName(projectFile.Path);
 
                 // Collecting all projects that contain imports, like <Import Project="../../common.props">
                 var importTags = xmlDoc.DocumentElement.SelectNodes("//Import");
@@ -72,13 +71,13 @@ namespace Incrementalist.ProjectSystem
                         continue;
                     
                     var importedFileFillPath = Path.GetFullPath(Path.Combine(projectDir, importedFilePath));
-                    var dependentProjectId = projectFile.ProjectId;
+                    var dependentProjectId = projectFile.File.ProjectId;
 
                     imports.AddOrUpdate(importedFileFillPath,
-                        addValue: new HashSet<SlnFileWithPath>() { new SlnFileWithPath(projectPath, projectFile) },
+                        addValue: new HashSet<SlnFileWithPath>() { projectFile },
                         updateValueFactory: (_, dependentProjects) =>
                         {
-                            dependentProjects.Add(new SlnFileWithPath(projectPath, projectFile));
+                            dependentProjects.Add(projectFile);
                             return dependentProjects;
                         });
                 }

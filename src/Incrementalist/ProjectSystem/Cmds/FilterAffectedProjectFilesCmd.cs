@@ -59,7 +59,7 @@ namespace Incrementalist.ProjectSystem.Cmds
 
             var projectFiles = fileDict.Where(x => x.Value.FileType == FileType.Project).ToList();
             var projectFolders = projectFiles.ToDictionary(x => Path.GetDirectoryName(x.Key), v => Tuple.Create(v.Key, v.Value));
-            var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
+            var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles.Select(pair => new SlnFileWithPath(pair.Key, pair.Value)));
 
             // filter out any files that aren't affected by the diff
             var newDict = new Dictionary<string, SlnFile>();

@@ -1,0 +1,24 @@
+<Project>
+    <PropertyGroup>
+        <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
+        <Authors>Petabridge</Authors>
+        <VersionPrefix>0.1.7</VersionPrefix>
+        <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.6
+            Fixed [Bug: in multi-targeted projects, only one "project" contains the dependency graph.](https://github.com/petabridge/Incrementalist/issues/63). This will make it easier for Incrementalist to detect changes that occur inside multi-targeted projects.</PackageReleaseNotes>
+        <tags>build, msbuild, incremental build, roslyn, git</tags>
+        <PackageIconUrl>
+            https://petabridge.com/images/logo.png
+        </PackageIconUrl>
+        <PackageProjectUrl>
+            https://github.com/petabridge/Incrementalist
+        </PackageProjectUrl>
+        <PackageLicenseUrl>https://cmd.petabridge.com/articles/install/license.html</PackageLicenseUrl>
+        <License>License.</License>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+    <PropertyGroup>
+        <NBenchVersion>1.2.2</NBenchVersion>
+        <XunitVersion>2.4.1</XunitVersion>
+        <TestSdkVersion>15.9.0</TestSdkVersion>
+    </PropertyGroup>
+</Project>
