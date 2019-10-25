@@ -34,13 +34,14 @@ namespace Incrementalist.Tests.Dependencies
         [Fact(DisplayName = "List of project imported files should be loaded correctly")]
         public void ImportedFilePathIsFound()
         {
-            File.WriteAllText("SampleProject.csproj", ProjectSampleGenerator.GetProjectFileContent());
-            File.WriteAllText("imported.props", ProjectSampleGenerator.GetImportedPropsFileContent());
+            Repository
+                .WriteFile("SampleProject.csproj", ProjectSampleGenerator.GetProjectFileContent())
+                .WriteFile("imported.props", ProjectSampleGenerator.GetImportedPropsFileContent());
 
-            var projectFile = new SlnFileWithPath(Path.GetFullPath("SampleProject.csproj"), new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
+            var projectFile = new SlnFileWithPath(Path.Combine(Repository.BasePath, "SampleProject.csproj"), new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
             var imports = ProjectImportsFinder.FindProjectImports(new[] { projectFile });
             
-            imports.Values.Should().BeEquivalentTo(new ImportedFile(Path.GetFullPath("imported.props"), new[] { projectFile }.ToList()));
+            imports.Values.Should().BeEquivalentTo(new ImportedFile(Path.Combine(Repository.BasePath, "imported.props"), new[] { projectFile }.ToList()));
         }
 
         [Fact(DisplayName = "When project imported file is changed, the project should be marked as affected")]
