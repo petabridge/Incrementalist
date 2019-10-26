@@ -57,7 +57,7 @@ namespace Incrementalist.Tests.Dependencies
             var emitTask = new EmitDependencyGraphTask(settings, workspace, logger);
             var affectedFiles = (await emitTask.Run()).ToList();
 
-            affectedFiles.Should().HaveCount(2).And.Subject.Should().BeEquivalentTo(fsharpProjectFullPath, csharpProjectFullPath);
+            affectedFiles.Select(f => f.Key).Should().HaveCount(2).And.Subject.Should().BeEquivalentTo(fsharpProjectFullPath, csharpProjectFullPath);
         }
 
         private static MSBuildWorkspace SetupMsBuildWorkspace()
