@@ -34,30 +34,39 @@ namespace Incrementalist.Tests.Dependencies
         [Fact(DisplayName = "List of project imported files should be loaded correctly")]
         public void ImportedFilePathIsFound()
         {
+            var sample = ProjectSampleGenerator.GetProjectWithImportSample();
+            var projectName = "SampleProject.csproj";
+            var projectFilePath = Path.Combine(Repository.BasePath, projectName);
+            var importedPropsFilePath = Path.Combine(Repository.BasePath, sample.ImportedPropsFile.Name);
+            
             Repository
-                .WriteFile("SampleProject.csproj", ProjectSampleGenerator.GetProjectFileContent())
-                .WriteFile("imported.props", ProjectSampleGenerator.GetImportedPropsFileContent());
+                .WriteFile(projectName, sample.ProjectFileContent)
+                .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content);
 
-            var projectFile = new SlnFileWithPath(Path.Combine(Repository.BasePath, "SampleProject.csproj"), new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
+            var projectFile = new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
             var imports = ProjectImportsFinder.FindProjectImports(new[] { projectFile });
             
-            imports.Values.Should().BeEquivalentTo(new ImportedFile(Path.Combine(Repository.BasePath, "imported.props"), new[] { projectFile }.ToList()));
+            imports.Values.Should().BeEquivalentTo(new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToList()));
         }
 
         [Fact(DisplayName = "When project imported file is changed, the project should be marked as affected")]
         public async Task Should_mark_project_as_changed_when_only_imported_file_changed()
         {
+            var sample = ProjectSampleGenerator.GetProjectWithImportSample();
+            var projectName = "SampleProject.csproj";
+            var projectFilePath = Path.Combine(Repository.BasePath, projectName);
+            var importedPropsFilePath = Path.Combine(Repository.BasePath, sample.ImportedPropsFile.Name);
+            
             Repository
-                .WriteFile("SampleProject.csproj", ProjectSampleGenerator.GetProjectFileContent())
-                .WriteFile("imported.props", ProjectSampleGenerator.GetImportedPropsFileContent())
+                .WriteFile(projectName, sample.ProjectFileContent)
+                .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content)
                 .Commit("Created sample project")
                 .CreateBranch("foo")
                 .CheckoutBranch("foo")
-                .WriteFile("imported.props", ProjectSampleGenerator.GetImportedPropsFileContent() + " ")
+                .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content + " ")
                 .Commit("Updated imported file with a space");
 
             var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), new CancellationToken(), Repository.BasePath, "master");
-            var projectFilePath = Path.Combine(Repository.BasePath, "SampleProject.csproj");
             var solutionFiles = new Dictionary<string, SlnFile>()
             {
                 [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
