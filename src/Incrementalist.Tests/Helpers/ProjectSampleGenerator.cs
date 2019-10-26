@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Incrementalist.Tests.Helpers
@@ -12,8 +13,8 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         public static ProjectWithImportSample GetProjectWithImportSample(string projectFileName)
         {
-            var projectContent = File.ReadAllText("../../../Samples/ProjectFileWithImportSample.xml");
-            var importedPropsContent = File.ReadAllText("../../../Samples/ImportedPropsSample.xml");
+            var projectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ProjectFileWithImportSample.xml"));
+            var importedPropsContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ImportedPropsSample.xml"));
             
             return new ProjectWithImportSample(
                 new SampleFile(projectFileName, projectContent), 
@@ -25,9 +26,9 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         public static FSharpSampleSolution GetFSharpSolutionSample(string solutionName)
         {
-            var solutionContent = File.ReadAllText("../../../Samples/FSharpSampleSolution/Solution.xml");
-            var fsharpProjectContent = File.ReadAllText("../../../Samples/FSharpSampleSolution/FSharpProject.xml");
-            var csharpProjectContent = File.ReadAllText("../../../Samples/FSharpSampleSolution/CSharpProject.xml");
+            var solutionContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/Solution.xml"));
+            var fsharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/FSharpProject.xml"));
+            var csharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/CSharpProject.xml"));
             
             return new FSharpSampleSolution(
                 new SampleFile(solutionName, solutionContent), 
