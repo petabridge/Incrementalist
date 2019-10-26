@@ -58,7 +58,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             var affectedFiles = DiffHelper.ChangedFiles(repo, _targetGitBranch).ToList();
 
             var projectFiles = fileDict.Where(x => x.Value.FileType == FileType.Project).ToList();
-            var projectFolders = projectFiles.ToDictionary(x => Path.GetDirectoryName(x.Key), v => Tuple.Create(v.Key, v.Value));
+            var projectFolders = projectFiles.ToLookup(x => Path.GetDirectoryName(x.Key), v => Tuple.Create(v.Key, v.Value));
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles.Select(pair => new SlnFileWithPath(pair.Key, pair.Value)));
 
             // filter out any files that aren't affected by the diff
@@ -74,13 +74,17 @@ namespace Incrementalist.ProjectSystem.Cmds
                     // Check to see if these affected files are in the same folder as any of the projects
                     var directoryName = Path.GetDirectoryName(file);
 
-                    if (TryFindSubFolder(projectFolders.Keys, directoryName, out var projectFolder))
+                    if (TryFindSubFolder(projectFolders.Select(c => c.Key), directoryName, out var projectFolder))
                     {
-                        var project = projectFolders[projectFolder].Item2;
-                        var projectPath = projectFolders[projectFolder].Item1;
-                        Logger.LogInformation("Adding project {0} to the set of affected files because non-code file {1}, " +
-                            "found inside same directory [{2}], was modified.", projectPath, file, directoryName);
-                        newDict[projectPath] = project;
+                        var affectedProjects = projectFolders[projectFolder];
+                        foreach (var affectedProject in affectedProjects)
+                        {
+                            var project = affectedProject.Item2;
+                            var projectPath = affectedProject.Item1;
+                            Logger.LogInformation("Adding project {0} to the set of affected files because non-code file {1}, " +
+                                                  "found inside same directory [{2}], was modified.", projectPath, file, directoryName);
+                            newDict[projectPath] = project;
+                        }
                     }
                 }
                 
