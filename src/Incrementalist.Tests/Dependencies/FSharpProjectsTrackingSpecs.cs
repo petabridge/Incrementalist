@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Incrementalist.Cmd.Commands;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Tests.Helpers;
+using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.MSBuild;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -47,15 +51,21 @@ namespace Incrementalist.Tests.Dependencies
                 .WriteFile(sample.FSharpProjectFile.Name, sample.FSharpProjectFile.Content + " ")
                 .Commit("Updated both project files");
             
-            var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), new CancellationToken(), Repository.BasePath, "master");
-            var solutionFiles = new Dictionary<string, SlnFile>()
-            {
-                [solutionFullPath] = new SlnFile(FileType.Solution, ProjectId.CreateNewId()),
-                [fsharpProjectFullPath] = new SlnFile(FileType.Project, ProjectId.CreateNewId()),
-                [csharpProjectFullPath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
-            };
-            var filteredAffectedFiles = await cmd.Process(Task.FromResult(solutionFiles));
-            filteredAffectedFiles.Should().HaveCount(2).And.Subject.Keys.Should().BeEquivalentTo(fsharpProjectFullPath, csharpProjectFullPath);
+            var logger = new TestOutputLogger(_outputHelper);
+            var settings = new BuildSettings("master", solutionFullPath, Repository.BasePath);
+            var workspace = SetupMsBuildWorkspace();
+            var emitTask = new EmitDependencyGraphTask(settings, workspace, logger);
+            var affectedFiles = (await emitTask.Run()).ToList();
+
+            affectedFiles.Should().HaveCount(2).And.Subject.Should().BeEquivalentTo(fsharpProjectFullPath, csharpProjectFullPath);
+        }
+
+        private static MSBuildWorkspace SetupMsBuildWorkspace()
+        {
+            // Locate and register the default instance of MSBuild installed on this machine.
+            MSBuildLocator.RegisterDefaults();
+            
+            return MSBuildWorkspace.Create();
         }
     }
 }
