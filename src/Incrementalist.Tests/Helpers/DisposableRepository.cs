@@ -105,6 +105,14 @@ namespace Incrementalist.Tests.Helpers
         }
 
         /// <summary>
+        /// Adds or updates sample fime in the repository
+        /// </summary>
+        /// <param name="sampleFile">File info source</param>
+        /// <returns>The current <see cref="DisposableRepository" />.</returns>
+        public DisposableRepository WriteFile(ProjectSampleGenerator.SampleFile sampleFile) =>
+            WriteFile(sampleFile.Name, sampleFile.Content);
+        
+        /// <summary>
         ///     Delete an existing file from the repository.
         /// </summary>
         /// <param name="fileName">The name of the file to delete.</param>

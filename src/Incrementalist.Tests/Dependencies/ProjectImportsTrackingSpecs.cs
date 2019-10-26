@@ -34,14 +34,13 @@ namespace Incrementalist.Tests.Dependencies
         [Fact(DisplayName = "List of project imported files should be loaded correctly")]
         public void ImportedFilePathIsFound()
         {
-            var sample = ProjectSampleGenerator.GetProjectWithImportSample();
-            var projectName = "SampleProject.csproj";
-            var projectFilePath = Path.Combine(Repository.BasePath, projectName);
+            var sample = ProjectSampleGenerator.GetProjectWithImportSample("SampleProject.csproj");
+            var projectFilePath = sample.ProjectFile.GetFullPath(Repository.BasePath);
             var importedPropsFilePath = Path.Combine(Repository.BasePath, sample.ImportedPropsFile.Name);
             
             Repository
-                .WriteFile(projectName, sample.ProjectFileContent)
-                .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content);
+                .WriteFile(sample.ProjectFile)
+                .WriteFile(sample.ImportedPropsFile);
 
             var projectFile = new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
             var imports = ProjectImportsFinder.FindProjectImports(new[] { projectFile });
@@ -52,14 +51,12 @@ namespace Incrementalist.Tests.Dependencies
         [Fact(DisplayName = "When project imported file is changed, the project should be marked as affected")]
         public async Task Should_mark_project_as_changed_when_only_imported_file_changed()
         {
-            var sample = ProjectSampleGenerator.GetProjectWithImportSample();
-            var projectName = "SampleProject.csproj";
-            var projectFilePath = Path.Combine(Repository.BasePath, projectName);
-            var importedPropsFilePath = Path.Combine(Repository.BasePath, sample.ImportedPropsFile.Name);
+            var sample = ProjectSampleGenerator.GetProjectWithImportSample("SampleProject.csproj");
+            var projectFilePath = sample.ProjectFile.GetFullPath(Repository.BasePath);
             
             Repository
-                .WriteFile(projectName, sample.ProjectFileContent)
-                .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content)
+                .WriteFile(sample.ProjectFile)
+                .WriteFile(sample.ImportedPropsFile)
                 .Commit("Created sample project")
                 .CreateBranch("foo")
                 .CheckoutBranch("foo")
