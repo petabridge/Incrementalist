@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Incrementalist.Cmd\Incrementalist.Cmd.csproj" />
     <ProjectReference Include="..\Incrementalist\Incrementalist.csproj" />
   </ItemGroup>
 

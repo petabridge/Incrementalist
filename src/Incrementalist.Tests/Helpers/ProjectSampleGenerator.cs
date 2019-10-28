@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace Incrementalist.Tests.Helpers
@@ -10,12 +11,29 @@ namespace Incrementalist.Tests.Helpers
         /// <summary>
         /// Gets project with import files sample
         /// </summary>
-        public static ProjectWithImportSample GetProjectWithImportSample()
+        public static ProjectWithImportSample GetProjectWithImportSample(string projectFileName)
         {
-            var projectContent = File.ReadAllText("../../../Samples/ProjectFileWithImportSample.xml");
-            var importedPropsContent = File.ReadAllText("../../../Samples/ImportedPropsSample.xml");
+            var projectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ProjectFileWithImportSample.xml"));
+            var importedPropsContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ImportedPropsSample.xml"));
             
-            return new ProjectWithImportSample(projectContent, new SampleFile("imported.props", importedPropsContent));
+            return new ProjectWithImportSample(
+                new SampleFile(projectFileName, projectContent), 
+                new SampleFile("imported.props", importedPropsContent));
+        }
+
+        /// <summary>
+        /// Gets .net solution with different csharp and fsharp projects
+        /// </summary>
+        public static FSharpSampleSolution GetFSharpSolutionSample(string solutionName)
+        {
+            var solutionContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/Solution.xml"));
+            var fsharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/FSharpProject.xml"));
+            var csharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/CSharpProject.xml"));
+            
+            return new FSharpSampleSolution(
+                new SampleFile(solutionName, solutionContent), 
+                new SampleFile("CSharpProject.csproj", csharpProjectContent), 
+                new SampleFile("FSharpProject.fsproj", fsharpProjectContent));
         }
 
         /// <summary>
@@ -23,9 +41,9 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         public class ProjectWithImportSample
         {
-            public ProjectWithImportSample(string projectFileContent, SampleFile importedPropsFile)
+            public ProjectWithImportSample(SampleFile projectFile, SampleFile importedPropsFile)
             {
-                ProjectFileContent = projectFileContent;
+                ProjectFile = projectFile;
                 ImportedPropsFile = importedPropsFile;
             }
 
@@ -35,7 +53,7 @@ namespace Incrementalist.Tests.Helpers
             /// <remarks>
             /// Name of the file is not important here
             /// </remarks>
-            public string ProjectFileContent { get; }
+            public SampleFile ProjectFile { get; }
             /// <summary>
             /// Imported props file info
             /// </summary>
@@ -44,7 +62,33 @@ namespace Incrementalist.Tests.Helpers
             /// </remarks>
             public SampleFile ImportedPropsFile { get; }
         }
+        
+        /// <summary>
+        /// FSharp sample solution data
+        /// </summary>
+        public class FSharpSampleSolution
+        {
+            public FSharpSampleSolution(SampleFile solutionFile, SampleFile fSharpProjectFile, SampleFile cSharpProjectFile)
+            {
+                SolutionFile = solutionFile;
+                FSharpProjectFile = fSharpProjectFile;
+                CSharpProjectFile = cSharpProjectFile;
+            }
 
+            /// <summary>
+            /// Solution file info.
+            /// </summary>
+            public SampleFile SolutionFile { get; }
+            /// <summary>
+            /// FSharp project file info. Name of the project is used in solution's content
+            /// </summary>
+            public SampleFile FSharpProjectFile { get; }
+            /// <summary>
+            /// CSharp project file info. Name of the project is used in solution's content
+            /// </summary>
+            public SampleFile CSharpProjectFile { get; }
+        }
+        
         /// <summary>
         /// Generated sample file info
         /// </summary>
@@ -64,6 +108,11 @@ namespace Incrementalist.Tests.Helpers
             /// File content
             /// </summary>
             public string Content { get; }
+
+            /// <summary>
+            /// Gets full file path
+            /// </summary>
+            public string GetFullPath(string basePath) => Path.Combine(basePath, Name);
         }
     }
 }
