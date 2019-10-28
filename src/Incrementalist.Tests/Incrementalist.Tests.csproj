@@ -2,7 +2,7 @@
   <Import Project="..\common.props" />
 
   <PropertyGroup>    
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
