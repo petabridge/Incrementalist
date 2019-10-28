@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="imported.props" />
+    
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <Description>Library for running incremental, Git-based builds and tests in .NET and .NET Core.</Description>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <PackageReference Include="Libgit2Sharp" Version="0.26.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
+    </ItemGroup>
+
+</Project>
