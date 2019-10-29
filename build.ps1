@@ -31,11 +31,11 @@ Param(
 
 $FakeVersion = "4.61.2"
 $DotNetChannel = "LTS";
-$DotNetVersion = "2.1.500";
-$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/v$DotNetVersion/scripts/obtain/dotnet-install.ps1";
+$DotNetVersion = "3.0.100";
+$DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 $NugetVersion = "4.1.0";
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/v$NugetVersion/nuget.exe"
-$ProtobufVersion = "3.4.0"
+$ProtobufVersion = "3.9.2"
 $DocfxVersion = "2.40.5"
 
 # Make sure tools folder exists
@@ -87,6 +87,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
     $env:PATH = "$InstallPath;$env:PATH"
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
     $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+    $env:DOTNET_ROOT=$InstallPath
 }
 
 ###########################################################################
@@ -127,6 +128,22 @@ if (!(Test-Path $DocfxExePath)) {
         Throw "An error occured while restoring docfx.console from NuGet."
     }
 }
+
+
+###########################################################################
+# Google.Protobuf.Tools
+###########################################################################
+
+# Make sure Google.Protobuf.Tools has been installed.
+$ProtobufExePath = Join-Path $ToolPath "Google.Protobuf.Tools/tools/windows_x64/protoc.exe"
+if (!(Test-Path $ProtobufExePath)) {
+    Write-Host "Installing Google.Protobuf.Tools..."
+    Invoke-Expression "&`"$NugetPath`" install Google.Protobuf.Tools -ExcludeVersion -Version $ProtobufVersion -OutputDirectory `"$ToolPath`"" | Out-Null;
+    if ($LASTEXITCODE -ne 0) {
+        Throw "An error occured while restoring Google.Protobuf.Tools from NuGet."
+    }
+}
+
 
 ###########################################################################
 # SignTool
@@ -256,8 +273,8 @@ exit $LASTEXITCODE
 # +jrFfrNWxRlmVcfE+ZBH8bLJinzYGNChgg7IMIIOxAYKKwYBBAGCNwMDATGCDrQw
 # gg6wBgkqhkiG9w0BBwKggg6hMIIOnQIBAzEPMA0GCWCGSAFlAwQCAQUAMHcGCyqG
 # SIb3DQEJEAEEoGgEZjBkAgEBBglghkgBhv1sBwEwMTANBglghkgBZQMEAgEFAAQg
-# yVw1M/glzmvyYENKoVDAlG2PPFDPhYSmm6N4s9jIPD0CEDlse+eGBA4upExwL3x7
-# DG4YDzIwMTkwMzA3MTk0MjQ4WqCCC7swggaCMIIFaqADAgECAhAJwPxGyARCE7VZ
+# yVw1M/glzmvyYENKoVDAlG2PPFDPhYSmm6N4s9jIPD0CEGcCUCnVFW/SW5WYFvGQ
+# UdEYDzIwMTkwMzE1MTYwMDU3WqCCC7swggaCMIIFaqADAgECAhAJwPxGyARCE7VZ
 # i68oT05BMA0GCSqGSIb3DQEBCwUAMHIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxE
 # aWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xMTAvBgNVBAMT
 # KERpZ2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBUaW1lc3RhbXBpbmcgQ0EwHhcNMTcw
@@ -324,13 +341,13 @@ exit $LASTEXITCODE
 # cnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdp
 # Q2VydCBTSEEyIEFzc3VyZWQgSUQgVGltZXN0YW1waW5nIENBAhAJwPxGyARCE7VZ
 # i68oT05BMA0GCWCGSAFlAwQCAQUAoIGYMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0B
-# CRABBDAcBgkqhkiG9w0BCQUxDxcNMTkwMzA3MTk0MjQ4WjArBgsqhkiG9w0BCRAC
+# CRABBDAcBgkqhkiG9w0BCQUxDxcNMTkwMzE1MTYwMDU3WjArBgsqhkiG9w0BCRAC
 # DDEcMBowGDAWBBRAAZFHXJiJHeuhBK9HCRtettTLyzAvBgkqhkiG9w0BCQQxIgQg
-# THJaw67Mv8gSdYbuiJzceMQu2BnXQMbGHfTk35ilTHkwDQYJKoZIhvcNAQEBBQAE
-# ggEAD6QiEmVV5ZSFeaSHvujQ33RCMbndiy71RsysBVsJqOLp9uC0XXutmwjqa7q/
-# aOXOFNSTZAOGBeDVrObLe1eyVGO2ZdeA1WqTZC56dTo447OGSOacYd2x6S0UGPR8
-# jkDDYDIWKWhtNERUXiw4R+xGWRfUElwSn+vIT6izyV/4IgiEgoINe4/nQ3y9Asbc
-# oY8bE8uBhfimwgzpsqj6YTHCJxSrPnloqeHJYQmBn+1RcJ06lNiY8eppAZGo+zQQ
-# CMtoxnhrX3J9A/+41e6y1TX7YCLFV+bznmgVQz0cUqoEvB5TemogV2NwOTgnYvz0
-# SfejbelpMrP5PYsNcJePyRpdsQ==
+# jLu5eXUI0j43Sq/ZJ76+UJmWF/2Amb+YAcVtGZhRJKowDQYJKoZIhvcNAQEBBQAE
+# ggEAQBQNwdmatbURcWuntIUvk18FZGGLRA3bT0kNXN0pwwwopQlr4G6WbL8C8oSw
+# 0KUbWa3VonUYHemc6ZYgSOaa07X9dMoEWdgf9Jy7LDFZQCYBkI7034x0ujyTAZ6U
+# KtqQupuRPdLAsCb67KB6DR6lIuP1hj1yolPb9uyqEsH1JJqusTiirZvO1UvNVtHU
+# ljscye8j2SiO8UNLhYHL1me43S4NmqgLkaDvIE8lVx8GtyFyGRdFZYTzAufXTR9H
+# HK8lsD0ekQiOpaAIw/MfhEgTej1Z3L686Z0xwBVyH988UA9lVbXdDZWS3odGd2CT
+# /JdEUFIMzW5J8N+QntZ/Fjua/A==
 # SIG # End signature block

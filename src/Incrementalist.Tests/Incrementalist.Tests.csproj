@@ -2,17 +2,18 @@
   <Import Project="..\common.props" />
 
   <PropertyGroup>    
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="5.6.0" />
+    <PackageReference Include="FluentAssertions" Version="5.9.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="xunit" Version="$(XunitVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitVersion)" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Incrementalist.Cmd\Incrementalist.Cmd.csproj" />
     <ProjectReference Include="..\Incrementalist\Incrementalist.csproj" />
   </ItemGroup>
 

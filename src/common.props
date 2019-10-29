@@ -2,9 +2,12 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.1.7</VersionPrefix>
-    <PackageReleaseNotes>Bugfix release for Incrementalist v0.1.6
-Fixed [Bug: in multi-targeted projects, only one "project" contains the dependency graph.](https://github.com/petabridge/Incrementalist/issues/63). This will make it easier for Incrementalist to detect changes that occur inside multi-targeted projects.</PackageReleaseNotes>
+    <VersionPrefix>0.2.0</VersionPrefix>
+    <PackageReleaseNotes>Feature release: Incrementalist v0.2.0
+[Added .NET Core 3.0 global tool support](https://github.com/petabridge/Incrementalist/issues/70)
+[Added F# project support](https://github.com/petabridge/Incrementalist/issues/69)
+[Bugfix: Need to be able to detect changes in `.props` files referenced by projects](https://github.com/petabridge/Incrementalist/issues/68)
+[Added configurable timeout to commandline options](https://github.com/petabridge/Incrementalist/pull/86)</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
@@ -221,6 +224,7 @@ Fixed [Bug: in multi-targeted projects, only one "project" contains the dependen
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>15.9.0</TestSdkVersion>
+    <TestSdkVersion>16.3.0</TestSdkVersion>
+    <RoslynVersion>3.3.1</RoslynVersion>
   </PropertyGroup>
 </Project>

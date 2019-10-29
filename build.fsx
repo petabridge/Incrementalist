@@ -122,8 +122,8 @@ Target "IntegrationTests" <| fun _ ->
 
     let runSingleProject project =
         
-        let folderOnlyArgs = sprintf "run --project %s -c %s --no-build -- -b dev -l -f %s" project configuration (outputTests @@ "incrementalist-affected-folders.txt")
-        let slnArgs = sprintf "run --project %s -c %s --no-build -- -b dev -f %s" project configuration (outputTests @@ "incrementalist-affected-files.txt")
+        let folderOnlyArgs = sprintf "run --project %s -c %s --framework netcoreapp3.0 --no-build -- -b dev -l -f %s" project configuration (outputTests @@ "incrementalist-affected-folders.txt")
+        let slnArgs = sprintf "run --project %s -c %s --framework netcoreapp3.0 -- -b dev -f %s" project configuration (outputTests @@ "incrementalist-affected-files.txt")
 
         let execWithArgs args =
             let result = ExecProcess(fun info ->
