@@ -35,7 +35,7 @@ namespace Incrementalist.Cmd
             HelpText = "Prints out extensive debug logs during operation.")]
         public bool Verbose { get; set; }
 
-        [Option('t', "timeout", Default = "2", HelpText = "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.")]
+        [Option('t', "timeout", Default = 2, HelpText = "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.")]
         public int TimeoutMinutes { get; set; }
     }
 }
