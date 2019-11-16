@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -45,7 +46,7 @@ namespace Incrementalist.Tests.Dependencies
             var projectFile = new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
             var imports = ProjectImportsFinder.FindProjectImports(new[] { projectFile });
             
-            imports.Values.Should().BeEquivalentTo(new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToList()));
+            imports.Values.Should().BeEquivalentTo(new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToImmutableList()));
         }
 
         [Fact(DisplayName = "When project imported file is changed, the project should be marked as affected")]
