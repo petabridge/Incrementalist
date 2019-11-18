@@ -23,7 +23,7 @@ namespace Incrementalist.ProjectSystem
     
     public sealed class ImportedFile
     {
-        public ImportedFile(string path, List<SlnFileWithPath> dependantProjects)
+        public ImportedFile(string path, IImmutableList<SlnFileWithPath> dependantProjects)
         {
             DependantProjects = dependantProjects;
             Path = path;
@@ -32,7 +32,7 @@ namespace Incrementalist.ProjectSystem
         /// <summary>
         /// List of project files that are importing this file
         /// </summary>
-        public List<SlnFileWithPath> DependantProjects { get; }
+        public IImmutableList<SlnFileWithPath> DependantProjects { get; }
         /// <summary>
         /// File path
         /// </summary>
@@ -51,7 +51,7 @@ namespace Incrementalist.ProjectSystem
         /// <returns>Doctionary of imported files with their paths</returns>
         public static Dictionary<string, ImportedFile> FindProjectImports(IEnumerable<SlnFileWithPath> projectFiles)
         {
-            var imports = new ConcurrentDictionary<string, HashSet<SlnFileWithPath>>();
+            var imports = new ConcurrentDictionary<string, IImmutableList<SlnFileWithPath>>();
             
             Parallel.ForEach(projectFiles, projectFile =>
             {
@@ -71,19 +71,13 @@ namespace Incrementalist.ProjectSystem
                         continue;
                     
                     var importedFileFillPath = Path.GetFullPath(Path.Combine(projectDir, importedFilePath));
-                    var dependentProjectId = projectFile.File.ProjectId;
-
                     imports.AddOrUpdate(importedFileFillPath,
-                        addValue: new HashSet<SlnFileWithPath>() { projectFile },
-                        updateValueFactory: (_, dependentProjects) =>
-                        {
-                            dependentProjects.Add(projectFile);
-                            return dependentProjects;
-                        });
+                        addValue: ImmutableList<SlnFileWithPath>.Empty.Add(projectFile), 
+                        updateValueFactory: (_, dependentProjects) => dependentProjects.Add(projectFile));
                 }
             });
 
-            return imports.ToDictionary(pair => pair.Key, pair => new ImportedFile(pair.Key, pair.Value.ToList()));
+            return imports.ToDictionary(pair => pair.Key, pair => new ImportedFile(pair.Key, pair.Value));
         }
 
         private static XmlDocument ParseXmlDocument(string projectFilePath)
