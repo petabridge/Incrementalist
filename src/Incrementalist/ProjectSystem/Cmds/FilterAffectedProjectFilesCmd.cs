@@ -92,7 +92,10 @@ namespace Incrementalist.ProjectSystem.Cmds
                 if (projectImports.ContainsKey(file))
                 { 
                     // Mark all dependant as affected
-                    projectImports[file].DependantProjects.ForEach(dependentProject => newDict[dependentProject.Path] = dependentProject.File);
+                    foreach (var dependentProject in projectImports[file].DependantProjects)
+                    {
+                        newDict[dependentProject.Path] = dependentProject.File;
+                    }
                 }
             }
 
