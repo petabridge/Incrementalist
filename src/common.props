@@ -222,6 +222,6 @@
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
     <TestSdkVersion>16.4.0</TestSdkVersion>
-    <RoslynVersion>3.3.1</RoslynVersion>
+    <RoslynVersion>3.4.0</RoslynVersion>
   </PropertyGroup>
 </Project>
