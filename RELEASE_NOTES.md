@@ -1,4 +1,5 @@
-#### 0.2.1 November 18 2019 ####
-Maintenance release: Incrementalist v0.2.1
+#### 0.2.2 February 14 2020 ####
+Maintenance release: Incrementalist v0.2.2
 
-* [Fixed: NRE during Incrementalist.ProjectSystem.Cmds.FilterAffectedProjectFilesCmd](https://github.com/petabridge/Incrementalist/issues/70)
+* Updated Roslyn version to 3.4.0
+* Updated Libgit2Sharp version to 0.26.2

@@ -2,9 +2,10 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.2.1</VersionPrefix>
-    <PackageReleaseNotes>Maintenance release: Incrementalist v0.2.1
-[Fixed: NRE during Incrementalist.ProjectSystem.Cmds.FilterAffectedProjectFilesCmd](https://github.com/petabridge/Incrementalist/issues/70)</PackageReleaseNotes>
+    <VersionPrefix>0.2.2</VersionPrefix>
+    <PackageReleaseNotes>Maintenance release: Incrementalist v0.2.2
+Updated Roslyn version to 3.4.0
+Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
@@ -221,7 +222,7 @@
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.4.0</TestSdkVersion>
-    <RoslynVersion>3.3.1</RoslynVersion>
+    <TestSdkVersion>16.5.0</TestSdkVersion>
+    <RoslynVersion>3.4.0</RoslynVersion>
   </PropertyGroup>
 </Project>
