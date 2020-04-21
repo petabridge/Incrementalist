@@ -222,7 +222,7 @@ Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.5.0</TestSdkVersion>
+    <TestSdkVersion>16.6.0</TestSdkVersion>
     <RoslynVersion>3.5.0</RoslynVersion>
   </PropertyGroup>
 </Project>
