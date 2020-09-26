@@ -203,7 +203,7 @@ Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2015-2019 Petabridge, LLC
+   Copyright 2015-2020 Petabridge, LLC
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -222,7 +222,7 @@ Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.5.0</TestSdkVersion>
-    <RoslynVersion>3.4.0</RoslynVersion>
+    <TestSdkVersion>16.7.1</TestSdkVersion>
+    <RoslynVersion>3.7.0</RoslynVersion>
   </PropertyGroup>
 </Project>
