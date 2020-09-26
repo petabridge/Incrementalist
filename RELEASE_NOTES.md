@@ -1,5 +1,5 @@
-#### 0.2.2 February 14 2020 ####
-Maintenance release: Incrementalist v0.2.2
+#### 0.3.0 September 26 2020 ####
+New feature release: 0.3.0
 
-* Updated Roslyn version to 3.4.0
-* Updated Libgit2Sharp version to 0.26.2
+* Updated Roslyn version to 3.7.0
+* Dropped .NET tool support for .NET Core 2.1 and 3.0; moved to targeting .NET Core 3.1
