@@ -11,7 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Libgit2Sharp" Version="0.26.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
