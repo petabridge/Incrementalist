@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Incrementalist", "src\Incrementalist\Incrementalist.csproj", "{E945AABA-2779-41E8-9B43-8898FFD64F22}"
 EndProject
@@ -16,6 +16,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Incrementalist.Cmd", "src\Incrementalist.Cmd\Incrementalist.Cmd.csproj", "{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "system", "system", "{8FD45831-7673-48E6-9970-47A858844758}"
+	ProjectSection(SolutionItems) = preProject
+		build-system\azure-pipeline.template.yaml = build-system\azure-pipeline.template.yaml
+		build-system\linux-pr-validation.yaml = build-system\linux-pr-validation.yaml
+		build-system\README.md = build-system\README.md
+		build-system\windows-pr-validation.yaml = build-system\windows-pr-validation.yaml
+		build-system\windows-release.yaml = build-system\windows-release.yaml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +47,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8FD45831-7673-48E6-9970-47A858844758} = {79D71264-186B-4F62-8930-35DD9ECCAF3B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B99E6BB8-642A-4A68-86DF-69567CBA700A}
