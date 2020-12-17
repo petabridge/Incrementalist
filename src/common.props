@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.2.2</VersionPrefix>
+    <VersionPrefix>0.4.0</VersionPrefix>
     <PackageReleaseNotes>Maintenance release: Incrementalist v0.2.2
 Updated Roslyn version to 3.4.0
 Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
@@ -222,7 +222,7 @@ Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.8.0</TestSdkVersion>
-    <RoslynVersion>3.8.0</RoslynVersion>
+    <TestSdkVersion>16.8.3</TestSdkVersion>
+    <RoslynVersion>3.9.0-2.final</RoslynVersion>
   </PropertyGroup>
 </Project>
