@@ -20,10 +20,3 @@ jobs:
     vmImage: 'windows-2019'
     scriptFileName: build.cmd
     scriptArgs: all
-- template: azure-pipeline.template.yaml
-  parameters:
-    name: 'net_5_windows'
-    displayName: 'Integration Tests NET 5 (Windows)'
-    vmImage: 'windows-2019'
-    scriptFileName: build.cmd
-    scriptArgs: IntegrationTestsNet

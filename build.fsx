@@ -140,6 +140,29 @@ Target "IntegrationTests" <| fun _ ->
 
     integrationTests |> Seq.iter runSingleProject
 
+Target "IntegrationTestsNet" <| fun _ ->    
+    let integrationTests = !! "./src/**/Incrementalist.Cmd.csproj"
+
+    let runSingleProject project =
+        
+        let folderOnlyArgs = sprintf "run --project %s -c %s --framework net5.0 --no-build -- -b dev -l -f %s" project configuration (outputTests @@ "incrementalist-affected-folders.txt")
+        let slnArgs = sprintf "run --project %s -c %s --framework net5.0 -- -b dev -f %s" project configuration (outputTests @@ "incrementalist-affected-files.txt")
+
+        let execWithArgs args =
+            let result = ExecProcess(fun info ->
+                info.FileName <- "dotnet"
+                info.WorkingDirectory <- __SOURCE_DIRECTORY__
+                info.Arguments <- args) (TimeSpan.FromMinutes 5.0) 
+            if result <> 0 then failwithf "Incrementalist failed.%s" args
+        
+        log "Running Incrementalist folders-only check"
+        execWithArgs folderOnlyArgs
+
+        log "Running Incrementalist solution check"
+        execWithArgs slnArgs
+
+    integrationTests |> Seq.iter runSingleProject
+
 Target "NBench" <| fun _ ->
     let projects = 
         match (isWindows) with 
@@ -337,6 +360,7 @@ Target "Nuget" DoNothing
 // all
 "BuildRelease" ==> "All"
 "IntegrationTests" ==> "All"
+"IntegrationTestsNet" ==> "All"
 "RunTests" ==> "All"
 "NBench" ==> "All"
 "Nuget" ==> "All"
