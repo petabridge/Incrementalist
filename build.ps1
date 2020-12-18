@@ -31,7 +31,7 @@ Param(
 
 $FakeVersion = "4.61.2"
 $DotNetChannel = "LTS";
-$DotNetVersion = "3.1.100";
+$DotNetVersion = "5.0.101";
 $DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 $NugetVersion = "4.1.0";
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/v$NugetVersion/nuget.exe"
@@ -47,7 +47,7 @@ if (!(Test-Path $ToolPath)) {
 }
 
 ###########################################################################
-# INSTALL .NET CORE CLI
+# INSTALL .NET CLI
 ###########################################################################
 
 Function Remove-PathVariable([string]$VariableToRemove)
