@@ -20,7 +20,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
     scriptFileName: ./build.sh
     scriptArgs: all
-- template: azure-pipeline.mntr-template.yaml
+- template: azure-pipeline.template.yaml
   parameters:
     name: 'net_5_Linux'
     displayName: 'Integration Tests NET 5 (Linux)'
