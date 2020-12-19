@@ -94,7 +94,7 @@ module internal ResultHandling =
         buildErrorMessage
         >> Option.iter (failBuildWithMessage errorLevel)
 
-Target "RunTestsCore" (fun _ ->
+Target "RunTests" (fun _ ->
     let projects = 
         match (isWindows) with 
         | true -> !! "./src/**/*.Tests.csproj"
@@ -103,8 +103,8 @@ Target "RunTestsCore" (fun _ ->
     let runSingleProject project =
         let arguments =
             match (hasTeamCity) with
-            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework netcoreapp3.1 --results-directory %s -- -parallel none -teamcity" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework netcoreapp3.1 --results-directory %s -- -parallel none" (outputTests))
+            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none -teamcity" (outputTests))
+            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --results-directory %s -- -parallel none" (outputTests))
 
         let result = ExecProcess(fun info ->
             info.FileName <- "dotnet"
@@ -117,30 +117,7 @@ Target "RunTestsCore" (fun _ ->
     projects |> Seq.iter (runSingleProject)
 )
 
-Target "RunTestsNet" (fun _ ->
-    let projects = 
-        match (isWindows) with 
-        | true -> !! "./src/**/*.Tests.csproj"
-        | _ -> !! "./src/**/*.Tests.csproj" // if you need to filter specs for Linux vs. Windows, do it here
-
-    let runSingleProject project =
-        let arguments =
-            match (hasTeamCity) with
-            | true -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework net5.0 --results-directory %s -- -parallel none -teamcity" (outputTests))
-            | false -> (sprintf "test -c Release --no-build --logger:trx --logger:\"console;verbosity=normal\" --framework net5.0 --results-directory %s -- -parallel none" (outputTests))
-
-        let result = ExecProcess(fun info ->
-            info.FileName <- "dotnet"
-            info.WorkingDirectory <- (Directory.GetParent project).FullName
-            info.Arguments <- arguments) (TimeSpan.FromMinutes 30.0) 
-        
-        ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result  
-
-    projects |> Seq.iter (log)
-    projects |> Seq.iter (runSingleProject)
-)
-
-Target "IntegrationTestsCore" <| fun _ ->    
+Target "IntegrationTests" <| fun _ ->    
     let integrationTests = !! "./src/**/Incrementalist.Cmd.csproj"
 
     let frameworks = ["netcoreapp3.1"; "net5.0"]
@@ -352,7 +329,7 @@ Target "Nuget" DoNothing
 "Clean" ==> "RestorePackages" ==> "AssemblyInfo" ==> "Build" ==> "BuildRelease"
 
 // tests dependencies
-"Clean" ==> "RestorePackages" ==> "Build" ==> "RunTestsCore" ==> "RunTestsNet"
+"Clean" ==> "RestorePackages" ==> "Build" ==> "RunTests"
 
 // nuget dependencies
 "Clean" ==> "RestorePackages" ==> "Build" ==> "CreateNuget"
@@ -364,7 +341,6 @@ Target "Nuget" DoNothing
 // all
 "BuildRelease" ==> "All"
 "IntegrationTests" ==> "All"
-"IntegrationTestsNet" ==> "All"
 "RunTests" ==> "All"
 "NBench" ==> "All"
 "Nuget" ==> "All"
