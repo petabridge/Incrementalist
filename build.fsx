@@ -341,7 +341,6 @@ Target "Nuget" DoNothing
 // all
 "BuildRelease" ==> "All"
 "IntegrationTests" ==> "All"
-"IntegrationTestsNet" ==> "All"
 "RunTests" ==> "All"
 "NBench" ==> "All"
 "Nuget" ==> "All"
