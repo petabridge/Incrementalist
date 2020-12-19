@@ -32,7 +32,7 @@ Param(
 $FakeVersion = "4.61.2"
 $DotNetChannel = "LTS";
 $DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
-$NugetVersion = "5.8.0";
+$NugetVersion = "4.1.0";
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/v$NugetVersion/nuget.exe"
 $ProtobufVersion = "3.9.2"
 $DocfxVersion = "2.40.5"
@@ -55,7 +55,8 @@ if (!(Test-Path $NugetPath)) {
     Write-Host "Downloading NuGet.exe..."
     (New-Object System.Net.WebClient).DownloadFile($NugetUrl, $NugetPath);
 }
-
+Write-Host "Update NuGet"
+& $NugetPath update -self
 ###########################################################################
 # INSTALL FAKE
 ###########################################################################
