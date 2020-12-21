@@ -132,7 +132,8 @@ Target "IntegrationTests" <| fun _ ->
                 info.FileName <- "dotnet"
                 info.WorkingDirectory <- __SOURCE_DIRECTORY__
                 info.Arguments <- args) (TimeSpan.FromMinutes 5.0) 
-            if result <> 0 then failwithf "Incrementalist failed.%s" args
+
+            ResultHandling.failBuildIfXUnitReportedError TestRunnerErrorLevel.Error result
         
         log "Running Incrementalist folders-only check"
         execWithArgs folderOnlyArgs
