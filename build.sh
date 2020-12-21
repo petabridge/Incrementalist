@@ -1,115 +1,62 @@
 #!/usr/bin/env bash
-##########################################################################
-# This is the Fake bootstrapper script for Linux and OS X.
-##########################################################################
 
-# Define directories.
-SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-TOOLS_DIR=$SCRIPT_DIR/tools
-SIGNCLIENT_DIR=$TOOLS_DIR/signclient
-NUGET_EXE=$TOOLS_DIR/nuget.exe
-NUGET_URL=https://dist.nuget.org/win-x86-commandline/v4.0.0/nuget.exe
-FAKE_VERSION=4.61.2
-FAKE_EXE=$TOOLS_DIR/FAKE/tools/FAKE.exe
-DOTNET_VERSION=3.1.100
-DOTNET_INSTALLER_URL=https://dot.net/v1/dotnet-install.sh
-DOTNET_CHANNEL=LTS;
-DOCFX_VERSION=2.40.5
-DOCFX_EXE=$TOOLS_DIR/docfx.console/tools/docfx.exe
+bash --version 2>&1 | head -n 1
 
-# Define default arguments.
-TARGET="Default"
-CONFIGURATION="Release"
-VERBOSITY="verbose"
-DRYRUN=
-SCRIPT_ARGUMENTS=()
-
-# Parse arguments.
-for i in "$@"; do
-    case $1 in
-        -t|--target) TARGET="$2"; shift ;;
-        -c|--configuration) CONFIGURATION="$2"; shift ;;
-        -v|--verbosity) VERBOSITY="$2"; shift ;;
-        -d|--dryrun) DRYRUN="-dryrun" ;;
-        --) shift; SCRIPT_ARGUMENTS+=("$@"); break ;;
-        *) SCRIPT_ARGUMENTS+=("$1") ;;
-    esac
-    shift
-done
-
-# Make sure the tools folder exist.
-if [ ! -d "$TOOLS_DIR" ]; then
-  mkdir "$TOOLS_DIR"
-fi
+set -eo pipefail
+SCRIPT_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 
 ###########################################################################
-# INSTALL NUGET
+# CONFIGURATION
 ###########################################################################
 
-# Download NuGet if it does not exist.
-if [ ! -f "$NUGET_EXE" ]; then
-    echo "Downloading NuGet..."
-    curl -Lsfo "$NUGET_EXE" $NUGET_URL
-    if [ $? -ne 0 ]; then
-        echo "An error occured while downloading nuget.exe."
-        exit 1
+BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build.csproj"
+TEMP_DIRECTORY="$SCRIPT_DIR//.tmp"
+
+DOTNET_GLOBAL_FILE="$SCRIPT_DIR//global.json"
+DOTNET_INSTALL_URL="https://dot.net/v1/dotnet-install.sh"
+DOTNET_CHANNEL="Current"
+
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+export DOTNET_MULTILEVEL_LOOKUP=0
+
+###########################################################################
+# EXECUTION
+###########################################################################
+
+function FirstJsonValue {
+    perl -nle 'print $1 if m{"'"$1"'": "([^"]+)",?}' <<< "${@:2}"
+}
+
+# If dotnet CLI is installed globally and it matches requested version, use for execution
+if [ -x "$(command -v dotnet)" ] && dotnet --version &>/dev/null; then
+    export DOTNET_EXE="$(command -v dotnet)"
+else
+    # Download install script
+    DOTNET_INSTALL_FILE="$TEMP_DIRECTORY/dotnet-install.sh"
+    mkdir -p "$TEMP_DIRECTORY"
+    curl -Lsfo "$DOTNET_INSTALL_FILE" "$DOTNET_INSTALL_URL"
+    chmod +x "$DOTNET_INSTALL_FILE"
+
+    # If global.json exists, load expected version
+    if [[ -f "$DOTNET_GLOBAL_FILE" ]]; then
+        DOTNET_VERSION=$(FirstJsonValue "version" "$(cat "$DOTNET_GLOBAL_FILE")")
+        if [[ "$DOTNET_VERSION" == ""  ]]; then
+            unset DOTNET_VERSION
+        fi
     fi
-fi
 
-###########################################################################
-# INSTALL FAKE
-###########################################################################
-
-if [ ! -f "$FAKE_EXE" ]; then
-    mono "$NUGET_EXE" install Fake -ExcludeVersion -Version $FAKE_VERSION -OutputDirectory "$TOOLS_DIR"
-    if [ $? -ne 0 ]; then
-        echo "An error occured while installing Cake."
-        exit 1
+    # Install by channel or version
+    DOTNET_DIRECTORY="$TEMP_DIRECTORY/dotnet-unix"
+    if [[ -z ${DOTNET_VERSION+x} ]]; then
+        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --channel "$DOTNET_CHANNEL" --no-path
+    else
+        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --version "$DOTNET_VERSION" --no-path
     fi
+    export DOTNET_EXE="$DOTNET_DIRECTORY/dotnet"
 fi
 
-# Make sure that Fake has been installed.
-if [ ! -f "$FAKE_EXE" ]; then
-    echo "Could not find Fake.exe at '$FAKE_EXE'."
-    exit 1
-fi
+echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 
-###########################################################################
-# INSTALL DOCFX
-###########################################################################
-if [ ! -f "$DOCFX_EXE" ]; then
-    mono "$NUGET_EXE" install docfx.console -ExcludeVersion -Version $DOCFX_VERSION -OutputDirectory "$TOOLS_DIR"
-    if [ $? -ne 0 ]; then
-        echo "An error occured while installing DocFx."
-        exit 1
-    fi
-fi
-
-# Make sure that DocFx has been installed.
-if [ ! -f "$DOCFX_EXE" ]; then
-    echo "Could not find docfx.exe at '$DOCFX_EXE'."
-    exit 1
-fi
-
-###########################################################################
-# INSTALL SignTool
-###########################################################################
-if [ ! -f "$SIGNTOOL_EXE" ]; then
-    "$SCRIPT_DIR/.dotnet/dotnet" tool install SignClient --version 1.0.82 --tool-path "$SIGNCLIENT_DIR"
-    if [ $? -ne 0 ]; then
-        echo "SignClient already installed."
-    fi
-fi
-
-
-###########################################################################
-# WORKAROUND FOR MONO
-###########################################################################
-export FrameworkPathOverride=/usr/lib/mono/4.5/
-
-###########################################################################
-# RUN BUILD SCRIPT
-###########################################################################
-
-# Start Fake
-exec mono "$FAKE_EXE" build.fsx "${SCRIPT_ARGUMENTS[@]}" --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN
+"$DOTNET_EXE" build "$BUILD_PROJECT_FILE" /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet
+"$DOTNET_EXE" run --project "$BUILD_PROJECT_FILE" --no-build -- "$@"
