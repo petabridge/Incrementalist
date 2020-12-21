@@ -128,17 +128,17 @@ Target "IntegrationTests" <| fun _ ->
         let slnArgs = sprintf "run --project %s -c %s --framework %s -- -b dev -f %s" project configuration fwork (outputTests @@ "incrementalist-affected-files.txt")
 
         let execWithArgs args =
-            let result = ExecProcess(fun info ->
-                info.FileName <- "dotnet"
-                info.WorkingDirectory <- __SOURCE_DIRECTORY__
-                info.Arguments <- args) (TimeSpan.FromMinutes 5.0) 
-            if result <> 0 then failwithf "Incrementalist failed.%s" args
+            ExecProcess(fun info ->
+            info.FileName <- "dotnet"
+            info.WorkingDirectory <- __SOURCE_DIRECTORY__
+            info.Arguments <- args) (TimeSpan.FromMinutes 5.0)                     
         
         log "Running Incrementalist folders-only check"
         execWithArgs folderOnlyArgs
 
         log "Running Incrementalist solution check"
-        execWithArgs slnArgs
+        let result = execWithArgs slnArgs
+        if result <> 0 then failwithf "Incrementalist failed.%s" slnArgs
 
     for integrationTest in integrationTests do
       for framework in frameworks do
