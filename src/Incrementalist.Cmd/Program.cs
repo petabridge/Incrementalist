@@ -59,7 +59,6 @@ namespace Incrementalist.Cmd
                 ResetTitle();
                 return result;
             }
-
             var exitCode = await RunIncrementalist(options);
 
             ResetTitle();
