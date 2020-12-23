@@ -11,7 +11,6 @@ NUGET_EXE=$TOOLS_DIR/nuget.exe
 NUGET_URL=https://dist.nuget.org/win-x86-commandline/v4.0.0/nuget.exe
 FAKE_VERSION=4.61.2
 FAKE_EXE=$TOOLS_DIR/FAKE/tools/FAKE.exe
-DOTNET_VERSION=3.1.100
 DOTNET_INSTALLER_URL=https://dot.net/v1/dotnet-install.sh
 DOTNET_CHANNEL=LTS;
 DOCFX_VERSION=2.40.5
@@ -55,7 +54,7 @@ if [ ! -f "$NUGET_EXE" ]; then
         exit 1
     fi
 fi
-
+mono "$NUGET_EXE" update -self
 ###########################################################################
 # INSTALL FAKE
 ###########################################################################
