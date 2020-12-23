@@ -3,9 +3,9 @@
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
     <VersionPrefix>0.4.0</VersionPrefix>
-    <PackageReleaseNotes>Maintenance release: Incrementalist v0.4.0
-Added dual targeting (.NET 5; .NETCore 3.1)
-</PackageReleaseNotes>
+    <PackageReleaseNotes>New feature release: 0.4.0
+Added .NET 5 `dotnet tool` support in addition to .NET Core 3.1
+Target Roslyn 3.8.0</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
