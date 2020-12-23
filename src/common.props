@@ -2,10 +2,10 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.2.2</VersionPrefix>
-    <PackageReleaseNotes>Maintenance release: Incrementalist v0.2.2
-Updated Roslyn version to 3.4.0
-Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
+    <VersionPrefix>0.4.0</VersionPrefix>
+    <PackageReleaseNotes>New feature release: 0.4.0
+Added .NET 5 `dotnet tool` support in addition to .NET Core 3.1
+Target Roslyn 3.8.0</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
@@ -222,7 +222,8 @@ Updated Libgit2Sharp version to 0.26.2</PackageReleaseNotes>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.7.1</TestSdkVersion>
-    <RoslynVersion>3.7.0</RoslynVersion>
+    <TestSdkVersion>16.8.3</TestSdkVersion>
+    <RoslynVersion>3.8.0</RoslynVersion>
+    <NugetVersion>5.8.0</NugetVersion>
   </PropertyGroup>
 </Project>

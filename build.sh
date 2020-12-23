@@ -11,7 +11,6 @@ NUGET_EXE=$TOOLS_DIR/nuget.exe
 NUGET_URL=https://dist.nuget.org/win-x86-commandline/v4.0.0/nuget.exe
 FAKE_VERSION=4.61.2
 FAKE_EXE=$TOOLS_DIR/FAKE/tools/FAKE.exe
-DOTNET_VERSION=3.1.100
 DOTNET_INSTALLER_URL=https://dot.net/v1/dotnet-install.sh
 DOTNET_CHANNEL=LTS;
 DOCFX_VERSION=2.40.5
@@ -43,23 +42,6 @@ if [ ! -d "$TOOLS_DIR" ]; then
 fi
 
 ###########################################################################
-# INSTALL .NET CORE CLI
-###########################################################################
-
-echo "Installing .NET CLI..."
-if [ ! -d "$SCRIPT_DIR/.dotnet" ]; then
-  mkdir "$SCRIPT_DIR/.dotnet"
-fi
-curl -Lsfo "$SCRIPT_DIR/.dotnet/dotnet-install.sh" $DOTNET_INSTALLER_URL
-bash "$SCRIPT_DIR/.dotnet/dotnet-install.sh" --version $DOTNET_VERSION --channel $DOTNET_CHANNEL --install-dir .dotnet --no-path
-export PATH="$SCRIPT_DIR/.dotnet":$PATH
-export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-export DOTNET_CLI_TELEMETRY_OPTOUT=1
-chmod -R 0755 ".dotnet"
-"$SCRIPT_DIR/.dotnet/dotnet" --info
-
-
-###########################################################################
 # INSTALL NUGET
 ###########################################################################
 
@@ -72,7 +54,7 @@ if [ ! -f "$NUGET_EXE" ]; then
         exit 1
     fi
 fi
-
+mono "$NUGET_EXE" update -self
 ###########################################################################
 # INSTALL FAKE
 ###########################################################################
