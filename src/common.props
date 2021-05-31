@@ -224,6 +224,6 @@ Target Roslyn 3.8.0</PackageReleaseNotes>
     <XunitVersion>2.4.1</XunitVersion>
     <TestSdkVersion>16.10.0</TestSdkVersion>
     <RoslynVersion>3.9.0</RoslynVersion>
-    <NugetVersion>5.8.0</NugetVersion>
+    <NugetVersion>5.9.1</NugetVersion>
   </PropertyGroup>
 </Project>
