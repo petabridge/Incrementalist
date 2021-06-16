@@ -1,5 +1,4 @@
-#### 0.4.0 December 23 2020 ####
-New feature release: 0.4.0
+#### 0.5.0 June 16 2021 ####
+New feature release: 0.5.0
 
-* Added .NET 5 `dotnet tool` support in addition to .NET Core 3.1
-* Target Roslyn 3.8.0
+* Upgraded Roslyn, LibGit2, et al to latest.
