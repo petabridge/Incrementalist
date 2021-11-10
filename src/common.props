@@ -2,10 +2,11 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.4.0</VersionPrefix>
-    <PackageReleaseNotes>New feature release: 0.4.0
-Added .NET 5 `dotnet tool` support in addition to .NET Core 3.1
-Target Roslyn 3.8.0</PackageReleaseNotes>
+    <VersionPrefix>0.6.0</VersionPrefix>
+    <PackageReleaseNotes>New feature release: 0.6.0
+Upgraded to LibGit2 experimental in order to run on newer version of Ubuntu;
+Added .NET 6.0 `dotnet tool` support; and
+Upgraded to .NET 6 versions of binaries.</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
