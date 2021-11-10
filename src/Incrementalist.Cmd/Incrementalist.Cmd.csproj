@@ -4,7 +4,7 @@
     <ToolCommandName>incrementalist</ToolCommandName>
     <PackAsTool>true</PackAsTool>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <LangVersion>7.1</LangVersion>
     <Description>.NET Core global tool for determining how to run incremental builds based on the current Git diff.</Description>
