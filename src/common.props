@@ -223,7 +223,7 @@ Upgraded to .NET 6 versions of binaries.</PackageReleaseNotes>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
     <TestSdkVersion>17.0.0</TestSdkVersion>
-    <RoslynVersion>3.11.0</RoslynVersion>
+    <RoslynVersion>4.0.1</RoslynVersion>
     <NugetVersion>6.0.0</NugetVersion>
   </PropertyGroup>
 </Project>
