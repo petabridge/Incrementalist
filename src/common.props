@@ -1,11 +1,12 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright © 2015-2019 Petabridge</Copyright>
+    <Copyright>Copyright © 2015-2021 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.4.0</VersionPrefix>
-    <PackageReleaseNotes>New feature release: 0.4.0
-Added .NET 5 `dotnet tool` support in addition to .NET Core 3.1
-Target Roslyn 3.8.0</PackageReleaseNotes>
+    <VersionPrefix>0.6.0</VersionPrefix>
+    <PackageReleaseNotes>New feature release: 0.6.0
+Upgraded to LibGit2 experimental in order to run on newer version of Ubuntu;
+Added .NET 6.0 `dotnet tool` support; and
+Upgraded to .NET 6 versions of binaries.</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
@@ -13,7 +14,6 @@ Target Roslyn 3.8.0</PackageReleaseNotes>
     <PackageProjectUrl>
       https://github.com/petabridge/Incrementalist
     </PackageProjectUrl>
-    <PackageLicenseUrl>https://cmd.petabridge.com/articles/install/license.html</PackageLicenseUrl>
     <License>
                                        Apache License
                            Version 2.0, January 2004
@@ -203,7 +203,7 @@ Target Roslyn 3.8.0</PackageReleaseNotes>
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2015-2020 Petabridge, LLC
+   Copyright 2015-2021 Petabridge, LLC
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -222,8 +222,8 @@ Target Roslyn 3.8.0</PackageReleaseNotes>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>16.10.0</TestSdkVersion>
-    <RoslynVersion>3.10.0</RoslynVersion>
-    <NugetVersion>5.10.0</NugetVersion>
+    <TestSdkVersion>17.0.0</TestSdkVersion>
+    <RoslynVersion>3.11.0</RoslynVersion>
+    <NugetVersion>6.0.0</NugetVersion>
   </PropertyGroup>
 </Project>
