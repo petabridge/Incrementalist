@@ -224,6 +224,6 @@ Upgraded to .NET 6 versions of binaries.</PackageReleaseNotes>
     <XunitVersion>2.4.1</XunitVersion>
     <TestSdkVersion>17.0.0</TestSdkVersion>
     <RoslynVersion>3.11.0</RoslynVersion>
-    <NugetVersion>6.0.0</NugetVersion>
+    <NugetVersion>6.1.0</NugetVersion>
   </PropertyGroup>
 </Project>
