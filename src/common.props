@@ -222,7 +222,7 @@ Upgraded to .NET 6 versions of binaries.</PackageReleaseNotes>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <TestSdkVersion>17.0.0</TestSdkVersion>
+    <TestSdkVersion>17.1.0</TestSdkVersion>
     <RoslynVersion>3.11.0</RoslynVersion>
     <NugetVersion>6.0.0</NugetVersion>
   </PropertyGroup>
