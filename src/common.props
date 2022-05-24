@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Copyright>Copyright © 2015-2021 Petabridge</Copyright>
+    <Copyright>Copyright © 2015-2022 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
     <VersionPrefix>0.6.0</VersionPrefix>
     <PackageReleaseNotes>New feature release: 0.6.0

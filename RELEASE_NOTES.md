@@ -1,6 +1,5 @@
-#### 0.6.0 November 09 2021 ####
-New feature release: 0.6.0
+#### 0.7.0 May 24 2022 ####
 
-* Upgraded to LibGit2 experimental in order to run on newer version of Ubuntu;
-* Added .NET 6.0 `dotnet tool` support; and
-* Upgraded to .NET 6 versions of binaries.
+* Upgraded from Roslyn 3.11 to 4.2.0;
+* Upgraded NuGet.ProjectModel to 6.2.0; and
+* Upgraded Libgit2Sharp to 0.27.0-preview-0182.
