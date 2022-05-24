@@ -2,11 +2,10 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2022 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.6.0</VersionPrefix>
-    <PackageReleaseNotes>New feature release: 0.6.0
-Upgraded to LibGit2 experimental in order to run on newer version of Ubuntu;
-Added .NET 6.0 `dotnet tool` support; and
-Upgraded to .NET 6 versions of binaries.</PackageReleaseNotes>
+    <VersionPrefix>0.7.0</VersionPrefix>
+    <PackageReleaseNotes>Upgraded from Roslyn 3.11 to 4.2.0;
+Upgraded NuGet.ProjectModel to 6.2.0; and
+Upgraded Libgit2Sharp to 0.27.0-preview-0182.</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
