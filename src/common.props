@@ -223,6 +223,6 @@ Upgraded Libgit2Sharp to 0.27.0-preview-0182.</PackageReleaseNotes>
     <XunitVersion>2.4.2</XunitVersion>
     <TestSdkVersion>17.3.2</TestSdkVersion>
     <RoslynVersion>4.3.1</RoslynVersion>
-    <NugetVersion>6.2.0</NugetVersion>
+    <NugetVersion>6.3.1</NugetVersion>
   </PropertyGroup>
 </Project>
