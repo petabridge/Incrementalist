@@ -2,10 +2,11 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-2022 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>0.7.0</VersionPrefix>
-    <PackageReleaseNotes>Upgraded from Roslyn 3.11 to 4.2.0;
-Upgraded NuGet.ProjectModel to 6.2.0; and
-Upgraded Libgit2Sharp to 0.27.0-preview-0182.</PackageReleaseNotes>
+    <VersionPrefix>0.8.0</VersionPrefix>
+    <PackageReleaseNotes>Added .NET 7.0 support to `Incrementalist.Cmd`;
+Dropped .NET 5.0 support from `Incrementalist.Cmd`;
+Upgraded to Roslyn 4.4.0; and
+Upgraded to NuGet.ProjectModel 6.4.0.</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIconUrl>
       https://petabridge.com/images/logo.png
@@ -216,6 +217,7 @@ Upgraded Libgit2Sharp to 0.27.0-preview-0182.</PackageReleaseNotes>
    See the License for the specific language governing permissions and
    limitations under the License.
     </License>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
@@ -225,4 +227,7 @@ Upgraded Libgit2Sharp to 0.27.0-preview-0182.</PackageReleaseNotes>
     <RoslynVersion>4.4.0</RoslynVersion>
     <NugetVersion>6.4.0</NugetVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
+  </ItemGroup>
 </Project>

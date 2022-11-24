@@ -120,7 +120,7 @@ Target "RunTests" (fun _ ->
 Target "IntegrationTests" <| fun _ ->    
     let integrationTests = !! "./src/**/Incrementalist.Cmd.csproj"
 
-    let frameworks = ["netcoreapp3.1"; "net5.0"; "net6.0"]
+    let frameworks = ["netcoreapp3.1"; "net6.0"; "net7.0"]
 
     let runSingleProject project fwork =
 

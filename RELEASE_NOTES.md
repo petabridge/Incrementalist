@@ -1,5 +1,6 @@
-#### 0.7.0 May 24 2022 ####
+#### 0.8.0 November 24 2022 ####
 
-* Upgraded from Roslyn 3.11 to 4.2.0;
-* Upgraded NuGet.ProjectModel to 6.2.0; and
-* Upgraded Libgit2Sharp to 0.27.0-preview-0182.
+* Added .NET 7.0 support to `Incrementalist.Cmd`;
+* Dropped .NET 5.0 support from `Incrementalist.Cmd`;
+* Upgraded to Roslyn 4.4.0; and
+* Upgraded to NuGet.ProjectModel 6.4.0.
