@@ -52,8 +52,8 @@ Target "Clean" (fun _ ->
 )
 
 Target "AssemblyInfo" (fun _ ->
-    XmlPokeInnerText "./src/common.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion    
-    XmlPokeInnerText "./src/common.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
+    XmlPokeInnerText "./src/Directory.Build.props" "//Project/PropertyGroup/VersionPrefix" releaseNotes.AssemblyVersion    
+    XmlPokeInnerText "./src/Directory.Build.props" "//Project/PropertyGroup/PackageReleaseNotes" (releaseNotes.Notes |> String.concat "\n")
 )
 
 Target "RestorePackages" (fun _ ->
@@ -120,7 +120,7 @@ Target "RunTests" (fun _ ->
 Target "IntegrationTests" <| fun _ ->    
     let integrationTests = !! "./src/**/Incrementalist.Cmd.csproj"
 
-    let frameworks = ["netcoreapp3.1"; "net6.0"; "net7.0"]
+    let frameworks = ["net6.0"; "net7.0"; "net8.0"]
 
     let runSingleProject project fwork =
 
