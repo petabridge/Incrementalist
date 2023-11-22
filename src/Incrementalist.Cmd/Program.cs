@@ -59,6 +59,7 @@ namespace Incrementalist.Cmd
                 ResetTitle();
                 return result;
             }
+
             var exitCode = await RunIncrementalist(options);
 
             ResetTitle();
@@ -67,8 +68,15 @@ namespace Incrementalist.Cmd
 
         private static async Task<int> RunIncrementalist(SlnOptions options)
         {
-            var logger = new ConsoleLogger("Incrementalist",
-                (s, level) => level >= (options.Verbose ? LogLevel.Debug : LogLevel.Information), false);
+            // Create a logger factory instance
+            var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.SetMinimumLevel(options.Verbose ? LogLevel.Debug : LogLevel.Information)
+                    .AddConsole(loggerOptions => { });
+            });
+
+            // Create a logger from the factory
+            ILogger logger = loggerFactory.CreateLogger<Program>();
 
             try
             {
@@ -88,7 +96,8 @@ namespace Incrementalist.Cmd
 
                 if (!repoResult.foundRepo)
                 {
-                    Console.WriteLine("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
+                    Console.WriteLine("Unable to find Git repository located in {0}. Shutting down.",
+                        workingFolder.FullName);
                     return -3;
                 }
 
@@ -100,12 +109,14 @@ namespace Incrementalist.Cmd
                     options.GitBranch = $"origin/{options.GitBranch}";
                     if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                     {
-                        Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                        Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.",
+                            options.GitBranch);
                         Console.WriteLine("[Debug] Here are all of the currently known branches in this repository");
                         foreach (var b in repoResult.repo.Branches)
                         {
                             Console.WriteLine(b.FriendlyName);
                         }
+
                         return -4;
                     }
                 }
@@ -129,7 +140,8 @@ namespace Incrementalist.Cmd
 
         private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
-            var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName, TimeSpan.FromMinutes(options.TimeoutMinutes));
+            var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName,
+                TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
             var affectedFiles = (await emitTask.Run());
 
@@ -154,7 +166,8 @@ namespace Incrementalist.Cmd
         private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
             MSBuildWorkspace msBuild, ILogger logger)
         {
-            var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName, TimeSpan.FromMinutes(options.TimeoutMinutes));
+            var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
+                TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
             var affectedFiles = (await emitTask.Run()).ToList();
 
@@ -168,14 +181,16 @@ namespace Incrementalist.Cmd
         {
             if (affectedFilesCount == 0)
             {
-                Console.WriteLine("No changes detected by Incrementalist when analyzing {0}.", options.ListFolders ? "repository folders" : "solution");
+                Console.WriteLine("No changes detected by Incrementalist when analyzing {0}.",
+                    options.ListFolders ? "repository folders" : "solution");
                 return;
             }
 
             // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
-                Console.WriteLine("Detected {0} affected {1} - writing out to {2}", affectedFilesCount, options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
+                Console.WriteLine("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
+                    options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
 
