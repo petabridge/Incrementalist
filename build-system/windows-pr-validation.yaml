@@ -17,6 +17,6 @@ jobs:
 - template: azure-pipeline.template.yaml
   parameters:
     name: Windows
-    vmImage: 'windows-2019'
+    vmImage: 'windows-latest'
     scriptFileName: build.cmd
     scriptArgs: all
