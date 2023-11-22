@@ -51,7 +51,7 @@ PS> incrementalist -s ./src/Akka.sln -b dev --file ./bin/output/incrementalist.t
 
 Incrementalist works by analyizing the `git diff` of each commit in your working branch, comparing it to a base branch (i.e. `dev`) to determine which files have been modified in your changes, and then it uses Roslyn solution analysis to determine the graph of projects that were affected by these changes.
 
-![Incrementalist - how it works](docs/images/incrementalist-how-it-works.png)
+![Incrementalist - how it works](https://github.com/petabridge/Incrementalist/raw/dev/docs/images/incrementalist-how-it-works.png)
 
 This graph analysis produces a text file that looks like this (when we're running it on the [Akka.NET main repository](https://github.com/akkadotnet/akka.net)):
 
@@ -231,13 +231,7 @@ C:\> serve-docs.cmd
 This will use the built-in `docfx.console` binary that is installed as part of the NuGet restore process from executing any of the usual `build.cmd` or `build.sh` steps to preview the fully-rendered documentation. For best results, do this immediately after calling `build.cmd buildRelease`.
 
 ### Release Notes, Version Numbers, Etc
-This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`common.props`](src/common.props).
-
-If you add any new projects to the solution created with this template, be sure to add the following line to each one of them in order to ensure that you can take advantage of `common.props` for standardization purposes:
-
-```
-<Import Project="..\common.props" />
-```
+This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`Directory.Build.props`](src/Directory.Build.props).
 
 ### Code Signing via SignService
 This project uses [SignService](https://github.com/onovotny/SignService) to code-sign NuGet packages prior to publication. The `build.cmd` and `build.sh` scripts will automatically download the `SignClient` needed to execute code signing locally on the build agent, but it's still your responsibility to set up the SignService server per the instructions at the linked repository.
