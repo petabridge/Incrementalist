@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Description>Library for running incremental, Git-based builds and tests in .NET and .NET Core.</Description>
   </PropertyGroup>
 
