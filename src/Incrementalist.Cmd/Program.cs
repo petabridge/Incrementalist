@@ -169,11 +169,14 @@ namespace Incrementalist.Cmd
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
+            // TODO: need to emit strongly typed data structure here
             var affectedFiles = (await emitTask.Run()).ToList();
 
+            // TODO: need to emit strongly typed data structure here
             var affectedFilesStr =
                 string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
 
+            // TODO: need to return data structure AND THEN let the consumer decide what to do with it, writing files being but one option
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
         }
 

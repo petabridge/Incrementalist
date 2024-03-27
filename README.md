@@ -19,7 +19,15 @@ dotnet tool install --global Incrementalist.Cmd
 The following CLI options are available on Incrementalist, which you can print out at any time via the `incrementalist --help` command:
 
 ```
+build - runs dotnet build on all of the affected projects
+test - runs dotnet test on the affected projects, where relevant
+pack - runs dotnet pack on the affected projects, where relevant
+
   -s, --sln             The name of the Solution file to be analyzed by Incrementalist.
+
+  -c, --config          The MSBuild configuration to use. Defaults to "Debug."
+
+  --framework           The .NET runtime to use, when more than one is specified.
 
   -f, --file            If specified, writes the output to the named file.
 
