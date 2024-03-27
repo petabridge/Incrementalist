@@ -11,11 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(RoslynVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageReference Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
+    <PackageReference Include="CommandLineParser"/>
+    <PackageReference Include="Microsoft.Build.Locator"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
+    <PackageReference Include="NuGet.ProjectModel" />
   </ItemGroup>
 
   <ItemGroup>
