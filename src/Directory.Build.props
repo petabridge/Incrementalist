@@ -222,7 +222,7 @@ Upgraded to NuGet.ProjectModel 6.8.0.</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
-    <XunitVersion>2.4.2</XunitVersion>
+    <XunitVersion>2.7.0</XunitVersion>
     <TestSdkVersion>17.9.0</TestSdkVersion>
     <RoslynVersion>4.8.0</RoslynVersion>
     <NugetVersion>6.9.1</NugetVersion>
