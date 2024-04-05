@@ -21,7 +21,7 @@ namespace Incrementalist.ProjectSystem.Cmds
     {
         private readonly Solution _solution;
 
-        public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, Solution solution) : base(
+        public ComputeDependencyGraphCmd(ILogger logger, Solution solution, CancellationToken cancellationToken) : base(
             "ResolveSlnDependencyGraph", logger, cancellationToken)
         {
             _solution = solution;

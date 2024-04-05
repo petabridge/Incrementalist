@@ -49,7 +49,7 @@ namespace Incrementalist.Cmd.Commands
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd =
                 new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
-            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, slnFile);
+            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, slnFile, _cts.Token);
             var affectedFiles =
                 await createDependencyGraph.Process(
                     filterFilesCmd.Process(getFilesCmd.Process(Task.FromResult(slnFile))));
