@@ -37,7 +37,7 @@ namespace Incrementalist.Cmd.Commands
 
         public ILogger Logger { get; }
 
-        public async Task<Dictionary<string, ICollection<string>>> Run()
+        public async Task<SolutionAnalysisResult> Run()
         {
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);

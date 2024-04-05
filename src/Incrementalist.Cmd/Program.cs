@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -18,7 +17,6 @@ using LibGit2Sharp;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Incrementalist.Cmd
@@ -169,15 +167,15 @@ namespace Incrementalist.Cmd
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-            // TODO: need to emit strongly typed data structure here
-            var affectedFiles = (await emitTask.Run()).ToList();
+            var solutionAnalysisResult = await emitTask.Run();
 
             // TODO: need to emit strongly typed data structure here
             var affectedFilesStr =
-                string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
+                string.Join(Environment.NewLine, solutionAnalysisResult.AffectedGraphs.SelectMany(x => x.DependentProjects)
+                    .Select(x => string.Join(",", x.FilePath)));
 
             // TODO: need to return data structure AND THEN let the consumer decide what to do with it, writing files being but one option
-            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+            HandleAffectedFiles(options, affectedFilesStr, solutionAnalysisResult.Count);
         }
 
         private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount)
