@@ -38,26 +38,23 @@ namespace Incrementalist.ProjectSystem.Cmds
         {
             var fileDictObj = await previousTask;
 
-            var fileDict = (Dictionary<string, SlnFile>) fileDictObj;
-
-            var repoResult = GitRunner.FindRepository(_workingDirectory);
-            if (!repoResult.foundRepo)
+            var (repo, foundRepo) = GitRunner.FindRepository(_workingDirectory);
+            if (!foundRepo)
             {
-                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", _workingDirectory);
+                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", _workingDirectory);
                 return new Dictionary<string, SlnFile>();
             }
 
             // validate the target branch
-            if (!DiffHelper.HasBranch(repoResult.repo, _targetGitBranch))
+            if (!DiffHelper.HasBranch(repo, _targetGitBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", _targetGitBranch);
+                Logger.LogError("Current git repository doesn't have any branch named [{TargetBranch}]. Shutting down.", _targetGitBranch);
                 return new Dictionary<string, SlnFile>();
             }
 
-            var repo = repoResult.repo;
             var affectedFiles = DiffHelper.ChangedFiles(repo, _targetGitBranch).ToList();
 
-            var projectFiles = fileDict.Where(x => x.Value.FileType == FileType.Project).ToList();
+            var projectFiles = fileDictObj.Where(x => x.Value.FileType == FileType.Project).ToList();
             var projectFolders = projectFiles.ToLookup(x => Path.GetDirectoryName(x.Key), v => Tuple.Create(v.Key, v.Value));
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles.Select(pair => new SlnFileWithPath(pair.Key, pair.Value)));
 
@@ -65,9 +62,9 @@ namespace Incrementalist.ProjectSystem.Cmds
             var newDict = new Dictionary<string, SlnFile>();
             foreach (var file in affectedFiles)
             {
-                Logger.LogDebug("Affected file: {0}", file);
+                Logger.LogDebug("Affected file: {file}", file);
                 // this file is in the solution
-                if (fileDict.ContainsKey(file)) newDict[file] = fileDict[file];
+                if (fileDictObj.TryGetValue(file, out var value)) newDict[file] = value;
                 else
                 {
                     // special case - not all of the affected files were in the solution.
@@ -77,22 +74,20 @@ namespace Incrementalist.ProjectSystem.Cmds
                     if (TryFindSubFolder(projectFolders.Select(c => c.Key), directoryName, out var projectFolder))
                     {
                         var affectedProjects = projectFolders[projectFolder];
-                        foreach (var affectedProject in affectedProjects)
+                        foreach (var (projectPath, slnFile) in affectedProjects)
                         {
-                            var project = affectedProject.Item2;
-                            var projectPath = affectedProject.Item1;
                             Logger.LogInformation("Adding project {0} to the set of affected files because non-code file {1}, " +
                                                   "found inside same directory [{2}], was modified.", projectPath, file, directoryName);
-                            newDict[projectPath] = project;
+                            newDict[projectPath] = slnFile;
                         }
                     }
                 }
                 
                 // special case - if affected file was imported to some projects, need to mark importing project as affected
-                if (projectImports.ContainsKey(file))
+                if (projectImports.TryGetValue(file, out var import))
                 { 
                     // Mark all dependant as affected
-                    foreach (var dependentProject in projectImports[file].DependantProjects)
+                    foreach (var dependentProject in import.DependantProjects)
                     {
                         newDict[dependentProject.Path] = dependentProject.File;
                     }

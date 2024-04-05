@@ -11,6 +11,9 @@ using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.ProjectSystem
 {
+    /// <summary>
+    /// Metadata descriptor for a file in the solution.
+    /// </summary>
     public struct SlnFile
     {
         public SlnFile(FileType fileType, ProjectId projectId)

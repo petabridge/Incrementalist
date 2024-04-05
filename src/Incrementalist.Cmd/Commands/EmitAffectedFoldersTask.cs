@@ -38,14 +38,14 @@ namespace Incrementalist.Cmd.Commands
 
             if (!repoResult.foundRepo)
             {
-                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", Settings.WorkingDirectory);
+                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", Settings.WorkingDirectory);
                 return new Dictionary<string, ICollection<string>>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repoResult.repo, Settings.TargetBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", Settings.TargetBranch);
+                Logger.LogError("Current git repository doesn't have any branch named [{TargetBranch}]. Shutting down.", Settings.TargetBranch);
                 return new Dictionary<string, ICollection<string>>();
             }
 
