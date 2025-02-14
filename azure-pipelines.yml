@@ -1,0 +1,79 @@
+trigger:
+  branches:
+    include:
+      - dev
+      - master
+      - refs/tags/*
+
+pr:
+  branches:
+    include:
+      - dev
+      - master
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    strategy:
+      matrix:
+        Linux:
+          imageName: 'ubuntu-latest'
+        Windows:
+          imageName: 'windows-latest'
+        Mac:
+          imageName: 'macOS-latest'
+    
+    pool:
+      vmImage: $(imageName)
+    
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+        includePreviewVersions: false
+
+    - task: PowerShell@2
+      displayName: 'Build and Test'
+      inputs:
+        filePath: './build.ps1'
+        arguments: 'All'
+        pwsh: true
+      env:
+        SignClientUser: $(SignClientUser)
+        SignClientSecret: $(SignClientSecret)
+        NugetApiKey: $(NugetApiKey)
+        NugetSource: 'https://api.nuget.org/v3/index.json'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/TestResults/*.trx'
+        mergeTestResults: true
+        failTaskOnFailedTests: true
+        testRunTitle: '$(imageName) Test Results'
+      condition: succeededOrFailed()
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifacts'
+      inputs:
+        PathtoPublish: 'bin/nuget'
+        ArtifactName: 'packages'
+        publishLocation: 'Container'
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Documentation'
+      inputs:
+        PathtoPublish: 'docs/_site'
+        ArtifactName: 'docs'
+        publishLocation: 'Container'
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
