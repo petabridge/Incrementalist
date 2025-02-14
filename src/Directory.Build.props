@@ -220,10 +220,12 @@ Upgraded to NuGet.ProjectModel 6.8.0.</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
-    <XunitVersion>2.9.3</XunitVersion>
-    <TestSdkVersion>17.12.0</TestSdkVersion>
+    <XunitVersion>2.6.6</XunitVersion>
+    <TestSdkVersion>17.9.0</TestSdkVersion>
     <RoslynVersion>4.8.0</RoslynVersion>
-    <NugetVersion>6.13.1</NugetVersion>
+    <NugetVersion>6.8.0</NugetVersion>
+    <FluentAssertionsVersion>6.12.0</FluentAssertionsVersion>
+    <MicrosoftExtensionsLoggingVersion>8.0.0</MicrosoftExtensionsLoggingVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />

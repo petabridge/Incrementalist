@@ -5,8 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Libgit2Sharp"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
-    <PackageReference Include="Microsoft.Extensions.Logging"/>
+    <PackageReference Include="Libgit2Sharp" Version="0.30.0">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="$(MicrosoftExtensionsLoggingVersion)" />
   </ItemGroup>
 </Project>

@@ -41,8 +41,9 @@ namespace Incrementalist.Tests.Helpers
                     Directory.Delete(BasePath, true);
                     return;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
+                    // If we can't delete the directory, wait with exponential backoff and try again
                     if (attempt < MaxDeleteAttempts) Thread.Sleep(100 + (int) Math.Pow(10, attempt - 1));
                 }
         }
