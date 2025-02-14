@@ -8,8 +8,8 @@
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.7.8" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(RoslynVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.2" />
     <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
   </ItemGroup>
 
