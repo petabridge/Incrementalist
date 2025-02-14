@@ -61,8 +61,8 @@ namespace Incrementalist.Cmd.Commands
                 args.Add(_options.Framework);
             }
 
-            // Add no-restore if specified
-            if (_options.NoRestore)
+            // Add no-restore if specified and command supports it
+            if (_options.NoRestore && command != "clean")
             {
                 args.Add("--no-restore");
             }
