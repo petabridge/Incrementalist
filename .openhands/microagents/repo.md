@@ -25,3 +25,6 @@ Guidelines:
 - Any major changes in the CLI need to be documented in the `README.md`
 - Make sure the `Incrementalist.Cmd` tooling supports .NET 6 and newer
 - Make sure our standard copyright headers at the top of all files appear on any new files
+- Please follow JetBrains Rider coding standards in C#
+- Only use stable versions of any NuGet packages listed in `src/Directory.Packages.props` and only use the `dotnet` CLI to upgrade or add package versions (don't edit the `.props` or `.csproj` files directly)
+- Update the `.yaml` files in `build-system` if any major changes to the build system or `dotnet` runtime are needed.
