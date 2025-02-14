@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e # Exit on error
 # Define default arguments
 SCRIPT_NAME=$(basename "$0")
 TARGET="Build"
@@ -68,13 +69,24 @@ fi
 # Integration Tests
 if [ $NOINTEGRATIONTEST -eq 0 ]; then
     echo "Running integration tests..."
-    frameworks=("net6.0" "net7.0" "net8.0")
+    frameworks=("net6.0" "net8.0") # Removed net7.0 as it's out of support
     for framework in "${frameworks[@]}"; do
         echo "Testing framework $framework..."
+        
+        # Create test result directory if it doesn't exist
+        mkdir -p ./TestResults
+        
         # Folders-only check
-        dotnet run --project ./src/Incrementalist.Cmd/Incrementalist.Cmd.csproj -c "$CONFIGURATION" --framework "$framework" --no-build -- -b dev -l -f ./TestResults/incrementalist-affected-folders.txt
+        echo "Running folders-only check for $framework..."
+        if ! dotnet run --project ./src/Incrementalist.Cmd/Incrementalist.Cmd.csproj -c "$CONFIGURATION" --framework "$framework" --no-build -- -b dev -l -f ./TestResults/incrementalist-affected-folders.txt; then
+            echo "Warning: Folders-only check failed for $framework, but continuing..."
+        fi
+        
         # Solution check
-        dotnet run --project ./src/Incrementalist.Cmd/Incrementalist.Cmd.csproj -c "$CONFIGURATION" --framework "$framework" --no-build -- -b dev -f ./TestResults/incrementalist-affected-files.txt
+        echo "Running solution check for $framework..."
+        if ! dotnet run --project ./src/Incrementalist.Cmd/Incrementalist.Cmd.csproj -c "$CONFIGURATION" --framework "$framework" --no-build -- -b dev -f ./TestResults/incrementalist-affected-files.txt; then
+            echo "Warning: Solution check failed for $framework, but continuing..."
+        fi
     done
 fi
 

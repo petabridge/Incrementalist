@@ -32,15 +32,21 @@ namespace Incrementalist.Cmd
         {
             if (IsWindows) // changing console title is not supported on OS X or Linux
             {
+#pragma warning disable CA1416 // Platform compatibility validation
                 _originalTitle = Console.Title;
+#pragma warning restore CA1416
+#pragma warning disable CA1416 // Platform compatibility validation
                 Console.Title = StartupData.ConsoleWindowTitle;
+#pragma warning restore CA1416
             }
         }
 
         private static void ResetTitle()
         {
             if (IsWindows)
-                Console.Title = _originalTitle; // reset the console window title back
+#pragma warning disable CA1416 // Platform compatibility validation
+                Console.Title = _originalTitle;
+#pragma warning restore CA1416 // reset the console window title back
         }
 
         private static async Task<int> Main(string[] args)
