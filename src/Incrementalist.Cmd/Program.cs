@@ -174,6 +174,24 @@ namespace Incrementalist.Cmd
             var affectedFilesStr =
                 string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
 
+            // Execute dotnet commands if specified
+            if (options.DotnetCommands != null && options.DotnetCommands.Any())
+            {
+                logger.LogInformation($"Executing dotnet commands: {string.Join(", ", options.DotnetCommands)}");
+                var executor = new DotnetCommandExecutor(options, logger);
+                
+                foreach (var graph in affectedFiles)
+                {
+                    logger.LogInformation($"Processing dependency graph starting with {graph.Key}");
+                    var success = await executor.ExecuteCommandsOnProjects(graph.Value);
+                    if (!success)
+                    {
+                        logger.LogError("Command execution failed. Stopping further processing.");
+                        return;
+                    }
+                }
+            }
+
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
         }
 

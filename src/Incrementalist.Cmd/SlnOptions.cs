@@ -37,5 +37,17 @@ namespace Incrementalist.Cmd
 
         [Option('t', "timeout", Default = 2, HelpText = "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.")]
         public int TimeoutMinutes { get; set; }
+
+        [Option('c', "commands", Separator = ',', HelpText = "Comma-separated list of dotnet commands to execute on affected projects (e.g. 'build,test')")]
+        public string[] DotnetCommands { get; set; }
+
+        [Option("configuration", Default = "Release", HelpText = "Build configuration to use when executing dotnet commands")]
+        public string Configuration { get; set; }
+
+        [Option("framework", HelpText = "Target framework to use when executing dotnet commands")]
+        public string Framework { get; set; }
+
+        [Option("no-restore", Default = false, HelpText = "Skip the implicit restore when executing dotnet commands")]
+        public bool NoRestore { get; set; }
     }
 }
