@@ -18,5 +18,5 @@ jobs:
   parameters:
     name: Windows
     vmImage: 'windows-latest'
-    scriptFileName: build.cmd
-    scriptArgs: all
+    scriptFileName: ./build.ps1
+    scriptArgs: All

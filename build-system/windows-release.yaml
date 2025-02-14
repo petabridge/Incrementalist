@@ -25,11 +25,12 @@ steps:
   displayName: 'Use .NET 8 SDK 8.0.100'
   inputs:
     version:  8.0.100
-- task: BatchScript@1
-  displayName: 'FAKE Build'
+- task: PowerShell@2
+  displayName: 'Build and Publish NuGet Packages'
   inputs:
-    filename: build.cmd
-    arguments: 'Nuget nugetpublishurl=https://www.nuget.org/api/v2/package nugetkey=$(incrementalistKey)'
+    filePath: ./build.ps1
+    arguments: -Target Nuget -NugetSource https://www.nuget.org/api/v2/package -NugetApiKey $(incrementalistKey)
+    pwsh: true # Use PowerShell Core
 
 - task: GitHubRelease@0
   displayName: 'GitHub release (create)'

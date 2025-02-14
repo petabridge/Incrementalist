@@ -27,22 +27,13 @@ jobs:
         displayName: 'Use .NET 8 SDK 8.0.100'
         inputs:
           version:  8.0.100
-      # Linux or macOS
-      - task: Bash@3 
-        displayName: Linux / OSX Build
+      # Use PowerShell Core for all platforms
+      - task: PowerShell@2
+        displayName: Build
         inputs:
-          filePath: ${{ parameters.scriptFileName }}
-          arguments: ${{ parameters.scriptArgs }}
-        continueOnError: true
-        condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
-      # Windows
-      - task: BatchScript@1
-        displayName: Windows Build
-        inputs:
-          filename: ${{ parameters.scriptFileName }}
-          arguments: ${{ parameters.scriptArgs }}
-        continueOnError: true
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+          filePath: ./build.ps1
+          arguments: -Target ${{ parameters.scriptArgs }}
+          pwsh: true # Use PowerShell Core instead of Windows PowerShell
       - task: PublishTestResults@2
         inputs:
           testRunner: VSTest
