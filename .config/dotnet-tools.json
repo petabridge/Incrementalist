@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "signclient": {
+      "version": "1.0.82",
+      "commands": [
+        "SignClient"
+      ],
+      "rollForward": false
+    }
+  }
+}

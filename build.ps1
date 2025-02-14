@@ -164,16 +164,7 @@ function PublishNugetPackages {
     }
 }
 
-function BuildDocs {
-    Push-Location docs
-    try {
-        dotnet docfx docfx.json
-        if ($LASTEXITCODE -ne 0) { throw "Documentation generation failed" }
-    }
-    finally {
-        Pop-Location
-    }
-}
+
 
 function ShowHelp {
     Write-Host @"
@@ -187,7 +178,6 @@ Targets:
   * Nuget         - Creates NuGet packages
   * SignPackages  - Signs NuGet packages
   * PublishNuget  - Publishes NuGet packages
-  * Docs          - Generates documentation
   * All           - Runs all targets
   * Help          - Shows this help
 
@@ -240,11 +230,6 @@ switch ($Target.ToLower()) {
     "publishnuget" {
         PublishNugetPackages
     }
-    "docs" {
-        Clean
-        Build
-        BuildDocs
-    }
     "all" {
         Clean
         UpdateAssemblyInfo
@@ -255,7 +240,7 @@ switch ($Target.ToLower()) {
         CreateNugetPackages
         SignPackages
         PublishNugetPackages
-        BuildDocs
+
     }
     default { ShowHelp }
 }
