@@ -1,0 +1,78 @@
+trigger:
+  branches:
+    include:
+      - dev
+      - master
+      - feature/*
+      - release/*
+
+pr:
+  branches:
+    include:
+      - dev
+      - master
+      - release/*
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: petabridge/petabridge-build-system
+      endpoint: petabridge
+
+variables:
+  - group: signingSecrets #create this group with SignClientUser and SignClientSecret variables
+
+stages:
+  - stage: Build
+    jobs:
+      - template: build-system/azure-pipeline.template.yaml@self
+        parameters:
+          name: 'windows_build'
+          displayName: 'Windows Build'
+          vmImage: 'windows-latest'
+          scriptFileName: './build.cmd'
+          scriptArgs: 'all'
+          
+      - template: build-system/azure-pipeline.template.yaml@self
+        parameters:
+          name: 'linux_build'
+          displayName: 'Linux Build'
+          vmImage: 'ubuntu-latest'
+          scriptFileName: './build.sh'
+          scriptArgs: 'all'
+
+  - stage: SignPackages
+    condition: and(succeeded('Build'), not(eq(variables['build.reason'], 'PullRequest')))
+    jobs:
+      - job: SignPackages
+        pool:
+          vmImage: windows-latest
+        steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'nuget'
+              downloadPath: '$(Build.ArtifactStagingDirectory)'
+          
+          - task: UseDotNet@2
+            inputs:
+              version: '8.0.x'
+          
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'restore'
+          
+          - task: PowerShell@2
+            inputs:
+              filePath: 'scripts/sign-nuget.ps1'
+              arguments: '-SignClientUser "$(SignClientUser)" -SignClientSecret "$(SignClientSecret)"'
+            displayName: 'Authenticode Sign NuGet Packages'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)/nuget'
+              artifactName: 'signed-nuget'

@@ -1,114 +1,87 @@
 #!/usr/bin/env bash
-##########################################################################
-# This is the Fake bootstrapper script for Linux and OS X.
-##########################################################################
-
-# Define directories.
-SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-TOOLS_DIR=$SCRIPT_DIR/tools
-SIGNCLIENT_DIR=$TOOLS_DIR/signclient
-NUGET_EXE=$TOOLS_DIR/nuget.exe
-NUGET_URL=https://dist.nuget.org/win-x86-commandline/v4.0.0/nuget.exe
-FAKE_VERSION=4.61.2
-FAKE_EXE=$TOOLS_DIR/FAKE/tools/FAKE.exe
-DOTNET_INSTALLER_URL=https://dot.net/v1/dotnet-install.sh
-DOTNET_CHANNEL=LTS;
-DOCFX_VERSION=2.40.5
-DOCFX_EXE=$TOOLS_DIR/docfx.console/tools/docfx.exe
-
-# Define default arguments.
-TARGET="Default"
+# Define default arguments
+SCRIPT_NAME=$(basename "$0")
+TARGET="Build"
 CONFIGURATION="Release"
 VERBOSITY="verbose"
 DRYRUN=
-SCRIPT_ARGUMENTS=()
+NOTEST=0
+NOINTEGRATIONTEST=0
+NOPACK=0
+NOSIGN=0
 
-# Parse arguments.
-for i in "$@"; do
-    case $1 in
-        -t|--target) TARGET="$2"; shift ;;
-        -c|--configuration) CONFIGURATION="$2"; shift ;;
-        -v|--verbosity) VERBOSITY="$2"; shift ;;
-        -d|--dryrun) DRYRUN="-dryrun" ;;
-        --) shift; SCRIPT_ARGUMENTS+=("$@"); break ;;
-        *) SCRIPT_ARGUMENTS+=("$1") ;;
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -t|--target)
+            TARGET="$2"
+            shift 2
+            ;;
+        -c|--configuration)
+            CONFIGURATION="$2"
+            shift 2
+            ;;
+        --notest)
+            NOTEST=1
+            shift
+            ;;
+        --nointegrationtest)
+            NOINTEGRATIONTEST=1
+            shift
+            ;;
+        --nopack)
+            NOPACK=1
+            shift
+            ;;
+        --nosign)
+            NOSIGN=1
+            shift
+            ;;
+        *)
+            echo "Invalid argument: $1"
+            exit 1
+            ;;
     esac
-    shift
 done
 
-# Make sure the tools folder exist.
-if [ ! -d "$TOOLS_DIR" ]; then
-  mkdir "$TOOLS_DIR"
+# Clean
+echo "Cleaning..."
+dotnet clean -c "$CONFIGURATION"
+rm -rf ./bin
+rm -rf ./TestResults
+rm -rf ./PerfResults
+
+# Restore tools
+echo "Restoring .NET tools..."
+dotnet tool restore
+
+# Build
+echo "Building..."
+dotnet build -c "$CONFIGURATION"
+
+# Tests
+if [ $NOTEST -eq 0 ]; then
+    echo "Running tests..."
+    dotnet test -c "$CONFIGURATION" --no-build --logger:trx --logger:"console;verbosity=normal" --results-directory ./TestResults
 fi
 
-###########################################################################
-# INSTALL NUGET
-###########################################################################
-
-# Download NuGet if it does not exist.
-if [ ! -f "$NUGET_EXE" ]; then
-    echo "Downloading NuGet..."
-    curl -Lsfo "$NUGET_EXE" $NUGET_URL
-    if [ $? -ne 0 ]; then
-        echo "An error occured while downloading nuget.exe."
-        exit 1
-    fi
-fi
-mono "$NUGET_EXE" update -self
-###########################################################################
-# INSTALL FAKE
-###########################################################################
-
-if [ ! -f "$FAKE_EXE" ]; then
-    mono "$NUGET_EXE" install Fake -ExcludeVersion -Version $FAKE_VERSION -OutputDirectory "$TOOLS_DIR"
-    if [ $? -ne 0 ]; then
-        echo "An error occured while installing Cake."
-        exit 1
-    fi
+# Integration Tests
+if [ $NOINTEGRATIONTEST -eq 0 ]; then
+    echo "Running integration tests..."
+    frameworks=("net6.0" "net7.0" "net8.0")
+    for framework in "${frameworks[@]}"; do
+        echo "Testing framework $framework..."
+        # Folders-only check
+        dotnet run --project ./src/Incrementalist.Cmd/Incrementalist.Cmd.csproj -c "$CONFIGURATION" --framework "$framework" --no-build -- -b dev -l -f ./TestResults/incrementalist-affected-folders.txt
+        # Solution check
+        dotnet run --project ./src/Incrementalist.Cmd/Incrementalist.Cmd.csproj -c "$CONFIGURATION" --framework "$framework" --no-build -- -b dev -f ./TestResults/incrementalist-affected-files.txt
+    done
 fi
 
-# Make sure that Fake has been installed.
-if [ ! -f "$FAKE_EXE" ]; then
-    echo "Could not find Fake.exe at '$FAKE_EXE'."
-    exit 1
+# Pack
+if [ $NOPACK -eq 0 ]; then
+    echo "Creating NuGet packages..."
+    find ./src -name "*.csproj" -not -name "*Tests*" -exec dotnet pack {} -c "$CONFIGURATION" --no-build --include-symbols -o ./bin/nuget \;
 fi
 
-###########################################################################
-# INSTALL DOCFX
-###########################################################################
-if [ ! -f "$DOCFX_EXE" ]; then
-    mono "$NUGET_EXE" install docfx.console -ExcludeVersion -Version $DOCFX_VERSION -OutputDirectory "$TOOLS_DIR"
-    if [ $? -ne 0 ]; then
-        echo "An error occured while installing DocFx."
-        exit 1
-    fi
-fi
-
-# Make sure that DocFx has been installed.
-if [ ! -f "$DOCFX_EXE" ]; then
-    echo "Could not find docfx.exe at '$DOCFX_EXE'."
-    exit 1
-fi
-
-###########################################################################
-# INSTALL SignTool
-###########################################################################
-if [ ! -f "$SIGNTOOL_EXE" ]; then
-    "$SCRIPT_DIR/.dotnet/dotnet" tool install SignClient --version 1.0.82 --tool-path "$SIGNCLIENT_DIR"
-    if [ $? -ne 0 ]; then
-        echo "SignClient already installed."
-    fi
-fi
-
-
-###########################################################################
-# WORKAROUND FOR MONO
-###########################################################################
-export FrameworkPathOverride=/usr/lib/mono/4.5/
-
-###########################################################################
-# RUN BUILD SCRIPT
-###########################################################################
-
-# Start Fake
-exec mono "$FAKE_EXE" build.fsx "${SCRIPT_ARGUMENTS[@]}" --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN
+echo "Build completed successfully!"
