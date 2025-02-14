@@ -18,6 +18,8 @@ If we are making changes to the build system, make sure those changes are always
 - `.gitub`
 - `.azure`
 
+Always prefer re-using the same YAML files that are already in-place (if they exist - please check first) over creating new ones - that way CI/CD will validate our PRs correctly while we're making changes to them.
+
 Make sure you test all of the instructions we give to the CI/CD system locally before making any changes.
 
 Avoid writing large scripts to run CI/CD - we prefer a YAML file that is composed of simpler instructions and individual component parts. Only write a script when you need to do something more complicated than calling a simple instruction.
