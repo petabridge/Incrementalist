@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Incrementalist.ProjectSystem
 {
@@ -31,10 +32,10 @@ namespace Incrementalist.ProjectSystem
         {
             if (string.IsNullOrEmpty(searchFilter))
                 return Directory.EnumerateFileSystemEntries(folderPath, DefaultSolutionFilter,
-                    searchOption ?? SearchOption.AllDirectories);
+                    searchOption ?? SearchOption.AllDirectories).OrderBy(Path.GetFileName);
 
             return Directory.EnumerateFileSystemEntries(folderPath, searchFilter,
-                searchOption ?? SearchOption.AllDirectories);
+                searchOption ?? SearchOption.AllDirectories).OrderBy(Path.GetFileName);
         }
     }
 }

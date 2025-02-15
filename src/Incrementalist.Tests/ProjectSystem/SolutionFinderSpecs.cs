@@ -121,5 +121,23 @@ namespace Incrementalist.Tests.ProjectSystem
             topDirSolutions.Should().HaveCount(1);
             topDirSolutions.First().Should().EndWith("Solution1.sln");
         }
+
+        [Fact(DisplayName = "Should process multiple solutions in deterministic order")]
+        public void Should_Process_Multiple_Solutions_In_Order()
+        {
+            // Arrange
+            var solutionContent = "dummy solution content";
+            _repository.WriteFile("A.Solution.sln", solutionContent)
+                      .WriteFile("B.Solution.sln", solutionContent)
+                      .WriteFile("C.Solution.sln", solutionContent);
+
+            // Act
+            var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
+
+            // Assert
+            solutions.Should().HaveCount(3);
+            // Verify solutions are returned in alphabetical order
+            solutions.Select(s => Path.GetFileName(s)).Should().BeInAscendingOrder();
+        }
     }
 } 
