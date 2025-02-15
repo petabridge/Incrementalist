@@ -19,6 +19,12 @@ dotnet tool install --global Incrementalist.Cmd
 Here are some common use cases to get you started:
 
 ```shell
+# Get list of affected projects and save to file (for use in build scripts)
+incrementalist -s ./src/MySolution.sln -b dev -f ./affected-projects.txt
+
+# Get list of affected folders and save to file
+incrementalist -s ./src/MySolution.sln -b dev -l -f ./affected-folders.txt
+
 # Build only the affected projects in Release configuration
 incrementalist -s ./src/MySolution.sln -b dev -r -- build -c Release --nologo
 
@@ -27,7 +33,25 @@ incrementalist -s ./src/MySolution.sln -b dev -r -- test -c Release --no-build -
 
 # Run tests with code coverage collection
 incrementalist -s ./src/MySolution.sln -b dev -r -- test -c Release --no-build --nologo /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/
+
+# Save affected projects to file AND run commands against them
+incrementalist -s ./src/MySolution.sln -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
 ```
+
+### Output Files
+Incrementalist can generate two types of output files using the `-f, --file` option:
+
+1. **Project Lists** (default mode): Contains comma-separated lists of affected .NET project files
+   ```
+   D:\src\Project1\Project1.csproj,D:\src\Project2\Project2.csproj
+   ```
+
+2. **Folder Lists** (with `-l, --folders-only`): Contains comma-separated lists of affected folders
+   ```
+   D:\src\Project1,D:\src\Project2\SubFolder
+   ```
+
+These output files can be used in build scripts, CI/CD pipelines, or any other automation tools. You can combine file output with command execution (`-r`) to both save the affected items list and run commands against them. Capturing these files as build artifacts can be useful for understanding what dependency graphs the tool detected and executed.
 
 ### `Incrementalist.Cmd` CLI Options
 
