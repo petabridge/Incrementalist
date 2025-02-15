@@ -68,6 +68,7 @@ namespace Incrementalist.Tests.ProjectSystem
         {
             // Arrange
             var solutionContent = "dummy solution content";
+            var expectedPath = Path.Join("src", "MySolution.sln");
             Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src"));
             _repository.WriteFile("src/MySolution.sln", solutionContent);
 
@@ -76,7 +77,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             solutions.Should().HaveCount(1);
-            solutions.First().Should().EndWith("src/MySolution.sln");
+            solutions.First().Should().EndWith(expectedPath);
         }
 
         [Fact(DisplayName = "Should return empty list when no solutions found")]
