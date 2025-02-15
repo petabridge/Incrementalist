@@ -40,10 +40,17 @@ namespace Incrementalist.Tests.Commands
         {
             // Arrange
             var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
-            var task = new RunDotNetCommandTask(settings, _logger, new[] { "--version" }, true, false);
+            var projectPath = Path.Combine(_repository.BasePath, "test.csproj");
+            File.WriteAllText(projectPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+</Project>");
+            var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "-c", "Release", "--nologo" }, true, false);
 
             // Act
-            var result = await task.Run(new[] { "dummy.csproj" });
+            var result = await task.Run(new[] { projectPath });
 
             // Assert
             result.Should().Be(0);
@@ -68,8 +75,19 @@ namespace Incrementalist.Tests.Commands
         {
             // Arrange
             var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
-            var task = new RunDotNetCommandTask(settings, _logger, new[] { "--version" }, true, true);
-            var projects = new[] { "project1.csproj", "project2.csproj", "project3.csproj" };
+            var projects = new List<string>();
+            for (int i = 1; i <= 3; i++)
+            {
+                var projectPath = Path.Combine(_repository.BasePath, $"test{i}.csproj");
+                File.WriteAllText(projectPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+</Project>");
+                projects.Add(projectPath);
+            }
+            var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "-c", "Release", "--nologo" }, true, true);
 
             // Act
             var result = await task.Run(projects);
