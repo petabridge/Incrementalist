@@ -38,12 +38,6 @@ namespace Incrementalist.Cmd.Commands
             var projects = affectedProjects.ToList();
             if (!projects.Any())
             {
-                var repoResult = GitRunner.FindRepository(_settings.WorkingDirectory);
-                if (repoResult.foundRepo && DiffHelper.IsCurrentBranch(repoResult.repo, _settings.TargetBranch))
-                {
-                    _logger.LogInformation("No changes detected (running on same branch as target branch).");
-                    return 0;
-                }
                 _logger.LogInformation("No affected projects to run commands against.");
                 return 0;
             }
