@@ -20,22 +20,26 @@ Here are some common use cases to get you started:
 
 ```shell
 # Get list of affected projects and save to file (for use in build scripts)
+# If in a directory with a single .sln file, no need to specify it
+incrementalist -b dev -f ./affected-projects.txt
+
+# If you need to specify the solution explicitly
 incrementalist -s ./src/MySolution.sln -b dev -f ./affected-projects.txt
 
 # Get list of affected folders and save to file
-incrementalist -s ./src/MySolution.sln -b dev -l -f ./affected-folders.txt
+incrementalist -b dev -l -f ./affected-folders.txt
 
 # Build only the affected projects in Release configuration
-incrementalist -s ./src/MySolution.sln -b dev -r -- build -c Release --nologo
+incrementalist -b dev -r -- build -c Release --nologo
 
 # Run tests only for affected projects
-incrementalist -s ./src/MySolution.sln -b dev -r -- test -c Release --no-build --nologo
+incrementalist -b dev -r -- test -c Release --no-build --nologo
 
 # Run tests with code coverage collection
-incrementalist -s ./src/MySolution.sln -b dev -r -- test -c Release --no-build --nologo /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/
+incrementalist -b dev -r -- test -c Release --no-build --nologo /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/
 
 # Save affected projects to file AND run commands against them
-incrementalist -s ./src/MySolution.sln -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
+incrementalist -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
 ```
 
 ### Output Files
@@ -58,7 +62,8 @@ These output files can be used in build scripts, CI/CD pipelines, or any other a
 The following CLI options are available on Incrementalist, which you can print out at any time via the `incrementalist --help` command:
 
 ```
-  -s, --sln             The name of the Solution file to be analyzed by Incrementalist.
+  -s, --sln             Optional. The name of the Solution file to be analyzed by Incrementalist.
+                        If not specified, will use any .sln file found in the current directory.
 
   -f, --file            If specified, writes the output to the named file.
 
@@ -87,10 +92,15 @@ The following CLI options are available on Incrementalist, which you can print o
   --version             Display version information.
 ```
 
-To run a standard Incrementalist build on a project like Akka.NET, we do the following:
+To run a standard Incrementalist build on a project like Akka.NET, we can do either of these:
 
 ```shell
-PS> incrementalist -s ./src/Akka.sln -b dev --file ./bin/output/incrementalist.txt
+# Specify solution explicitly
+incrementalist -s ./src/Akka.sln -b dev --file ./bin/output/incrementalist.txt
+
+# Or let Incrementalist find the solution in the current directory
+cd ./src
+incrementalist -b dev --file ./bin/output/incrementalist.txt
 ```
 
 ### Running Commands Against Affected Projects
