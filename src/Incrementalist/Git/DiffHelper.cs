@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LibGit2Sharp;
+using System;
 
 namespace Incrementalist.Git
 {
@@ -25,6 +26,23 @@ namespace Incrementalist.Git
         public static bool HasBranch(Repository repo, string targetBranch)
         {
             return repo.Branches.Any(x => x.FriendlyName.Equals(targetBranch));
+        }
+
+        /// <summary>
+        /// Checks if the specified branch is the current branch.
+        /// </summary>
+        public static bool IsCurrentBranch(Repository repo, string targetBranch)
+        {
+            // Handle HEAD reference explicitly
+            if (targetBranch.Equals("HEAD", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Normalize branch names by removing origin/ prefix if present
+            var currentBranch = repo.Head.FriendlyName;
+            var normalizedTarget = targetBranch.Replace("origin/", "");
+            var normalizedCurrent = currentBranch.Replace("origin/", "");
+
+            return normalizedCurrent.Equals(normalizedTarget, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
