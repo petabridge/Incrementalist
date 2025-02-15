@@ -52,13 +52,24 @@ namespace Incrementalist.Cmd
             var incrementalistArgs = splitIndex >= 0 ? args.Take(splitIndex).ToArray() : args;
             var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : Array.Empty<string>();
 
+#if DEBUG
+            // Debug logging
+            Console.WriteLine("All args: " + string.Join(" ", args));
+            Console.WriteLine("Split index: " + splitIndex);
+            Console.WriteLine("Incrementalist args: " + string.Join(" ", incrementalistArgs));
+            Console.WriteLine("Dotnet args: " + string.Join(" ", dotnetArgs));
+#endif
+
             SlnOptions options = null;
-            var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
-            {
-                options = r;
-                options.DotNetArgs = dotnetArgs;
-                return 0;
-            }, _ => 1);
+            var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs)
+                .MapResult(r =>
+                {
+                    options = r;
+                    options.DotNetArgs = dotnetArgs; // Store the dotnet args separately
+                    if (dotnetArgs.Length > 0) // Automatically set RunCommand to true if we have dotnet args
+                        options.RunCommand = true;
+                    return 0;
+                }, _ => 1);
 
             if (result != 0)
             {
