@@ -3,10 +3,10 @@
     <ToolCommandName>incrementalist</ToolCommandName>
     <PackAsTool>true</PackAsTool>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <RollForward>LatestMajor</RollForward>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>latest</LangVersion>
     <Description>.NET Core global tool for determining how to run incremental builds based on the current Git diff.</Description>
   </PropertyGroup>
 

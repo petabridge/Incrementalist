@@ -120,7 +120,7 @@ Target "RunTests" (fun _ ->
 Target "IntegrationTests" <| fun _ ->    
     let integrationTests = !! "./src/**/Incrementalist.Cmd.csproj"
 
-    let frameworks = ["net6.0"; "net7.0"; "net8.0"]
+    let frameworks = ["net8.0"] // Only .NET 8
 
     let runSingleProject project fwork =
         // First, build the solution to ensure we have all the necessary artifacts
