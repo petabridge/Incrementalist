@@ -131,7 +131,7 @@ namespace Incrementalist.Cmd.Commands
                 }
             }
 
-            if (failedProjects.Any())
+            if (failedProjects.Count != 0)
             {
                 _logger.LogError("Command failed for the following projects: {0}", string.Join(", ", failedProjects));
                 return 1;

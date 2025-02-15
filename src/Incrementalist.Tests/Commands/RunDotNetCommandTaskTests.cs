@@ -41,7 +41,7 @@ namespace Incrementalist.Tests.Commands
             // Arrange
             var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
             var projectPath = Path.Combine(_repository.BasePath, "test.csproj");
-            File.WriteAllText(projectPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+            await File.WriteAllTextAsync(projectPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
@@ -79,7 +79,7 @@ namespace Incrementalist.Tests.Commands
             for (int i = 1; i <= 3; i++)
             {
                 var projectPath = Path.Combine(_repository.BasePath, $"test{i}.csproj");
-                File.WriteAllText(projectPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+                await File.WriteAllTextAsync(projectPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>

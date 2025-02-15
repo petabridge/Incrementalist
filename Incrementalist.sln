@@ -13,6 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 		build.fsx = build.fsx
 		build.ps1 = build.ps1
 		build.sh = build.sh
+		NuGet.config = NuGet.config
+		src\Directory.Build.props = src\Directory.Build.props
+		src\Directory.Packages.props = src\Directory.Packages.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Incrementalist.Cmd", "src\Incrementalist.Cmd\Incrementalist.Cmd.csproj", "{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}"
