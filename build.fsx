@@ -123,9 +123,9 @@ Target "IntegrationTests" <| fun _ ->
     let frameworks = ["net6.0"; "net7.0"; "net8.0"]
 
     let runSingleProject project fwork =
-
         let folderOnlyArgs = sprintf "run --project %s -c %s --framework %s --no-build -- -b dev -l -f %s" project configuration fwork (outputTests @@ "incrementalist-affected-folders.txt")
         let slnArgs = sprintf "run --project %s -c %s --framework %s -- -b dev -f %s" project configuration fwork (outputTests @@ "incrementalist-affected-files.txt")
+        let runCommandArgs = sprintf "run --project %s -c %s --framework %s -- -b dev -r -- --version" project configuration fwork
 
         let execWithArgs args =
             let result = ExecProcess(fun info ->
@@ -139,6 +139,23 @@ Target "IntegrationTests" <| fun _ ->
 
         log "Running Incrementalist solution check"
         execWithArgs slnArgs
+
+        log "Running Incrementalist run command check"
+        execWithArgs runCommandArgs
+
+        // Test parallel execution
+        let parallelRunArgs = sprintf "run --project %s -c %s --framework %s -- -b dev -r --parallel -- --version" project configuration fwork
+        log "Running Incrementalist parallel run command check"
+        execWithArgs parallelRunArgs
+
+        // Test continue-on-error behavior
+        let errorRunArgs = sprintf "run --project %s -c %s --framework %s -- -b dev -r --continue-on-error=false -- invalid-command" project configuration fwork
+        log "Running Incrementalist error handling check"
+        let errorResult = ExecProcess(fun info ->
+            info.FileName <- "dotnet"
+            info.WorkingDirectory <- __SOURCE_DIRECTORY__
+            info.Arguments <- errorRunArgs) (TimeSpan.FromMinutes 5.0)
+        if errorResult = 0 then failwithf "Expected Incrementalist to fail with invalid command"
 
     for integrationTest in integrationTests do
       for framework in frameworks do
