@@ -47,10 +47,16 @@ namespace Incrementalist.Cmd
         {
             SetTitle();
 
+            // Split args at -- to separate incrementalist args from dotnet args
+            var splitIndex = Array.IndexOf(args, "--");
+            var incrementalistArgs = splitIndex >= 0 ? args.Take(splitIndex).ToArray() : args;
+            var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : Array.Empty<string>();
+
             SlnOptions options = null;
-            var result = Parser.Default.ParseArguments<SlnOptions>(args).MapResult(r =>
+            var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
             {
                 options = r;
+                options.DotNetArgs = dotnetArgs;
                 return 0;
             }, _ => 1);
 
@@ -171,10 +177,21 @@ namespace Incrementalist.Cmd
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
             var affectedFiles = (await emitTask.Run()).ToList();
 
-            var affectedFilesStr =
-                string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
+            if (options.RunCommand && options.DotNetArgs.Length > 0)
+            {
+                var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
+                    options.ContinueOnError, options.RunInParallel);
+                var exitCode = await runTask.Run(affectedFiles.SelectMany(x => x.Value));
+                if (exitCode != 0)
+                    throw new Exception($"Command execution failed with exit code {exitCode}");
+            }
+            else
+            {
+                var affectedFilesStr =
+                    string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
 
-            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+                HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+            }
         }
 
         private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount)

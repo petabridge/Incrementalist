@@ -86,7 +86,7 @@ namespace Incrementalist.Tests.Helpers
         public DisposableRepository CheckoutBranch(string branchName)
         {
             var branch = Repository.Branches[branchName];
-            var currentBranch = Commands.Checkout(Repository, branch);
+            var currentBranch = LibGit2Sharp.Commands.Checkout(Repository, branch);
             return this;
         }
 
@@ -100,7 +100,7 @@ namespace Incrementalist.Tests.Helpers
         {
             var filePath = Path.Combine(BasePath, fileName);
             File.WriteAllText(filePath, fileText);
-            Commands.Stage(Repository, filePath);
+            LibGit2Sharp.Commands.Stage(Repository, filePath);
             return this;
         }
 
@@ -121,7 +121,7 @@ namespace Incrementalist.Tests.Helpers
         {
             var filePath = Path.Combine(BasePath, fileName);
             File.Delete(fileName);
-            Commands.Remove(Repository, filePath);
+            LibGit2Sharp.Commands.Remove(Repository, filePath);
             return this;
         }
 

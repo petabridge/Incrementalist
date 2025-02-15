@@ -37,5 +37,17 @@ namespace Incrementalist.Cmd
 
         [Option('t', "timeout", Default = 2, HelpText = "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.")]
         public int TimeoutMinutes { get; set; }
+
+        [Option('r', "run", HelpText = "Run a dotnet CLI command against affected projects. All arguments after -- will be passed to dotnet.", Required = false)]
+        public bool RunCommand { get; set; }
+
+        [Option("continue-on-error", HelpText = "When running commands, continue executing even if some commands fail.", Default = true)]
+        public bool ContinueOnError { get; set; }
+
+        [Option("parallel", HelpText = "When running commands, execute them in parallel.", Default = false)]
+        public bool RunInParallel { get; set; }
+
+        // Property to store dotnet CLI arguments that come after --
+        public string[] DotNetArgs { get; set; }
     }
 }
