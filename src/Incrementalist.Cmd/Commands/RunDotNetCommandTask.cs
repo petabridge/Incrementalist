@@ -48,28 +48,34 @@ namespace Incrementalist.Cmd.Commands
             
             async Task<bool> RunCommand(string project)
             {
+                // For dotnet CLI commands like 'build', 'test', etc., the project path comes last
+                var args = string.Join(" ", _dotnetArgs);
+                if (!args.Contains("--project") && !args.Contains("-p"))
+                    args = $"{args} \"{project}\"";
+
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "dotnet",
-                        Arguments = $"{string.Join(" ", _dotnetArgs)} {project}",
+                        Arguments = args,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
-                        RedirectStandardError = true
+                        RedirectStandardError = true,
+                        WorkingDirectory = _settings.WorkingDirectory
                     }
                 };
 
-                process.OutputDataReceived += (sender, args) =>
+                process.OutputDataReceived += (sender, eventArgs) =>
                 {
-                    if (!string.IsNullOrEmpty(args.Data))
-                        _logger.LogInformation("[{0}] {1}", project, args.Data);
+                    if (!string.IsNullOrEmpty(eventArgs.Data))
+                        _logger.LogInformation("[{0}] {1}", project, eventArgs.Data);
                 };
 
-                process.ErrorDataReceived += (sender, args) =>
+                process.ErrorDataReceived += (sender, eventArgs) =>
                 {
-                    if (!string.IsNullOrEmpty(args.Data))
-                        _logger.LogError("[{0}] {1}", project, args.Data);
+                    if (!string.IsNullOrEmpty(eventArgs.Data))
+                        _logger.LogError("[{0}] {1}", project, eventArgs.Data);
                 };
 
                 try
@@ -102,8 +108,12 @@ namespace Incrementalist.Cmd.Commands
             {
                 var tasks = projects.Select(async project =>
                 {
-                    if (!await RunCommand(project) && !_continueOnError)
+                    if (!await RunCommand(project))
+                    {
                         failedProjects.Add(project);
+                        if (!_continueOnError)
+                            return;
+                    }
                 });
                 
                 await Task.WhenAll(tasks);
@@ -112,10 +122,11 @@ namespace Incrementalist.Cmd.Commands
             {
                 foreach (var project in projects)
                 {
-                    if (!await RunCommand(project) && !_continueOnError)
+                    if (!await RunCommand(project))
                     {
                         failedProjects.Add(project);
-                        break;
+                        if (!_continueOnError)
+                            break;
                     }
                 }
             }

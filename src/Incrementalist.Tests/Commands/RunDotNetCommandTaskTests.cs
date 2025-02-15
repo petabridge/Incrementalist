@@ -54,7 +54,7 @@ namespace Incrementalist.Tests.Commands
         {
             // Arrange
             var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
-            var task = new RunDotNetCommandTask(settings, _logger, new[] { "invalid-command" }, true, false);
+            var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "--invalid-option" }, true, false);
 
             // Act
             var result = await task.Run(new[] { "dummy.csproj" });
