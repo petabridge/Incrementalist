@@ -56,3 +56,131 @@ jobs:
         failOnStderr: true
         displayName: 'If above is partially succeeded, then fail'
         condition: eq(variables['Agent.JobStatus'], 'SucceededWithIssues')
+
+# Starter pipeline
+trigger:
+  branches:
+    include:
+      - master
+      - dev
+      - "feature/*"
+      - "release-*"
+  paths:
+    exclude:
+      - '**/*.md'
+      - 'docs/*'
+
+variables:
+  - name: buildConfiguration
+    value: 'Release'
+
+stages:
+- stage: BuildAndTest
+  jobs:
+  - job: windows_build
+    displayName: 'Windows Build'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+      - checkout: self
+        clean: false
+        submodules: recursive
+        persistCredentials: true
+      - task: UseDotNet@2
+        displayName: 'Use .NET 8 SDK 8.0.100'
+        inputs:
+          version: 8.0.100
+      - task: BatchScript@1
+        displayName: 'Build and Test'
+        inputs:
+          filename: build.cmd
+          arguments: all
+      - task: PublishTestResults@2
+        inputs:
+          testRunner: VSTest
+          testResultsFiles: '**/*.trx'
+          testRunTitle: 'Windows Tests'
+          mergeTestResults: true
+      - task: CopyFiles@2
+        displayName: Copy affected files
+        inputs:
+          Contents: |
+            **/incrementalist-affected-folders.txt
+            **/incrementalist-affected-files.txt
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: incrementalist-affected-files-windows
+
+  - job: linux_build
+    displayName: 'Linux Build'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - checkout: self
+        clean: false
+        submodules: recursive
+        persistCredentials: true
+      - task: UseDotNet@2
+        displayName: 'Use .NET 8 SDK 8.0.100'
+        inputs:
+          version: 8.0.100
+      - task: Bash@3
+        displayName: 'Build and Test'
+        inputs:
+          filePath: build.sh
+          arguments: all
+      - task: PublishTestResults@2
+        inputs:
+          testRunner: VSTest
+          testResultsFiles: '**/*.trx'
+          testRunTitle: 'Linux Tests'
+          mergeTestResults: true
+      - task: CopyFiles@2
+        displayName: Copy affected files
+        inputs:
+          Contents: |
+            **/incrementalist-affected-folders.txt
+            **/incrementalist-affected-files.txt
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: incrementalist-affected-files-linux
+
+  - job: integration_tests
+    displayName: 'Integration Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    dependsOn: [] # Run in parallel with builds
+    steps:
+      - checkout: self
+        clean: false
+        persistCredentials: true
+      - task: PowerShell@2
+        displayName: 'Run Incrementalist Integration Tests'
+        inputs:
+          pwsh: true
+          targetType: 'filePath'
+          filePath: './test-incrementalist.ps1'
+          failOnStderr: true
+        env:
+          DOCKER_BUILDKIT: 1
+      - task: PublishTestResults@2
+        displayName: 'Publish Integration Test Results'
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFormat: 'VSTest'
+          testResultsFiles: '**/*.trx'
+          searchFolder: '$(System.DefaultWorkingDirectory)'
+          mergeTestResults: true
+          failTaskOnFailedTests: true
+          testRunTitle: 'Incrementalist Integration Tests'
+
+- stage: Release
+  displayName: Release
+  dependsOn: BuildAndTest
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  jobs:
+  - template: release.yaml

@@ -1,0 +1,30 @@
+parameters:
+  name: ''
+
+jobs:
+- job: incrementalist_integration_test_${{ parameters.name }}
+  displayName: Incrementalist Integration Tests
+  pool:
+    vmImage: 'ubuntu-latest'
+  
+  steps:
+  - task: PowerShell@2
+    displayName: 'Run Incrementalist Integration Tests'
+    inputs:
+      pwsh: true # Ensures PowerShell Core (pwsh) is used
+      targetType: 'filePath'
+      filePath: './test-incrementalist.ps1'
+      failOnStderr: true
+    env:
+      DOCKER_BUILDKIT: 1 # Enable BuildKit for faster builds
+
+  - task: PublishTestResults@2
+    displayName: 'Publish Test Results'
+    condition: succeededOrFailed() # Run even if previous step fails
+    inputs:
+      testResultsFormat: 'VSTest'
+      testResultsFiles: '**/*.trx'
+      searchFolder: '$(System.DefaultWorkingDirectory)'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+      testRunTitle: 'Incrementalist Integration Tests' 
