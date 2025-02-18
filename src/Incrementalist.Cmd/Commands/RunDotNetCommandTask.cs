@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Incrementalist.ProjectSystem;
 
 namespace Incrementalist.Cmd.Commands
 {
@@ -24,6 +25,7 @@ namespace Incrementalist.Cmd.Commands
         private readonly bool _continueOnError;
         private readonly bool _runInParallel;
         private readonly bool _failOnNoProjects;
+        private readonly DotNetCommandOptimizer _optimizer;
 
         public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError, bool runInParallel, bool failOnNoProjects = false)
         {
@@ -33,6 +35,7 @@ namespace Incrementalist.Cmd.Commands
             _continueOnError = continueOnError;
             _runInParallel = runInParallel;
             _failOnNoProjects = failOnNoProjects;
+            _optimizer = new DotNetCommandOptimizer();
         }
 
         public async Task<int> Run(IEnumerable<string> affectedProjects)
@@ -44,75 +47,29 @@ namespace Incrementalist.Cmd.Commands
                 return _failOnNoProjects ? 1 : 0;
             }
 
-            _logger.LogInformation("Running '{0}' against {1} affected projects", string.Join(" ", _dotnetArgs), projects.Count);
+            var command = string.Join(" ", _dotnetArgs);
+            _logger.LogInformation("Running '{0}' against {1} affected projects", command, projects.Count);
             
             var failedProjects = new List<string>();
-            
-            async Task<bool> RunCommand(string project)
+
+            // Check if we need to run on full solution
+            if (_optimizer.ShouldRunOnFullSolution(projects))
             {
-                // For dotnet CLI commands like 'build', 'test', etc., the project path comes last
-                var args = string.Join(" ", _dotnetArgs);
-                if (!args.Contains("--project") && !args.Contains("-p"))
-                    args = $"{args} \"{project}\"";
-
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "dotnet",
-                        Arguments = args,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        WorkingDirectory = _settings.WorkingDirectory
-                    }
-                };
-
-                process.OutputDataReceived += (sender, eventArgs) =>
-                {
-                    if (!string.IsNullOrEmpty(eventArgs.Data))
-                        _logger.LogInformation("[{0}] {1}", project, eventArgs.Data);
-                };
-
-                process.ErrorDataReceived += (sender, eventArgs) =>
-                {
-                    if (!string.IsNullOrEmpty(eventArgs.Data))
-                        _logger.LogError("[{0}] {1}", project, eventArgs.Data);
-                };
-
-                try
-                {
-                    process.Start();
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
-                    await process.WaitForExitAsync();
-                    
-                    if (process.ExitCode != 0)
-                    {
-                        _logger.LogError("Command failed for project {0} with exit code {1}", project, process.ExitCode);
-                        return false;
-                    }
-                    
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to execute command for project {0}", project);
-                    return false;
-                }
-                finally
-                {
-                    process.Dispose();
-                }
+                _logger.LogInformation("Solution-level files detected. Running command on entire solution.");
+                var result = await RunCommand(_settings.SolutionFile);
+                return result ? 0 : 1;
             }
+
+            // Get optimized commands
+            var commands = _optimizer.OptimizeCommand(command, projects, _settings.SolutionFile);
 
             if (_runInParallel)
             {
-                var tasks = projects.Select(async project =>
+                var tasks = commands.Select(async cmd =>
                 {
-                    if (!await RunCommand(project))
+                    if (!await RunCommand(cmd))
                     {
-                        failedProjects.Add(project);
+                        failedProjects.Add(cmd);
                         if (!_continueOnError)
                             return;
                     }
@@ -122,11 +79,11 @@ namespace Incrementalist.Cmd.Commands
             }
             else
             {
-                foreach (var project in projects)
+                foreach (var cmd in commands)
                 {
-                    if (!await RunCommand(project))
+                    if (!await RunCommand(cmd))
                     {
-                        failedProjects.Add(project);
+                        failedProjects.Add(cmd);
                         if (!_continueOnError)
                             break;
                     }
@@ -135,11 +92,64 @@ namespace Incrementalist.Cmd.Commands
 
             if (failedProjects.Count != 0)
             {
-                _logger.LogError("Command failed for the following projects: {0}", string.Join(", ", failedProjects));
+                _logger.LogError("Command failed for the following commands: {0}", string.Join(", ", failedProjects));
                 return 1;
             }
 
             return 0;
+        }
+
+        private async Task<bool> RunCommand(string args)
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    WorkingDirectory = _settings.WorkingDirectory
+                }
+            };
+
+            process.OutputDataReceived += (sender, eventArgs) =>
+            {
+                if (!string.IsNullOrEmpty(eventArgs.Data))
+                    _logger.LogInformation("[{0}] {1}", args, eventArgs.Data);
+            };
+
+            process.ErrorDataReceived += (sender, eventArgs) =>
+            {
+                if (!string.IsNullOrEmpty(eventArgs.Data))
+                    _logger.LogError("[{0}] {1}", args, eventArgs.Data);
+            };
+
+            try
+            {
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                await process.WaitForExitAsync();
+                
+                if (process.ExitCode != 0)
+                {
+                    _logger.LogError("Command failed with exit code {0}: {1}", process.ExitCode, args);
+                    return false;
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to execute command: {0}", args);
+                return false;
+            }
+            finally
+            {
+                process.Dispose();
+            }
         }
     }
 } 
