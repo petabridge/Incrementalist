@@ -1,0 +1,391 @@
+# Cursor Rules File: C# Coding Style Best Practices
+# This file provides guidelines for writing clean, maintainable, and idiomatic C# code
+# with a focus on functional patterns and proper abstraction.
+
+Role Definition:
+ - C# Language Expert
+ - Software Architect
+ - Code Quality Specialist
+
+General:
+  Description: >
+    C# code should be written to maximize readability, maintainability, and correctness
+    while minimizing complexity and coupling. Prefer functional patterns and immutable
+    data where appropriate, and keep abstractions simple and focused.
+  Requirements:
+    - Write clear, self-documenting code
+    - Keep abstractions simple and focused
+    - Minimize dependencies and coupling
+    - Use modern C# features appropriately
+
+Type Definitions:
+  - Prefer records for data types:
+      ```csharp
+      // Good: Immutable data type with value semantics
+      public sealed record CustomerDto(string Name, Email Email);
+      
+      // Avoid: Class with mutable properties
+      public class Customer
+      {
+          public string Name { get; set; }
+          public string Email { get; set; }
+      }
+      ```
+  - Make classes sealed by default:
+      ```csharp
+      // Good: Sealed by default
+      public sealed class OrderProcessor
+      {
+          // Implementation
+      }
+      
+      // Only unsealed when inheritance is specifically designed for
+      public abstract class Repository<T>
+      {
+          // Base implementation
+      }
+      ```
+  - Use value objects to avoid primitive obsession:
+      ```csharp
+      // Good: Strong typing with value objects
+      public sealed record OrderId(Guid Value)
+      {
+          public static OrderId New() => new(Guid.NewGuid());
+          public static OrderId From(string value) => new(Guid.Parse(value));
+      }
+      
+      // Avoid: Primitive types for identifiers
+      public class Order
+      {
+          public Guid Id { get; set; }  // Primitive obsession
+      }
+      ```
+
+Functional Patterns:
+  - Use pattern matching effectively:
+      ```csharp
+      // Good: Clear pattern matching
+      public decimal CalculateDiscount(Customer customer) =>
+          customer switch
+          {
+              { Tier: CustomerTier.Premium } => 0.2m,
+              { OrderCount: > 10 } => 0.1m,
+              _ => 0m
+          };
+      
+      // Avoid: Nested if statements
+      public decimal CalculateDiscount(Customer customer)
+      {
+          if (customer.Tier == CustomerTier.Premium)
+              return 0.2m;
+          if (customer.OrderCount > 10)
+              return 0.1m;
+          return 0m;
+      }
+      ```
+  - Prefer pure methods:
+      ```csharp
+      // Good: Pure function
+      public static decimal CalculateTotalPrice(
+          IEnumerable<OrderLine> lines,
+          decimal taxRate) =>
+          lines.Sum(line => line.Price * line.Quantity) * (1 + taxRate);
+      
+      // Avoid: Method with side effects
+      public void CalculateAndUpdateTotalPrice()
+      {
+          this.Total = this.Lines.Sum(l => l.Price * l.Quantity);
+          this.UpdateDatabase();
+      }
+      ```
+
+Code Organization:
+  - Separate state from behavior:
+      ```csharp
+      // Good: Behavior separate from state
+      public sealed record Order(OrderId Id, List<OrderLine> Lines);
+      
+      public static class OrderOperations
+      {
+          public static decimal CalculateTotal(Order order) =>
+              order.Lines.Sum(line => line.Price * line.Quantity);
+      }
+      ```
+  - Use extension methods appropriately:
+      ```csharp
+      // Good: Extension method for domain-specific operations
+      public static class OrderExtensions
+      {
+          public static bool CanBeFulfilled(this Order order, Inventory inventory) =>
+              order.Lines.All(line => inventory.HasStock(line.ProductId, line.Quantity));
+      }
+      ```
+
+Dependency Management:
+  - Minimize constructor injection:
+      ```csharp
+      // Good: Minimal dependencies
+      public sealed class OrderProcessor
+      {
+          private readonly IOrderRepository _repository;
+          
+          public OrderProcessor(IOrderRepository repository)
+          {
+              _repository = repository;
+          }
+      }
+      
+      // Avoid: Too many dependencies
+      public class OrderProcessor
+      {
+          public OrderProcessor(
+              IOrderRepository repository,
+              ILogger logger,
+              IEmailService emailService,
+              IMetrics metrics,
+              IValidator validator)
+          {
+              // Too many dependencies indicates possible design issues
+          }
+      }
+      ```
+  - Prefer composition with interfaces:
+      ```csharp
+      // Good: Composition with interfaces
+      public sealed class EnhancedLogger : ILogger
+      {
+          private readonly ILogger _baseLogger;
+          private readonly IMetrics _metrics;
+          
+          public EnhancedLogger(ILogger baseLogger, IMetrics metrics)
+          {
+              _baseLogger = baseLogger;
+              _metrics = metrics;
+          }
+      }
+      ```
+
+Code Clarity:
+  - Avoid complex indexers:
+      ```csharp
+      // Good: Clear method names
+      var lastItem = items.LastOrDefault();
+      var firstThree = items.Take(3).ToList();
+      
+      // Avoid: Cryptic range operations
+      var lastItem = items[^1];
+      var firstThree = items[..3];
+      ```
+  - Use meaningful names:
+      ```csharp
+      // Good: Clear intent
+      public async Task<Result<Order>> ProcessOrderAsync(
+          OrderRequest request,
+          CancellationToken cancellationToken)
+      
+      // Avoid: Unclear abbreviations
+      public async Task<Result<T>> ProcAsync<T>(ReqDto r, CancellationToken ct)
+      ```
+
+Error Handling:
+  - Use Result types for expected failures:
+      ```csharp
+      // Good: Explicit error handling
+      public sealed record Result<T>
+      {
+          public T? Value { get; }
+          public Error? Error { get; }
+          
+          private Result(T value) => Value = value;
+          private Result(Error error) => Error = error;
+          
+          public static Result<T> Success(T value) => new(value);
+          public static Result<T> Failure(Error error) => new(error);
+      }
+      ```
+  - Prefer exceptions for exceptional cases:
+      ```csharp
+      // Good: Exception for truly exceptional case
+      public static OrderId From(string value)
+      {
+          if (!Guid.TryParse(value, out var guid))
+              throw new ArgumentException("Invalid OrderId format", nameof(value));
+          
+          return new OrderId(guid);
+      }
+      ```
+
+Testing Considerations:
+  - Design for testability:
+      ```csharp
+      // Good: Easy to test pure functions
+      public static class PriceCalculator
+      {
+          public static decimal CalculateDiscount(
+              decimal price,
+              int quantity,
+              CustomerTier tier) =>
+              // Pure calculation
+      }
+      
+      // Avoid: Hard to test due to hidden dependencies
+      public decimal CalculateDiscount()
+      {
+          var user = _userService.GetCurrentUser();  // Hidden dependency
+          var settings = _configService.GetSettings(); // Hidden dependency
+          // Calculation
+      }
+      ```
+
+Immutable Collections:
+  - Use System.Collections.Immutable with records:
+      ```csharp
+      // Good: Immutable collections in records
+      public sealed record Order(
+          OrderId Id, 
+          ImmutableList<OrderLine> Lines,
+          ImmutableDictionary<string, string> Metadata);
+      
+      // Avoid: Mutable collections in records
+      public record Order(
+          OrderId Id,
+          List<OrderLine> Lines,  // Can be modified after creation
+          Dictionary<string, string> Metadata);
+      ```
+  - Initialize immutable collections efficiently:
+      ```csharp
+      // Good: Using builder pattern
+      var builder = ImmutableList.CreateBuilder<OrderLine>();
+      foreach (var line in lines)
+      {
+          builder.Add(line);
+      }
+      return new Order(id, builder.ToImmutable());
+      
+      // Also Good: Using collection initializer
+      return new Order(
+          id,
+          lines.ToImmutableList(),
+          metadata.ToImmutableDictionary());
+      ```
+
+Asynchronous Programming:
+  - Avoid async void:
+      ```csharp
+      // Good: Async method returns Task
+      public async Task ProcessOrderAsync(Order order)
+      {
+          await _repository.SaveAsync(order);
+      }
+      
+      // Avoid: Async void can crash your application
+      public async void ProcessOrder(Order order)
+      {
+          await _repository.SaveAsync(order);
+      }
+      ```
+  - Use Task.FromResult for pre-computed values:
+      ```csharp
+      // Good: Return pre-computed value
+      public Task<int> GetDefaultQuantityAsync() =>
+          Task.FromResult(1);
+      
+      // Better: Use ValueTask for zero allocations
+      public ValueTask<int> GetDefaultQuantityAsync() =>
+          new ValueTask<int>(1);
+      
+      // Avoid: Unnecessary thread pool usage
+      public Task<int> GetDefaultQuantityAsync() =>
+          Task.Run(() => 1);
+      ```
+  - Always flow CancellationToken:
+      ```csharp
+      // Good: Propagate cancellation
+      public async Task<Order> ProcessOrderAsync(
+          OrderRequest request,
+          CancellationToken cancellationToken)
+      {
+          var order = await _repository.GetAsync(
+              request.OrderId, 
+              cancellationToken);
+              
+          await _processor.ProcessAsync(
+              order, 
+              cancellationToken);
+              
+          return order;
+      }
+      ```
+  - Prefer await over ContinueWith:
+      ```csharp
+      // Good: Using await
+      public async Task<Order> ProcessOrderAsync(OrderId id)
+      {
+          var order = await _repository.GetAsync(id);
+          await _validator.ValidateAsync(order);
+          return order;
+      }
+      
+      // Avoid: Using ContinueWith
+      public Task<Order> ProcessOrderAsync(OrderId id)
+      {
+          return _repository.GetAsync(id)
+              .ContinueWith(t => 
+              {
+                  var order = t.Result; // Can deadlock
+                  return _validator.ValidateAsync(order);
+              });
+      }
+      ```
+  - Never use Task.Result or Task.Wait:
+      ```csharp
+      // Good: Async all the way
+      public async Task<Order> GetOrderAsync(OrderId id)
+      {
+          return await _repository.GetAsync(id);
+      }
+      
+      // Avoid: Blocking on async code
+      public Order GetOrder(OrderId id)
+      {
+          return _repository.GetAsync(id).Result; // Can deadlock
+      }
+      ```
+  - Use TaskCompletionSource correctly:
+      ```csharp
+      // Good: Using RunContinuationsAsynchronously
+      private readonly TaskCompletionSource<Order> _tcs = 
+          new(TaskCreationOptions.RunContinuationsAsynchronously);
+      
+      // Avoid: Default TaskCompletionSource can cause deadlocks
+      private readonly TaskCompletionSource<Order> _tcs = new();
+      ```
+  - Always dispose CancellationTokenSources:
+      ```csharp
+      // Good: Proper disposal of CancellationTokenSource
+      public async Task<Order> GetOrderWithTimeout(OrderId id)
+      {
+          using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+          return await _repository.GetAsync(id, cts.Token);
+      }
+      ```
+  - Prefer async/await over direct Task return:
+      ```csharp
+      // Good: Using async/await
+      public async Task<Order> ProcessOrderAsync(OrderRequest request)
+      {
+          await _validator.ValidateAsync(request);
+          var order = await _factory.CreateAsync(request);
+          return order;
+      }
+      
+      // Avoid: Manual task composition
+      public Task<Order> ProcessOrderAsync(OrderRequest request)
+      {
+          return _validator.ValidateAsync(request)
+              .ContinueWith(t => _factory.CreateAsync(request))
+              .Unwrap();
+      }
+      ```
+
+# End of Cursor Rules File 

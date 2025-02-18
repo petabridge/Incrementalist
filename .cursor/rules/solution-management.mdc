@@ -1,0 +1,170 @@
+# Cursor Rules File: Best Practices for .NET Solution Management
+# This file provides guidelines for maintaining .NET solutions with consistent SDK versions,
+# shared metadata, and centralized package management.
+
+Role Definition:
+ - .NET Solution Architect
+ - Build System Expert
+ - Package Management Specialist
+
+General:
+  Description: >
+    .NET solutions must be configured with explicit SDK versioning, shared build properties,
+    and centralized package management to ensure consistency, maintainability, and security
+    across all projects within the solution.
+  Requirements:
+    - Maintain a global.json for SDK version control
+    - Use Directory.Build.props for shared metadata
+    - Implement centralized package management
+    - Configure secure and reliable package sources
+
+SDK Version Management:
+  - Maintain a global.json file in the solution root:
+      - Specify exact SDK version to ensure consistent builds
+      - Include rollForward policy for patch version flexibility
+      - Example:
+        ```json
+        {
+          "sdk": {
+            "version": "8.0.100",
+            "rollForward": "patch"
+          }
+        }
+        ```
+  - Update SDK versions through controlled processes:
+      - Test new SDK versions in development/CI before updating
+      - Document SDK version changes in source control
+      - Consider implications for CI/CD pipelines
+
+Shared Build Properties:
+  - Implement Directory.Build.props in solution root:
+      - Define common metadata:
+          - Company/Author information
+          - Copyright details
+          - Project URL
+          - License information
+          - Version prefix/suffix strategy
+      - Example structure:
+        ```xml
+        <Project>
+          <PropertyGroup>
+            <Authors>Your Company</Authors>
+            <Company>Your Company</Company>
+            <Copyright>© $([System.DateTime]::Now.Year) Your Company</Copyright>
+            <PackageLicenseExpression>MIT</PackageLicenseExpression>
+            <PackageProjectUrl>https://github.com/your/project</PackageProjectUrl>
+            <VersionPrefix>1.0.0</VersionPrefix>
+          </PropertyGroup>
+        </Project>
+        ```
+  - Consider environment-specific overrides:
+      - Use Directory.Build.targets for overrides
+      - Support CI/CD pipeline customization
+
+Package Management:
+  - Enable centralized package management:
+      - Create Directory.Packages.props:
+          - Define package versions once
+          - Enforce consistent versions across projects
+          - Example:
+            ```xml
+            <Project>
+              <PropertyGroup>
+                <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+              </ItemGroup>
+            </Project>
+            ```
+  - Configure nuget.config:
+      - Enable package source mapping
+      - Define trusted package sources
+      - Example:
+        ```xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSourceMapping>
+            <packageSource key="nuget.org">
+              <package pattern="*" />
+            </packageSource>
+          </packageSourceMapping>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+          </packageSources>
+        </configuration>
+        ```
+
+Maintenance:
+  - Regular auditing:
+      - Review SDK versions for security updates
+      - Validate package versions for vulnerabilities
+      - Update shared metadata as needed
+  - Version control:
+      - Commit all configuration files
+      - Document changes in commit messages
+      - Consider using git hooks for validation
+
+Compilation:
+  - Use dotnet CLI for builds:
+      - Prefer `dotnet build` over IDE builds for consistency
+      - Use `dotnet build -c Release` for release builds
+      - Enable deterministic builds with `/p:ContinuousIntegrationBuild=true`
+  - Enforce code quality:
+      - Enable `TreatWarningsAsErrors` in Directory.Build.props:
+        ```xml
+        <PropertyGroup>
+          <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+          <!-- Optionally allow specific warnings -->
+          <WarningsNotAsErrors>CS1591</WarningsNotAsErrors>
+        </PropertyGroup>
+        ```
+      - Address warnings properly:
+          - Fix the underlying issue rather than suppressing
+          - Document any necessary warning suppressions
+          - Use `#pragma warning disable` sparingly and only with comments
+  - Build configuration:
+      - Use conditional compilation symbols purposefully
+      - Define debug/release-specific behavior clearly
+      - Example:
+        ```xml
+        <PropertyGroup>
+          <DefineConstants>TRACE</DefineConstants>
+          <DefineConstants Condition="'$(Configuration)'=='Debug'">$(DefineConstants);DEBUG</DefineConstants>
+        </PropertyGroup>
+        ```
+  - Performance:
+      - Enable incremental builds by default
+      - Use `dotnet build --no-incremental` only when needed
+      - Consider using Fast Up-to-Date Check:
+        ```xml
+        <PropertyGroup>
+          <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+        </PropertyGroup>
+        ```
+  - Build output:
+      - Set consistent output paths
+      - Configure deterministic output:
+        ```xml
+        <PropertyGroup>
+          <Deterministic>true</Deterministic>
+          <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+        </PropertyGroup>
+        ```
+  - Error handling:
+      - Log build errors comprehensively
+      - Use MSBuild binary log for detailed diagnostics:
+        ```bash
+        dotnet build -bl:build.binlog
+        ```
+      - Configure error reporting in CI/CD:
+        ```yaml
+        - name: Build
+          run: dotnet build --configuration Release /p:ContinuousIntegrationBuild=true
+          env:
+            DOTNET_CLI_TELEMETRY_OPTOUT: 1
+            DOTNET_NOLOGO: 1
+        ```
+
+# End of Cursor Rules File 

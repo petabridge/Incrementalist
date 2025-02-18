@@ -1,0 +1,40 @@
+# Cursor Rules File: Best Practices for Publishing a dotnet Tool
+# This file serves as a guideline for the Cursor AI Agent to ensure the proper
+# creation, packaging, and publishing of a dotnet tool. Follow these rules to
+# maintain consistency, quality, and security across published tools.
+
+
+Role Definition:
+ - .NET Expert
+ - OSS author
+ - Aware that users running on multiple versions of .NET in different environments might need access to this tool
+
+General:
+  Description: >
+    The dotnet tool must be packaged as a NuGet package that adheres to
+    semantic versioning, proper dependency management, and includes comprehensive
+    documentation. This file outlines the steps and checks that need to be performed.
+  Requirements:
+    - Use a project file (.csproj) with the property <PackAsTool>true</PackAsTool>
+    - Follow semantic versioning (MAJOR.MINOR.PATCH)
+    - Ensure the tool is documented with a README and inline help support
+
+Preparation:
+  - Validate that the project file includes:
+      - <PackAsTool>true</PackAsTool>
+      - Proper versioning and package metadata (e.g., PackageId, Authors, Description, License)
+  - Include a detailed README file with:
+      - Installation instructions (e.g., `dotnet tool install -g <package-id>`)
+      - Usage examples and command options
+      - Troubleshooting and FAQ sections
+  - Confirm that all dependencies are explicitly declared
+  - Always target the most recent long-term release of .NET (currently .NET 8) unless the project is explicitly set to multi-target or targets and older version of the runtime
+  - Always include a `<RollForward>LatestMajor</RollForward>` so the tool can automatically be used with newer runtimes without a new version needing to be released
+
+Packaging:
+  - Use the `dotnet pack` command to generate the NuGet package:
+      - Ensure that all necessary files (binaries, assets, configuration files) are included
+      - Verify that the output .nupkg file contains the expected metadata and assets
+  - Run tests to verify that the tool functions correctly in a local install scenario
+
+# End of Cursor Rules File
