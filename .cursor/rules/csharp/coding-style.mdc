@@ -1,7 +1,7 @@
-# Cursor Rules File: C# Coding Style Best Practices
-# This file provides guidelines for writing clean, maintainable, and idiomatic C# code
-# with a focus on functional patterns and proper abstraction.
-
+---
+description: This file provides guidelines for writing clean, maintainable, and idiomatic C# code with a focus on functional patterns and proper abstraction.
+globs: *.cs
+---
 Role Definition:
  - C# Language Expert
  - Software Architect
@@ -166,15 +166,17 @@ Dependency Management:
       ```
 
 Code Clarity:
-  - Avoid complex indexers:
+    - Prefer range indexers over LINQ:
       ```csharp
-      // Good: Clear method names
+      // Good: Using range indexers with clear comments
+      var lastItem = items[^1];  // ^1 means "1 from the end"
+      var firstThree = items[..3];  // ..3 means "take first 3 items"
+      var slice = items[2..5];  // take items from index 2 to 4 (5 exclusive)
+      
+      // Avoid: Using LINQ when range indexers are clearer
       var lastItem = items.LastOrDefault();
       var firstThree = items.Take(3).ToList();
-      
-      // Avoid: Cryptic range operations
-      var lastItem = items[^1];
-      var firstThree = items[..3];
+      var slice = items.Skip(2).Take(3).ToList();
       ```
   - Use meaningful names:
       ```csharp
@@ -267,6 +269,107 @@ Immutable Collections:
           id,
           lines.ToImmutableList(),
           metadata.ToImmutableDictionary());
+      ```
+
+// ... existing code ...
+
+Error Handling:
+  - Use Result types for expected failures:
+      ```csharp
+      // Good: Explicit error handling
+      public sealed record Result<T>
+      {
+          public T? Value { get; }
+          public Error? Error { get; }
+          
+          private Result(T value) => Value = value;
+          private Result(Error error) => Error = error;
+          
+          public static Result<T> Success(T value) => new(value);
+          public static Result<T> Failure(Error error) => new(error);
+      }
+      ```
+  - Prefer exceptions for exceptional cases:
+      ```csharp
+      // Good: Exception for truly exceptional case
+      public static OrderId From(string value)
+      {
+          if (!Guid.TryParse(value, out var guid))
+              throw new ArgumentException("Invalid OrderId format", nameof(value));
+          
+          return new OrderId(guid);
+      }
+      ```
+
+Safe Operations:
+  - Use Try methods for safer operations:
+      ```csharp
+      // Good: Using TryGetValue for dictionary access
+      if (dictionary.TryGetValue(key, out var value))
+      {
+          // Use value safely here
+      }
+      else
+      {
+          // Handle missing key case
+      }
+
+      // Avoid: Direct indexing which can throw
+      var value = dictionary[key];  // Throws if key doesn't exist
+
+      // Good: Using Uri.TryCreate for URL parsing
+      if (Uri.TryCreate(urlString, UriKind.Absolute, out var uri))
+      {
+          // Use uri safely here
+      }
+      else
+      {
+          // Handle invalid URL case
+      }
+
+      // Avoid: Direct Uri creation which can throw
+      var uri = new Uri(urlString);  // Throws on invalid URL
+
+      // Good: Using int.TryParse for number parsing
+      if (int.TryParse(input, out var number))
+      {
+          // Use number safely here
+      }
+      else
+      {
+          // Handle invalid number case
+      }
+
+      // Good: Combining Try methods with null coalescing
+      var value = dictionary.TryGetValue(key, out var result)
+          ? result
+          : defaultValue;
+
+      // Good: Using Try methods in LINQ with pattern matching
+      var validNumbers = strings
+          .Select(s => (Success: int.TryParse(s, out var num), Value: num))
+          .Where(x => x.Success)
+          .Select(x => x.Value);
+      ```
+      
+  - Prefer Try methods over exception handling:
+      ```csharp
+      // Good: Using Try method
+      if (decimal.TryParse(priceString, out var price))
+      {
+          // Process price
+      }
+
+      // Avoid: Exception handling for expected cases
+      try
+      {
+          var price = decimal.Parse(priceString);
+          // Process price
+      }
+      catch (FormatException)
+      {
+          // Handle invalid format
+      }
       ```
 
 Asynchronous Programming:

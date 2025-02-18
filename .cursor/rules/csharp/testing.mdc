@@ -1,7 +1,7 @@
-`# Cursor Rules File: C# Testing Best Practices
-# This file provides guidelines for writing effective, maintainable tests
-# using xUnit and related tools.
-
+---
+description: This file provides guidelines for writing effective, maintainable tests using xUnit and related tools.
+globs: *.cs, *.Tests.csproj
+---
 Role Definition:
  - Test Engineer
  - Quality Assurance Specialist

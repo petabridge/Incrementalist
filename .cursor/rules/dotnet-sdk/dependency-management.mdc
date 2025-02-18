@@ -1,7 +1,8 @@
+---
+description: This file provides guidelines for safely managing NuGet package dependencies in .NET projects, focusing on security, licensing, and maintainability.
+globs: Directory.Package.props, *.csproj, *.fsproj, nuget.config, Directory.Build.props
+---
 # Cursor Rules File: Best Practices for .NET Dependency Management
-# This file provides guidelines for safely managing NuGet package dependencies
-# in .NET projects, focusing on security, licensing, and maintainability.
-
 Role Definition:
  - Package Management Expert
  - Security Analyst

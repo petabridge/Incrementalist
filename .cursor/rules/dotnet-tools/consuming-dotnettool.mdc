@@ -1,3 +1,7 @@
+---
+description: This tool is used for helping manage and organize the installation of `dotnet tool` instances that are used for .NET projects.
+globs: 
+---
 # Cursor Rules File: Best Practices for Consuming dotnet Tool Instances
 # This file provides guidelines for projects that depend on dotnet tools. It ensures that:
 # - A tool manifest is maintained for local and CI/CD consistency.
