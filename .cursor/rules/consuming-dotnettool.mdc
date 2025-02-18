@@ -1,0 +1,66 @@
+# Cursor Rules File: Best Practices for Consuming dotnet Tool Instances
+# This file provides guidelines for projects that depend on dotnet tools. It ensures that:
+# - A tool manifest is maintained for local and CI/CD consistency.
+# - Tool versions are explicitly defined.
+# - Proper installation, updating, and documentation practices are followed.
+
+General:
+  Description: >
+    Projects consuming dotnet tool instances must manage their tool dependencies through a tool manifest.
+    This approach promotes reproducible builds and clear dependency management, ensuring that the correct
+    tool versions are used consistently across different environments.
+  Requirements:
+    - Maintain a tool manifest file (typically located at `.config/dotnet-tools.json`) in the project root.
+    - Use explicit versioning for all dotnet tools to prevent unexpected updates.
+    - Integrate tool management into the CI/CD pipeline for automated restoration.
+
+Preparation:
+  - If a tool manifest does not exist, create one by running:
+      - `dotnet new tool-manifest`
+  - Update the tool manifest with the necessary tools by executing:
+      - `dotnet tool install <tool-package> --version <version>`
+  - Ensure the manifest file (`.config/dotnet-tools.json`) is checked into version control for consistency.
+
+Tool Management:
+  - Installation:
+      - Use `dotnet tool install` with an explicit version to add a tool to the manifest.
+      - Verify that the installed tool versions match the ones specified in the manifest.
+      - For tools that support both global and local installation, prefer local installation via manifest.
+  - Updating:
+      - To update a tool, use `dotnet tool update <tool-package> --version <version>`.
+      - After updating, validate that the manifest reflects the new version.
+  - Restoration:
+      - Ensure that `dotnet tool restore` is executed as part of local setup and CI/CD processes to install all tools defined in the manifest.
+  - Verification:
+      - Periodically review the manifest to confirm that all tool versions are current and that deprecated or unused tools are removed.
+
+Integration & CI/CD:
+  - Include the following steps in your CI/CD pipeline:
+      - **Restore Tools:** Run `dotnet tool restore` prior to build or test phases.
+      - **Version Check:** Validate that the manifest has not drifted from the expected tool versions.
+      - **Cache Tools:** Consider caching the restored tools between pipeline runs to improve build times.
+  - Document the usage of these tools in your project README or contributing guidelines for clarity.
+
+Documentation & Maintenance:
+  - Document in your project README:
+      - The purpose of each dotnet tool listed in the manifest.
+      - Instructions for installing, updating, or troubleshooting the tools.
+  - Regularly audit the manifest to:
+      - Remove outdated or unused tools.
+      - Update tools when new versions become available and are verified for compatibility.
+  - Maintain clear commit messages when changes are made to the tool manifest.
+
+Security & Compliance:
+  - Ensure that all tools come from trusted sources and have proper licensing.
+  - Avoid using wildcard or range versioning to mitigate the risk of unintentional upgrades.
+  - Document any security advisories or considerations related to the consumed tools.
+
+Automation:
+  - Automate tool restoration by incorporating `dotnet tool restore` into your build scripts.
+  - Consider using scripts or CI/CD tasks to:
+      - Check for available updates to the tools.
+      - Validate the integrity and security compliance of the manifest file.
+      - Monitor for security advisories related to installed tools.
+      - Automatically create PRs for tool updates after successful testing.
+      
+# End of Cursor Rules File
