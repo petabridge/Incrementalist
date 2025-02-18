@@ -23,14 +23,16 @@ namespace Incrementalist.Cmd.Commands
         private readonly string[] _dotnetArgs;
         private readonly bool _continueOnError;
         private readonly bool _runInParallel;
+        private readonly bool _failOnNoProjects;
 
-        public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError, bool runInParallel)
+        public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError, bool runInParallel, bool failOnNoProjects = false)
         {
             _settings = settings;
             _logger = logger;
             _dotnetArgs = dotnetArgs;
             _continueOnError = continueOnError;
             _runInParallel = runInParallel;
+            _failOnNoProjects = failOnNoProjects;
         }
 
         public async Task<int> Run(IEnumerable<string> affectedProjects)
@@ -39,7 +41,7 @@ namespace Incrementalist.Cmd.Commands
             if (!projects.Any())
             {
                 _logger.LogInformation("No affected projects to run commands against.");
-                return 0;
+                return _failOnNoProjects ? 1 : 0;
             }
 
             _logger.LogInformation("Running '{0}' against {1} affected projects", string.Join(" ", _dotnetArgs), projects.Count);

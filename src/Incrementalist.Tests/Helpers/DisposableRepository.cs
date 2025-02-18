@@ -41,7 +41,7 @@ namespace Incrementalist.Tests.Helpers
                     Directory.Delete(BasePath, true);
                     return;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     if (attempt < MaxDeleteAttempts) Thread.Sleep(100 + (int) Math.Pow(10, attempt - 1));
                 }

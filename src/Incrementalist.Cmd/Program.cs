@@ -180,7 +180,7 @@ namespace Incrementalist.Cmd
             if (options.RunCommand && options.DotNetArgs.Length > 0)
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
-                    options.ContinueOnError, options.RunInParallel);
+                    options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
                 var exitCode = await runTask.Run(affectedFiles.SelectMany(x => x.Value));
                 if (exitCode != 0)
                     throw new Exception($"Command execution failed with exit code {exitCode}");
