@@ -158,12 +158,12 @@ Target "IntegrationTests" <| fun _ ->
         execWithArgs parallelRunArgs
 
         // Test error handling with invalid command
-        let errorRunArgs = sprintf "run --project %s -c %s --framework %s --no-build -- -b dev -r --continue-on-error=false -- invalid-command" project configuration fwork
+        let errorRunArgs = sprintf "run --project %s -c %s --framework %s --no-build -- -b dev -r --fail-on-no-projects -- invalid-command" project configuration fwork
         log "Running Incrementalist error handling check"
-        let errorResult = ExecProcess(fun info ->
+        let errorResult = ExecProcess(fun info -> 
             info.FileName <- "dotnet"
             info.WorkingDirectory <- __SOURCE_DIRECTORY__
-            info.Arguments <- errorRunArgs) (TimeSpan.FromMinutes 5.0)
+            info.Arguments <- errorRunArgs) (System.TimeSpan.FromMinutes 5.0)
         if errorResult = 0 then failwithf "Expected Incrementalist to fail with invalid command"
 
     for integrationTest in integrationTests do
