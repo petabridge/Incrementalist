@@ -1,0 +1,429 @@
+# Cursor Rules File: C# Testing Best Practices
+# This file provides guidelines for writing effective, maintainable tests
+# using xUnit and related tools.
+
+Role Definition:
+ - Test Engineer
+ - Quality Assurance Specialist
+ - CI/CD Expert
+
+General:
+  Description: >
+    Tests should be reliable, maintainable, and provide meaningful coverage.
+    Use xUnit as the primary testing framework, with proper isolation and
+    clear patterns for test organization and execution.
+  Requirements:
+    - Use xUnit as the testing framework
+    - Ensure test isolation
+    - Follow consistent patterns
+    - Maintain high code coverage
+    - Configure proper CI/CD test execution
+
+Project Setup:
+  - Configure test projects:
+      ```xml
+      <Project Sdk="Microsoft.NET.Sdk">
+        <PropertyGroup>
+          <TargetFramework>net8.0</TargetFramework>
+          <IsPackable>false</IsPackable>
+          <IsTestProject>true</IsTestProject>
+          <CollectCoverage>true</CollectCoverage>
+          <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+        </PropertyGroup>
+        
+        <ItemGroup>
+          <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+          <PackageReference Include="xunit" Version="2.6.2" />
+          <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4" />
+          <PackageReference Include="coverlet.collector" Version="6.0.0" />
+          <PackageReference Include="coverlet.msbuild" Version="6.0.0" />
+        </ItemGroup>
+      </Project>
+      ```
+
+Test Class Structure:
+  - Use ITestOutputHelper for logging:
+      ```csharp
+      public class OrderProcessingTests
+      {
+          private readonly ITestOutputHelper _output;
+          
+          public OrderProcessingTests(ITestOutputHelper output)
+          {
+              _output = output;
+          }
+          
+          [Fact]
+          public async Task ProcessOrder_ValidOrder_Succeeds()
+          {
+              _output.WriteLine("Starting test with valid order");
+              // Test implementation
+          }
+      }
+      ```
+  - Use fixtures for shared state:
+      ```csharp
+      public class DatabaseFixture : IAsyncLifetime
+      {
+          public DbConnection Connection { get; private set; }
+          
+          public async Task InitializeAsync()
+          {
+              Connection = new SqlConnection("connection-string");
+              await Connection.OpenAsync();
+          }
+          
+          public async Task DisposeAsync()
+          {
+              await Connection.DisposeAsync();
+          }
+      }
+      
+      public class OrderTests : IClassFixture<DatabaseFixture>
+      {
+          private readonly DatabaseFixture _fixture;
+          private readonly ITestOutputHelper _output;
+          
+          public OrderTests(DatabaseFixture fixture, ITestOutputHelper output)
+          {
+              _fixture = fixture;
+              _output = output;
+          }
+      }
+      ```
+
+Test Methods:
+  - Prefer Theory over multiple Facts:
+      ```csharp
+      public class DiscountCalculatorTests
+      {
+          public static TheoryData<decimal, int, decimal> DiscountTestData => 
+              new()
+              {
+                  { 100m, 1, 0m },      // No discount for single item
+                  { 100m, 5, 5m },      // 5% for 5 items
+                  { 100m, 10, 10m },    // 10% for 10 items
+              };
+          
+          [Theory]
+          [MemberData(nameof(DiscountTestData))]
+          public void CalculateDiscount_ReturnsCorrectAmount(
+              decimal price,
+              int quantity,
+              decimal expectedDiscount)
+          {
+              // Arrange
+              var calculator = new DiscountCalculator();
+              
+              // Act
+              var discount = calculator.Calculate(price, quantity);
+              
+              // Assert
+              Assert.Equal(expectedDiscount, discount);
+          }
+      }
+      ```
+  - Follow Arrange-Act-Assert pattern:
+      ```csharp
+      [Fact]
+      public async Task ProcessOrder_ValidOrder_UpdatesInventory()
+      {
+          // Arrange
+          var order = new Order(
+              OrderId.New(),
+              new[] { new OrderLine("SKU123", 5) });
+          var processor = new OrderProcessor(_mockRepository.Object);
+          
+          // Act
+          var result = await processor.ProcessAsync(order);
+          
+          // Assert
+          Assert.True(result.IsSuccess);
+          _mockRepository.Verify(
+              r => r.UpdateInventoryAsync(
+                  It.IsAny<string>(),
+                  It.IsAny<int>()),
+              Times.Once);
+      }
+      ```
+
+Test Isolation:
+  - Use fresh data for each test:
+      ```csharp
+      public class OrderTests
+      {
+          private static Order CreateTestOrder() =>
+              new(OrderId.New(), TestData.CreateOrderLines());
+              
+          [Fact]
+          public async Task ProcessOrder_Success()
+          {
+              var order = CreateTestOrder();
+              // Test implementation
+          }
+      }
+      ```
+  - Clean up resources:
+      ```csharp
+      public class IntegrationTests : IAsyncDisposable
+      {
+          private readonly TestServer _server;
+          private readonly HttpClient _client;
+          
+          public IntegrationTests()
+          {
+              _server = new TestServer(CreateHostBuilder());
+              _client = _server.CreateClient();
+          }
+          
+          public async ValueTask DisposeAsync()
+          {
+              _client.Dispose();
+              await _server.DisposeAsync();
+          }
+      }
+      ```
+
+CI/CD Configuration:
+  - Configure test runs:
+      ```yaml
+      - name: Test
+        run: |
+          dotnet test --configuration Release \
+                      --collect:"XPlat Code Coverage" \
+                      --logger:trx \
+                      --results-directory ./coverage
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-results
+          path: coverage/**
+      ```
+  - Enable code coverage:
+      ```xml
+      <PropertyGroup>
+        <CollectCoverage>true</CollectCoverage>
+        <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+        <CoverletOutput>./coverage/</CoverletOutput>
+        <ThresholdType>line,branch,method</ThresholdType>
+        <ThresholdStat>total</ThresholdStat>
+        <Threshold>80</Threshold>
+      </PropertyGroup>
+      ```
+
+Integration Testing:
+  - Always use TestContainers for infrastructure:
+      ```csharp
+      // Good: Using TestContainers for database testing
+      public class DatabaseTests : IAsyncLifetime
+      {
+          private readonly TestcontainersContainer _dbContainer;
+          
+          public DatabaseTests()
+          {
+              _dbContainer = new TestcontainersBuilder<TestcontainersContainer>()
+                  .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+                  .WithEnvironment("ACCEPT_EULA", "Y")
+                  .WithEnvironment("SA_PASSWORD", "Your_password123")
+                  .WithPortBinding(1433, true)
+                  .Build();
+          }
+          
+          public async Task InitializeAsync()
+          {
+              await _dbContainer.StartAsync();
+          }
+          
+          public async Task DisposeAsync()
+          {
+              await _dbContainer.DisposeAsync();
+          }
+      }
+      
+      // Good: Using TestContainers for Redis testing
+      public class CacheTests : IAsyncLifetime
+      {
+          private readonly TestcontainersContainer _redisContainer;
+          private IConnectionMultiplexer _redis;
+          
+          public CacheTests()
+          {
+              _redisContainer = new TestcontainersBuilder<TestcontainersContainer>()
+                  .WithImage("redis:alpine")
+                  .WithPortBinding(6379, true)
+                  .Build();
+          }
+          
+          public async Task InitializeAsync()
+          {
+              await _redisContainer.StartAsync();
+              _redis = await ConnectionMultiplexer.ConnectAsync(
+                  $"localhost:{_redisContainer.GetMappedPublicPort(6379)}");
+          }
+          
+          public async Task DisposeAsync()
+          {
+              if (_redis is not null)
+                  await _redis.DisposeAsync();
+              await _redisContainer.DisposeAsync();
+          }
+      }
+      
+      // Good: Using TestContainers for message queue testing
+      public class MessageQueueTests : IAsyncLifetime
+      {
+          private readonly TestcontainersContainer _rabbitContainer;
+          private IConnection _connection;
+          
+          public MessageQueueTests()
+          {
+              _rabbitContainer = new TestcontainersBuilder<TestcontainersContainer>()
+                  .WithImage("rabbitmq:management-alpine")
+                  .WithPortBinding(5672, true)
+                  .WithPortBinding(15672, true)
+                  .Build();
+          }
+          
+          public async Task InitializeAsync()
+          {
+              await _rabbitContainer.StartAsync();
+              var factory = new ConnectionFactory
+              {
+                  HostName = "localhost",
+                  Port = _rabbitContainer.GetMappedPublicPort(5672)
+              };
+              _connection = await factory.CreateConnectionAsync();
+          }
+          
+          public async Task DisposeAsync()
+          {
+              await _connection.CloseAsync();
+              await _rabbitContainer.DisposeAsync();
+          }
+      }
+      ```
+      
+  - Avoid mocking infrastructure:
+      ```csharp
+      // Avoid: Mocking database
+      public class DatabaseTests
+      {
+          private readonly Mock<IDbConnection> _mockDb = new();
+          
+          [Fact]
+          public async Task Test_WithMockedDb()
+          {
+              _mockDb.Setup(db => db.QueryAsync<Order>())
+                  .ReturnsAsync(new[] { new Order() });
+              // Test with mocked database - can miss real database behavior
+          }
+      }
+      
+      // Good: Real database in container
+      public class DatabaseTests : IAsyncLifetime
+      {
+          private readonly TestcontainersContainer _dbContainer;
+          private IDbConnection _db;
+          
+          // ... TestContainers setup as shown above ...
+          
+          [Fact]
+          public async Task Test_WithRealDb()
+          {
+              // Test with real database in container
+              var order = await _db.QuerySingleAsync<Order>(
+                  "SELECT * FROM Orders WHERE Id = @Id",
+                  new { Id = 1 });
+          }
+      }
+      ```
+      
+  - Use container networks for multi-container scenarios:
+      ```csharp
+      public class IntegrationTests : IAsyncLifetime
+      {
+          private readonly INetwork _network;
+          private readonly TestcontainersContainer _dbContainer;
+          private readonly TestcontainersContainer _redisContainer;
+          
+          public IntegrationTests()
+          {
+              _network = new TestcontainersNetwork();
+              
+              _dbContainer = new TestcontainersBuilder<TestcontainersContainer>()
+                  .WithImage("postgres:latest")
+                  .WithNetwork(_network)
+                  .WithNetworkAliases("db")
+                  .Build();
+                  
+              _redisContainer = new TestcontainersBuilder<TestcontainersContainer>()
+                  .WithImage("redis:alpine")
+                  .WithNetwork(_network)
+                  .WithNetworkAliases("redis")
+                  .Build();
+          }
+          
+          public async Task InitializeAsync()
+          {
+              await _network.CreateAsync();
+              await Task.WhenAll(
+                  _dbContainer.StartAsync(),
+                  _redisContainer.StartAsync());
+          }
+          
+          public async Task DisposeAsync()
+          {
+              await Task.WhenAll(
+                  _dbContainer.DisposeAsync().AsTask(),
+                  _redisContainer.DisposeAsync().AsTask());
+              await _network.DisposeAsync();
+          }
+      }
+      ```
+
+Best Practices:
+  - Name tests clearly:
+      ```csharp
+      // Good: Clear test names
+      [Fact]
+      public async Task ProcessOrder_WhenInventoryAvailable_UpdatesStockAndReturnsSuccess()
+      
+      // Avoid: Unclear names
+      [Fact]
+      public async Task TestProcessOrder()
+      ```
+  - Use meaningful assertions:
+      ```csharp
+      // Good: Clear assertions
+      Assert.Equal(expected, actual);
+      Assert.Contains(expectedItem, collection);
+      Assert.Throws<OrderException>(() => processor.Process(invalidOrder));
+      
+      // Avoid: Multiple assertions without context
+      Assert.NotNull(result);
+      Assert.True(result.Success);
+      Assert.Equal(0, result.Errors.Count);
+      ```
+  - Handle async operations properly:
+      ```csharp
+      // Good: Async test method
+      [Fact]
+      public async Task ProcessOrder_ValidOrder_Succeeds()
+      {
+          await using var processor = new OrderProcessor();
+          var result = await processor.ProcessAsync(order);
+          Assert.True(result.IsSuccess);
+      }
+      
+      // Avoid: Sync over async
+      [Fact]
+      public void ProcessOrder_ValidOrder_Succeeds()
+      {
+          using var processor = new OrderProcessor();
+          var result = processor.ProcessAsync(order).Result;  // Can deadlock
+          Assert.True(result.IsSuccess);
+      }
+      ```
+
+# End of Cursor Rules File 
