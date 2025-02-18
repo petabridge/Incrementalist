@@ -388,4 +388,256 @@ Asynchronous Programming:
       }
       ```
 
+Nullability:
+  - Enable nullable reference types:
+      ```xml
+      <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>nullable</WarningsAsErrors>
+      </PropertyGroup>
+      ```
+  - Mark nullable fields explicitly:
+      ```csharp
+      // Good: Explicit nullability
+      public class OrderProcessor
+      {
+          private readonly ILogger<OrderProcessor>? _logger;
+          private string? _lastError;
+          
+          public OrderProcessor(ILogger<OrderProcessor>? logger = null)
+          {
+              _logger = logger;
+          }
+      }
+      
+      // Avoid: Implicit nullability
+      public class OrderProcessor
+      {
+          private readonly ILogger<OrderProcessor> _logger; // Warning: Could be null
+          private string _lastError; // Warning: Could be null
+      }
+      ```
+  - Use null checks appropriately:
+      ```csharp
+      // Good: Proper null checking
+      public void ProcessOrder(Order? order)
+      {
+          if (order is null)
+              throw new ArgumentNullException(nameof(order));
+              
+          _logger?.LogInformation("Processing order {Id}", order.Id);
+      }
+      
+      // Good: Using pattern matching for null checks
+      public decimal CalculateTotal(Order? order) =>
+          order switch
+          {
+              null => throw new ArgumentNullException(nameof(order)),
+              { Lines: null } => throw new ArgumentException("Order lines cannot be null", nameof(order)),
+              _ => order.Lines.Sum(l => l.Total)
+          };
+      ```
+  - Use null-forgiving operator when appropriate:
+      ```csharp
+      public class OrderValidator
+      {
+          private readonly IValidator<Order> _validator;
+          
+          public OrderValidator(IValidator<Order> validator)
+          {
+              _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+          }
+          
+          public ValidationResult Validate(Order order)
+          {
+              // We know _validator can't be null due to constructor check
+              return _validator!.Validate(order);
+          }
+      }
+      ```
+  - Use nullability attributes:
+      ```csharp
+      public class StringUtilities
+      {
+          // Output is non-null if input is non-null
+          [return: NotNullIfNotNull(nameof(input))]
+          public static string? ToUpperCase(string? input) =>
+              input?.ToUpperInvariant();
+          
+          // Method never returns null
+          [return: NotNull]
+          public static string EnsureNotNull(string? input) =>
+              input ?? string.Empty;
+          
+          // Parameter must not be null when method returns true
+          public static bool TryParse(string? input, [NotNullWhen(true)] out string? result)
+          {
+              result = null;
+              if (string.IsNullOrEmpty(input))
+                  return false;
+                  
+              result = input;
+              return true;
+          }
+      }
+      ```
+  - Use init-only properties with non-null validation:
+      ```csharp
+      // Good: Non-null validation in constructor
+      public sealed record Order
+      {
+          public required OrderId Id { get; init; }
+          public required ImmutableList<OrderLine> Lines { get; init; }
+          
+          public Order()
+          {
+              Id = null!; // Will be set by required property
+              Lines = null!; // Will be set by required property
+          }
+          
+          private Order(OrderId id, ImmutableList<OrderLine> lines)
+          {
+              Id = id;
+              Lines = lines;
+          }
+          
+          public static Order Create(OrderId id, IEnumerable<OrderLine> lines) =>
+              new(id, lines.ToImmutableList());
+      }
+      ```
+  - Document nullability in interfaces:
+      ```csharp
+      public interface IOrderRepository
+      {
+          // Explicitly shows that null is a valid return value
+          Task<Order?> FindByIdAsync(OrderId id, CancellationToken ct = default);
+          
+          // Method will never return null
+          [return: NotNull]
+          Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken ct = default);
+          
+          // Parameter cannot be null
+          Task SaveAsync([NotNull] Order order, CancellationToken ct = default);
+      }
+      ```
+
+Symbol References:
+  - Always use nameof operator:
+      ```csharp
+      // Good: Using nameof for parameter names
+      public void ProcessOrder(Order order)
+      {
+          if (order is null)
+              throw new ArgumentNullException(nameof(order));
+      }
+      
+      // Good: Using nameof for property names
+      public class Customer
+      {
+          private string _email;
+          
+          public string Email
+          {
+              get => _email;
+              set => _email = value ?? throw new ArgumentNullException(nameof(value));
+          }
+          
+          public void UpdateEmail(string newEmail)
+          {
+              if (string.IsNullOrEmpty(newEmail))
+                  throw new ArgumentException("Email cannot be empty", nameof(newEmail));
+              
+              Email = newEmail;
+          }
+      }
+      
+      // Good: Using nameof in attributes
+      public class OrderProcessor
+      {
+          [Required(ErrorMessage = "The {0} field is required")]
+          [Display(Name = nameof(OrderId))]
+          public string OrderId { get; init; }
+          
+          [MemberNotNull(nameof(_repository))]
+          private void InitializeRepository()
+          {
+              _repository = new OrderRepository();
+          }
+          
+          [NotifyPropertyChangedFor(nameof(FullName))]
+          public string FirstName
+          {
+              get => _firstName;
+              set => SetProperty(ref _firstName, value);
+          }
+      }
+      
+      // Avoid: Hard-coded string references
+      public void ProcessOrder(Order order)
+      {
+          if (order is null)
+              throw new ArgumentNullException("order"); // Breaks refactoring
+      }
+      ```
+  - Use nameof with exceptions:
+      ```csharp
+      public class OrderService
+      {
+          public async Task<Order> GetOrderAsync(OrderId id, CancellationToken ct)
+          {
+              var order = await _repository.FindAsync(id, ct);
+              
+              if (order is null)
+                  throw new OrderNotFoundException(
+                      $"Order with {nameof(id)} '{id}' not found");
+                      
+              if (!order.Lines.Any())
+                  throw new InvalidOperationException(
+                      $"{nameof(order.Lines)} cannot be empty");
+                      
+              return order;
+          }
+          
+          public void ValidateOrder(Order order)
+          {
+              ArgumentNullException.ThrowIfNull(order, nameof(order));
+              
+              if (order.Lines.Count == 0)
+                  throw new ArgumentException(
+                      "Order must have at least one line",
+                      nameof(order));
+          }
+      }
+      ```
+  - Use nameof in logging:
+      ```csharp
+      public class OrderProcessor
+      {
+          private readonly ILogger<OrderProcessor> _logger;
+          
+          public async Task ProcessAsync(Order order)
+          {
+              _logger.LogInformation(
+                  "Starting {Method} for order {OrderId}",
+                  nameof(ProcessAsync),
+                  order.Id);
+                  
+              try
+              {
+                  await ProcessInternalAsync(order);
+              }
+              catch (Exception ex)
+              {
+                  _logger.LogError(
+                      ex,
+                      "Error in {Method} for {Property} {Value}",
+                      nameof(ProcessAsync),
+                      nameof(order.Id),
+                      order.Id);
+                  throw;
+              }
+          }
+      }
+      ```
+
 # End of Cursor Rules File 
