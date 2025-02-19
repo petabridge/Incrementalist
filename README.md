@@ -2,6 +2,16 @@
 
 Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/) and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large .NET solutions. It helps optimize your CI/CD pipeline by building and testing only the projects affected by your changes.
 
+## When to Use Incrementalist
+
+Incrementalist is particularly valuable for:
+
+- **Large Solutions**: If your solution contains dozens or hundreds of projects, Incrementalist can significantly reduce build times by only building what's necessary.
+- **Monorepos**: When managing multiple applications or services in a single repository, Incrementalist helps identify and build only the affected components.
+- **Microservice Architectures**: In repositories containing multiple microservices, build only the services impacted by your changes.
+- **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the complete build graph.
+- **CI/CD Optimization**: Reduce CI/CD pipeline execution time by skipping unnecessary builds and tests.
+
 ## Requirements
 
 - .NET 8.0 SDK or later
