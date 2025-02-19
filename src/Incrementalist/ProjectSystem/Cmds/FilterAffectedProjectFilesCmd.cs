@@ -37,8 +37,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             Task<Dictionary<string, SlnFile>> previousTask)
         {
             var fileDictObj = await previousTask;
-
-            var fileDict = (Dictionary<string, SlnFile>) fileDictObj;
+            var fileDict = (Dictionary<string, SlnFile>)fileDictObj;
 
             var repoResult = GitRunner.FindRepository(_workingDirectory);
             if (!repoResult.foundRepo)

@@ -175,22 +175,65 @@ namespace Incrementalist.Cmd
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-            var affectedFiles = (await emitTask.Run()).ToList();
+            var buildResult = await emitTask.Run();
 
             if (options.RunCommand && options.DotNetArgs.Length > 0)
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
                     options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
-                var exitCode = await runTask.Run(affectedFiles.SelectMany(x => x.Value));
+
+                var projectsToRebuild = buildResult switch
+                {
+                    FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Select(p => p.FilePath),
+                    IncrementalBuildResult incremental => incremental.AffectedProjects,
+                    _ => throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}")
+                };
+
+                var exitCode = await runTask.Run(projectsToRebuild);
                 if (exitCode != 0)
                     throw new Exception($"Command execution failed with exit code {exitCode}");
             }
             else
             {
-                var affectedFilesStr =
-                    string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
+                string buildType;
+                IEnumerable<string> projectsToRebuild;
 
-                HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+                switch (buildResult)
+                {
+                    case FullSolutionBuildResult _:
+                        buildType = "Full solution build";
+                        projectsToRebuild = msBuild.CurrentSolution.Projects.Select(p => p.FilePath);
+                        break;
+                    case IncrementalBuildResult incremental:
+                        buildType = "Incremental build";
+                        projectsToRebuild = incremental.AffectedProjects;
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
+                }
+
+                if (!projectsToRebuild.Any())
+                {
+                    Console.WriteLine("No changes detected by Incrementalist when analyzing solution");
+                    return;
+                }
+
+                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
+
+                // Check to see if we're planning on writing out to the file system or not.
+                if (!string.IsNullOrEmpty(options.OutputFile))
+                {
+                    Console.WriteLine("{0} required - {1} affected projects - writing out to {2}", 
+                        buildType,
+                        projectsToRebuild.Count(),
+                        options.OutputFile);
+                    File.WriteAllText(options.OutputFile, affectedFilesStr);
+                }
+                else
+                {
+                    Console.WriteLine("{0} required:", buildType);
+                    Console.WriteLine(affectedFilesStr);
+                }
             }
         }
 
@@ -210,7 +253,6 @@ namespace Incrementalist.Cmd
                     options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
-
             else
                 Console.WriteLine(affectedFilesStr);
         }
