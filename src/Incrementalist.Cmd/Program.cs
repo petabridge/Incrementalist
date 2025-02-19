@@ -102,8 +102,7 @@ namespace Incrementalist.Cmd
 
                 if (!repoResult.foundRepo)
                 {
-                    Console.WriteLine("Unable to find Git repository located in {0}. Shutting down.",
-                        workingFolder.FullName);
+                    logger.LogError("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
                     return -3;
                 }
 
@@ -115,12 +114,11 @@ namespace Incrementalist.Cmd
                     options.GitBranch = $"origin/{options.GitBranch}";
                     if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                     {
-                        Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.",
-                            options.GitBranch);
-                        Console.WriteLine("[Debug] Here are all of the currently known branches in this repository");
+                        logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                        logger.LogDebug("Here are all of the currently known branches in this repository:");
                         foreach (var b in repoResult.repo.Branches)
                         {
-                            Console.WriteLine(b.FriendlyName);
+                            logger.LogDebug(b.FriendlyName);
                         }
 
                         return -4;
@@ -153,7 +151,7 @@ namespace Incrementalist.Cmd
 
             var affectedFilesStr = string.Join(",", affectedFiles.Keys);
 
-            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
         private static async Task AnaylzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
@@ -207,7 +205,7 @@ namespace Incrementalist.Cmd
 
                 if (!projectsToRebuild.Any())
                 {
-                    Console.WriteLine("No changes detected by Incrementalist when analyzing solution");
+                    logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
                     return;
                 }
 
@@ -216,7 +214,7 @@ namespace Incrementalist.Cmd
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
                 {
-                    Console.WriteLine("{0} required - {1} affected projects - writing out to {2}", 
+                    logger.LogInformation("{0} required - {1} affected projects - writing out to {2}", 
                         buildType,
                         projectsToRebuild.Count(),
                         options.OutputFile);
@@ -224,17 +222,17 @@ namespace Incrementalist.Cmd
                 }
                 else
                 {
-                    Console.WriteLine("{0} required:", buildType);
-                    Console.WriteLine(affectedFilesStr);
+                    logger.LogInformation("{0} required:", buildType);
+                    logger.LogInformation(affectedFilesStr);
                 }
             }
         }
 
-        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount)
+        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount, ILogger logger)
         {
             if (affectedFilesCount == 0)
             {
-                Console.WriteLine("No changes detected by Incrementalist when analyzing {0}.",
+                logger.LogInformation("No changes detected by Incrementalist when analyzing {0}.",
                     options.ListFolders ? "repository folders" : "solution");
                 return;
             }
@@ -242,12 +240,12 @@ namespace Incrementalist.Cmd
             // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
-                Console.WriteLine("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
+                logger.LogInformation("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
                     options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
             else
-                Console.WriteLine(affectedFilesStr);
+                logger.LogInformation(affectedFilesStr);
         }
     }
 }
