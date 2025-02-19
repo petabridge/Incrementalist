@@ -35,7 +35,26 @@ namespace Incrementalist.Cmd.Commands
             _failOnNoProjects = failOnNoProjects;
         }
 
-        public async Task<int> Run(IEnumerable<string> affectedProjects)
+        public async Task<int> Run(BuildAnalysisResult buildResult)
+        {
+            switch (buildResult)
+            {
+                case FullSolutionBuildResult full:
+                    return await RunSolutionBuild(full.SolutionPath);
+                case IncrementalBuildResult incremental:
+                    return await RunIncrementalBuild(incremental.AffectedProjects);
+                default:
+                    throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
+            }
+        }
+
+        private async Task<int> RunSolutionBuild(string solutionPath)
+        {
+            _logger.LogInformation("Running '{0}' against solution {1}", string.Join(" ", _dotnetArgs), solutionPath);
+            return await RunCommand(solutionPath);
+        }
+
+        private async Task<int> RunIncrementalBuild(IEnumerable<string> affectedProjects)
         {
             var projects = affectedProjects.ToList();
             if (!projects.Any())
@@ -48,69 +67,11 @@ namespace Incrementalist.Cmd.Commands
             
             var failedProjects = new List<string>();
             
-            async Task<bool> RunCommand(string project)
-            {
-                // For dotnet CLI commands like 'build', 'test', etc., the project path comes last
-                var args = string.Join(" ", _dotnetArgs);
-                if (!args.Contains("--project") && !args.Contains("-p"))
-                    args = $"{args} \"{project}\"";
-
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "dotnet",
-                        Arguments = args,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        WorkingDirectory = _settings.WorkingDirectory
-                    }
-                };
-
-                process.OutputDataReceived += (sender, eventArgs) =>
-                {
-                    if (!string.IsNullOrEmpty(eventArgs.Data))
-                        _logger.LogInformation("[{0}] {1}", project, eventArgs.Data);
-                };
-
-                process.ErrorDataReceived += (sender, eventArgs) =>
-                {
-                    if (!string.IsNullOrEmpty(eventArgs.Data))
-                        _logger.LogError("[{0}] {1}", project, eventArgs.Data);
-                };
-
-                try
-                {
-                    process.Start();
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
-                    await process.WaitForExitAsync();
-                    
-                    if (process.ExitCode != 0)
-                    {
-                        _logger.LogError("Command failed for project {0} with exit code {1}", project, process.ExitCode);
-                        return false;
-                    }
-                    
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to execute command for project {0}", project);
-                    return false;
-                }
-                finally
-                {
-                    process.Dispose();
-                }
-            }
-
             if (_runInParallel)
             {
                 var tasks = projects.Select(async project =>
                 {
-                    if (!await RunCommand(project))
+                    if (await RunCommand(project) != 0)
                     {
                         failedProjects.Add(project);
                         if (!_continueOnError)
@@ -124,7 +85,7 @@ namespace Incrementalist.Cmd.Commands
             {
                 foreach (var project in projects)
                 {
-                    if (!await RunCommand(project))
+                    if (await RunCommand(project) != 0)
                     {
                         failedProjects.Add(project);
                         if (!_continueOnError)
@@ -140,6 +101,63 @@ namespace Incrementalist.Cmd.Commands
             }
 
             return 0;
+        }
+
+        private async Task<int> RunCommand(string target)
+        {
+            // For dotnet CLI commands like 'build', 'test', etc., the project/solution path comes last
+            var args = string.Join(" ", _dotnetArgs);
+            if (!args.Contains("--project") && !args.Contains("-p"))
+                args = $"{args} \"{target}\"";
+
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    WorkingDirectory = _settings.WorkingDirectory
+                }
+            };
+
+            process.OutputDataReceived += (sender, eventArgs) =>
+            {
+                if (!string.IsNullOrEmpty(eventArgs.Data))
+                    _logger.LogInformation("[{0}] {1}", target, eventArgs.Data);
+            };
+
+            process.ErrorDataReceived += (sender, eventArgs) =>
+            {
+                if (!string.IsNullOrEmpty(eventArgs.Data))
+                    _logger.LogError("[{0}] {1}", target, eventArgs.Data);
+            };
+
+            try
+            {
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                await process.WaitForExitAsync();
+                
+                if (process.ExitCode != 0)
+                {
+                    _logger.LogError("Command failed for {0} with exit code {1}", target, process.ExitCode);
+                }
+                
+                return process.ExitCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to execute command for {0}", target);
+                return 1;
+            }
+            finally
+            {
+                process.Dispose();
+            }
         }
     }
 } 

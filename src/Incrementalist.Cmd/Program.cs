@@ -182,14 +182,7 @@ namespace Incrementalist.Cmd
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
                     options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
 
-                var projectsToRebuild = buildResult switch
-                {
-                    FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Select(p => p.FilePath),
-                    IncrementalBuildResult incremental => incremental.AffectedProjects,
-                    _ => throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}")
-                };
-
-                var exitCode = await runTask.Run(projectsToRebuild);
+                var exitCode = await runTask.Run(buildResult);
                 if (exitCode != 0)
                     throw new Exception($"Command execution failed with exit code {exitCode}");
             }
