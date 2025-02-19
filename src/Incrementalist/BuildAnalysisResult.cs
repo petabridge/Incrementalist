@@ -6,6 +6,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Incrementalist
 {
@@ -14,7 +16,6 @@ namespace Incrementalist
     /// </summary>
     public abstract class BuildAnalysisResult
     {
-        // Base class for our union type
     }
 
     /// <summary>
