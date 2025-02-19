@@ -4,56 +4,96 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Cmd.Commands
 {
     /// <summary>
-    ///     Used to emit an entire dependency graph based on which files in
-    ///     a solution were affected.
+    /// Analyzes changes and determines whether a full solution build or incremental build is required.
     /// </summary>
     public sealed class EmitDependencyGraphTask
     {
         private readonly CancellationTokenSource _cts;
 
-        private readonly MSBuildWorkspace _workspace;
-
         public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger)
         {
             Settings = settings;
-            _workspace = workspace;
+            Workspace = workspace;
             Logger = logger;
             _cts = new CancellationTokenSource();
         }
 
         public BuildSettings Settings { get; }
 
+        public MSBuildWorkspace Workspace { get; }
+
         public ILogger Logger { get; }
 
-        public async Task<Dictionary<string, ICollection<string>>> Run()
+        public async Task<BuildAnalysisResult> Run()
         {
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
 
-            var loadSln = new LoadSolutionCmd(Logger, _workspace, _cts.Token);
-            var slnFile = await loadSln.Process(Task.FromResult(Settings.SolutionFile));
-
+            var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
-            var filterFilesCmd =
-                new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
-            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, slnFile);
-            var affectedFiles =
-                await createDependencyGraph.Process(
-                    filterFilesCmd.Process(getFilesCmd.Process(Task.FromResult(slnFile))));
-            return affectedFiles;
+            var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
+
+            // Get all files and filter affected ones
+            var allFiles = await getFilesCmd.Process(Task.FromResult(solution));
+            var affectedFiles = await filterFilesCmd.Process(Task.FromResult(allFiles));
+
+            // Early check: if no files are affected, return an incremental build with empty list
+            if (!affectedFiles.Any())
+            {
+                Logger.LogInformation("No files were affected by the changes");
+                return new IncrementalBuildResult(Array.Empty<string>());
+            }
+
+            // Check if any of the affected files require a solution-wide build
+            var projectFiles = allFiles.Where(x => x.Value.FileType == FileType.Project)
+                                     .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
+                                     .ToList();
+            var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
+            var detector = new SolutionWideChangeDetector(projectImports);
+
+            if (detector.RequiresFullSolutionBuild(affectedFiles.Keys))
+            {
+                Logger.LogInformation("Solution-wide changes detected. Full solution build required");
+                return new FullSolutionBuildResult(solution.FilePath);
+            }
+
+            // Get the list of affected projects
+            var affectedProjects = affectedFiles.Where(x => x.Value.FileType == FileType.Project)
+                                              .Select(x => x.Key)
+                                              .ToList();
+
+            // If all projects are affected, return a full solution build
+            if (affectedProjects.Count == solution.Projects.Count())
+            {
+                Logger.LogInformation("All projects are affected. Full solution build required");
+                return new FullSolutionBuildResult(solution.FilePath);
+            }
+
+            // For incremental builds, compute the dependency graph
+            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+            var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
+
+            // Convert the dependency graph to a list of affected projects
+            var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
+            
+            Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
+            return new IncrementalBuildResult(projectsToRebuild);
         }
     }
 }

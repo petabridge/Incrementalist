@@ -55,9 +55,12 @@ namespace Incrementalist.Tests.Dependencies
             var settings = new BuildSettings("master", solutionFullPath, Repository.BasePath);
             var workspace = SetupMsBuildWorkspace();
             var emitTask = new EmitDependencyGraphTask(settings, workspace, logger);
-            var affectedFiles = (await emitTask.Run()).ToList();
+            var buildResult = await emitTask.Run();
 
-            affectedFiles.Select(f => f.Key).Should().HaveCount(2).And.Subject.Should().BeEquivalentTo(fsharpProjectFullPath, csharpProjectFullPath);
+            // When all projects are affected, we expect a full solution build
+            buildResult.Should().BeOfType<FullSolutionBuildResult>();
+            var fullBuildResult = (FullSolutionBuildResult)buildResult;
+            fullBuildResult.SolutionPath.Should().Be(solutionFullPath);
         }
 
         private static MSBuildWorkspace SetupMsBuildWorkspace()

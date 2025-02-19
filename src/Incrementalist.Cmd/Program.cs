@@ -102,8 +102,7 @@ namespace Incrementalist.Cmd
 
                 if (!repoResult.foundRepo)
                 {
-                    Console.WriteLine("Unable to find Git repository located in {0}. Shutting down.",
-                        workingFolder.FullName);
+                    logger.LogError("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
                     return -3;
                 }
 
@@ -115,12 +114,11 @@ namespace Incrementalist.Cmd
                     options.GitBranch = $"origin/{options.GitBranch}";
                     if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                     {
-                        Console.WriteLine("Current git repository doesn't have any branch named [{0}]. Shutting down.",
-                            options.GitBranch);
-                        Console.WriteLine("[Debug] Here are all of the currently known branches in this repository");
+                        logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                        logger.LogDebug("Here are all of the currently known branches in this repository:");
                         foreach (var b in repoResult.repo.Branches)
                         {
-                            Console.WriteLine(b.FriendlyName);
+                            logger.LogDebug(b.FriendlyName);
                         }
 
                         return -4;
@@ -153,7 +151,7 @@ namespace Incrementalist.Cmd
 
             var affectedFilesStr = string.Join(",", affectedFiles.Keys);
 
-            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
         private static async Task AnaylzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
@@ -175,30 +173,66 @@ namespace Incrementalist.Cmd
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-            var affectedFiles = (await emitTask.Run()).ToList();
+            var buildResult = await emitTask.Run();
 
             if (options.RunCommand && options.DotNetArgs.Length > 0)
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
                     options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
-                var exitCode = await runTask.Run(affectedFiles.SelectMany(x => x.Value));
+
+                var exitCode = await runTask.Run(buildResult);
                 if (exitCode != 0)
                     throw new Exception($"Command execution failed with exit code {exitCode}");
             }
             else
             {
-                var affectedFilesStr =
-                    string.Join(Environment.NewLine, affectedFiles.Select(x => string.Join(",", x.Value)));
+                string buildType;
+                IEnumerable<string> projectsToRebuild;
 
-                HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count);
+                switch (buildResult)
+                {
+                    case FullSolutionBuildResult _:
+                        buildType = "Full solution build";
+                        projectsToRebuild = msBuild.CurrentSolution.Projects.Select(p => p.FilePath);
+                        break;
+                    case IncrementalBuildResult incremental:
+                        buildType = "Incremental build";
+                        projectsToRebuild = incremental.AffectedProjects;
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
+                }
+
+                if (!projectsToRebuild.Any())
+                {
+                    logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
+                    return;
+                }
+
+                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
+
+                // Check to see if we're planning on writing out to the file system or not.
+                if (!string.IsNullOrEmpty(options.OutputFile))
+                {
+                    logger.LogInformation("{0} required - {1} affected projects - writing out to {2}", 
+                        buildType,
+                        projectsToRebuild.Count(),
+                        options.OutputFile);
+                    File.WriteAllText(options.OutputFile, affectedFilesStr);
+                }
+                else
+                {
+                    logger.LogInformation("{0} required:", buildType);
+                    logger.LogInformation(affectedFilesStr);
+                }
             }
         }
 
-        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount)
+        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount, ILogger logger)
         {
             if (affectedFilesCount == 0)
             {
-                Console.WriteLine("No changes detected by Incrementalist when analyzing {0}.",
+                logger.LogInformation("No changes detected by Incrementalist when analyzing {0}.",
                     options.ListFolders ? "repository folders" : "solution");
                 return;
             }
@@ -206,13 +240,12 @@ namespace Incrementalist.Cmd
             // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
-                Console.WriteLine("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
+                logger.LogInformation("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
                     options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
-
             else
-                Console.WriteLine(affectedFilesStr);
+                logger.LogInformation(affectedFilesStr);
         }
     }
 }

@@ -50,7 +50,7 @@ namespace Incrementalist.Tests.Commands
             var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "-c", "Release", "--nologo" }, true, false);
 
             // Act
-            var result = await task.Run(new[] { projectPath });
+            var result = await task.Run(new IncrementalBuildResult(new[] { projectPath }));
 
             // Assert
             result.Should().Be(0);
@@ -64,7 +64,7 @@ namespace Incrementalist.Tests.Commands
             var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "--invalid-option" }, true, false);
 
             // Act
-            var result = await task.Run(new[] { "dummy.csproj" });
+            var result = await task.Run(new IncrementalBuildResult(new[] { "dummy.csproj" }));
 
             // Assert
             result.Should().Be(1);
@@ -90,7 +90,7 @@ namespace Incrementalist.Tests.Commands
             var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "-c", "Release", "--nologo" }, true, true);
 
             // Act
-            var result = await task.Run(projects);
+            var result = await task.Run(new IncrementalBuildResult(projects));
 
             // Assert
             result.Should().Be(0);
@@ -105,10 +105,40 @@ namespace Incrementalist.Tests.Commands
             var projects = new[] { "project1.csproj", "project2.csproj" };
 
             // Act
-            var result = await task.Run(projects);
+            var result = await task.Run(new IncrementalBuildResult(projects));
 
             // Assert
             result.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task Should_Execute_Full_Solution_Build()
+        {
+            // Arrange
+            var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
+            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
+            
+            // Create a minimal valid solution file
+            var solutionContent = @"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+EndGlobal";
+            File.WriteAllText(solutionPath, solutionContent);
+            
+            var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "-c", "Release", "--nologo" }, true, false);
+
+            // Act
+            var result = await task.Run(new FullSolutionBuildResult(solutionPath));
+
+            // Assert
+            result.Should().Be(0);
         }
     }
 } 
