@@ -2,7 +2,7 @@
 # See https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema for reference
 
 pool:
-  vmImage: windows-2019
+  vmImage: windows-latest
   demands: Cmd
 
 trigger:
@@ -22,9 +22,9 @@ variables:
 
 steps:
 - task: UseDotNet@2
-  displayName: 'Use .NET 8 SDK 8.0.100'
+  displayName: 'Use .NET SDK from global.json'
   inputs:
-    version:  8.0.100
+    useGlobalJson: true
 - task: BatchScript@1
   displayName: 'FAKE Build'
   inputs:
