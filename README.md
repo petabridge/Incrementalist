@@ -1,23 +1,23 @@
-# Incrementalist
+# 🔄 Incrementalist
 
 Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/) and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large .NET solutions. It helps optimize your CI/CD pipeline by building and testing only the projects affected by your changes.
 
-## When to Use Incrementalist
+## 🎯 When to Use Incrementalist
 
 Incrementalist is particularly valuable for:
 
-- **Large Solutions**: If your solution contains dozens or hundreds of projects, Incrementalist can significantly reduce build times by only building what's necessary.
-- **Monorepos**: When managing multiple applications or services in a single repository, Incrementalist helps identify and build only the affected components.
-- **Microservice Architectures**: In repositories containing multiple microservices, build only the services impacted by your changes.
-- **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the complete build graph.
-- **CI/CD Optimization**: Reduce CI/CD pipeline execution time by skipping unnecessary builds and tests.
+- 🏗️ **Large Solutions**: If your solution contains dozens or hundreds of projects, Incrementalist can significantly reduce build times by only building what's necessary.
+- 📦 **Monorepos**: When managing multiple applications or services in a single repository, Incrementalist helps identify and build only the affected components.
+- 🌐 **Microservice Architectures**: In repositories containing multiple microservices, build only the services impacted by your changes.
+- 🔗 **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the complete build graph.
+- ⚡ **CI/CD Optimization**: Reduce CI/CD pipeline execution time by skipping unnecessary builds and tests.
 
-## Requirements
+## ⚙️ Requirements
 
 - .NET 8.0 SDK or later
 - Git installed and available in the system PATH
 
-## Installation
+## 📥 Installation
 
 Incrementalist is available in two forms:
 
@@ -30,7 +30,7 @@ Install the command-line tool globally:
 dotnet tool install --global Incrementalist.Cmd
 ```
 
-## Quick Start Examples
+## 🚀 Quick Start Examples
 
 ```shell
 # Get list of affected projects and save to file
@@ -55,7 +55,7 @@ incrementalist -b dev -r -- test -c Release --no-build --nologo /p:CollectCovera
 incrementalist -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
 ```
 
-## Output Files
+## 📄 Output Files
 
 Incrementalist can generate two types of output files using `-f, --file`:
 
@@ -71,7 +71,7 @@ Incrementalist can generate two types of output files using `-f, --file`:
 
 These files can be used in build scripts, CI/CD pipelines, or other automation tools.
 
-## Command-Line Options
+## 🛠️ Command-Line Options
 
 ```
   -s, --sln             Optional. Solution file to analyze. Uses first .sln in
@@ -105,7 +105,7 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
   --version             Display version information.
 ```
 
-## Running Commands
+## ⚡ Running Commands
 
 Execute dotnet CLI commands against affected projects:
 
@@ -123,11 +123,11 @@ incrementalist -b dev -r --parallel -- build -c Release --nologo
 incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
 ```
 
-## Documentation
+## 📚 Documentation
 
-- [How It Works](docs/how-it-works.md) - Technical details and architecture
-- [Building from Source](docs/building.md) - Build instructions and development setup
+- 🔍 [How It Works](docs/how-it-works.md) - Technical details and architecture
+- 🏗️ [Building from Source](docs/building.md) - Build instructions and development setup
 
-## License
+## 📜 License
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
