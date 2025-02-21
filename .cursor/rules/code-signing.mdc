@@ -1,0 +1,114 @@
+---
+description: Rules and best practices for .NET code signing
+applies_to:
+  - "**/signsettings.json"
+  - "**/appsettings.json"
+  - "**/*.nupkg"
+triggers:
+  - file_pattern: "**/signsettings.json"
+    exists: true
+  - file_pattern: "**/appsettings.json"
+    content_pattern: "SignClient"
+---
+
+# .NET Code Signing Rules and Best Practices
+
+## Prerequisites
+These rules only apply when one of the following exists:
+- `signsettings.json`
+- `appsettings.json` with a `SignClient` section
+
+## Code Signing Configuration
+
+### SignClient Configuration
+```json
+{
+  "SignClient": {
+    "AzureAd": {
+      "AADInstance": "https://login.microsoftonline.com/",
+      "ClientId": "[configured in CI]",
+      "TenantId": "[configured in CI]"
+    },
+    "Service": {
+      "Url": "https://signing-service.example.com/",
+      "ResourceId": "[configured in CI]"
+    }
+  }
+}
+```
+
+## Security Best Practices
+1. Never commit signing credentials to source control
+2. Store signing credentials in CI/CD secret variables
+3. Use environment-specific signing configurations
+4. Implement proper credential rotation
+5. Log signing operations for audit purposes
+
+## CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install SignClient
+      run: dotnet tool install --global SignClient
+    
+    - name: Sign NuGet Packages
+      run: |
+        SignClient sign `
+          --config signsettings.json `
+          --input "**/*.nupkg" `
+          --secret "${{ secrets.SIGN_CLIENT_SECRET }}" `
+          --name "MyProject" `
+          --description "Official release package"
+```
+
+### Azure DevOps Example
+```yaml
+steps:
+- task: UseDotNet@2
+  inputs:
+    useGlobalJson: true
+
+- script: dotnet tool install --global SignClient
+  displayName: 'Install SignClient'
+
+- powershell: |
+    SignClient sign `
+      --config signsettings.json `
+      --input "$(Build.ArtifactStagingDirectory)/*.nupkg" `
+      --secret "$(SignClientSecret)" `
+      --name "$(Build.DefinitionName)" `
+      --description "Official release package"
+  displayName: 'Sign Packages'
+  env:
+    SignClientSecret: $(SignClientSecret)
+```
+
+## Verification
+1. Implement post-signing verification
+2. Check signature validity before publishing
+3. Include signature verification in test pipeline
+4. Document signature verification process
+
+## Package Publishing
+1. Only publish signed packages for releases
+2. Implement signature verification before publishing
+3. Maintain signed package archive
+4. Document package signature in release notes
+
+## Troubleshooting
+1. Common signing errors and solutions
+2. Credential validation steps
+3. Service connectivity issues
+4. Certificate expiration handling
+
+## Maintenance
+1. Regular credential rotation schedule
+2. Certificate expiration monitoring
+3. Signing service health checks
+4. Audit log review process 
