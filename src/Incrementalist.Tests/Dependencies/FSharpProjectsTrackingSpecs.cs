@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
@@ -58,9 +57,9 @@ namespace Incrementalist.Tests.Dependencies
             var buildResult = await emitTask.Run();
 
             // When all projects are affected, we expect a full solution build
-            buildResult.Should().BeOfType<FullSolutionBuildResult>();
+            Assert.True((buildResult) is FullSolutionBuildResult);
             var fullBuildResult = (FullSolutionBuildResult)buildResult;
-            fullBuildResult.SolutionPath.Should().Be(solutionFullPath);
+            Assert.Equal(solutionFullPath, fullBuildResult.SolutionPath);
         }
 
         private static MSBuildWorkspace SetupMsBuildWorkspace()

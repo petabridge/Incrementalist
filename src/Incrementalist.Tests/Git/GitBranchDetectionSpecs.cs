@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using FluentAssertions;
 using Incrementalist.Git;
 using Incrementalist.Tests.Helpers;
 using Xunit;
@@ -30,7 +29,7 @@ namespace Incrementalist.Tests.Git
         public void ShouldDetectExistingBranch()
         {
             Repository.CreateBranch("foo");
-            DiffHelper.HasBranch(Repository.Repository, "foo").Should().BeTrue();
+            Assert.True(DiffHelper.HasBranch(Repository.Repository, "foo"));
         }
     }
 }

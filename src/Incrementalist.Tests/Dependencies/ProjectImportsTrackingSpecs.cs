@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
@@ -46,7 +45,9 @@ namespace Incrementalist.Tests.Dependencies
             var projectFile = new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
             var imports = ProjectImportsFinder.FindProjectImports(new[] { projectFile });
             
-            imports.Values.Should().BeEquivalentTo(new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToImmutableList()));
+            var expectedImport = new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToImmutableList());
+            Assert.Collection(imports.Values, 
+                item => Assert.Equal(expectedImport.Path, item.Path));
         }
 
         [Fact(DisplayName = "When project imported file is changed, the project should be marked as affected")]
@@ -70,7 +71,8 @@ namespace Incrementalist.Tests.Dependencies
                 [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
             };
             var filteredAffectedFiles = await cmd.Process(Task.FromResult(solutionFiles));
-            filteredAffectedFiles.Should().HaveCount(1).And.Subject.Keys.Should().BeEquivalentTo(projectFilePath);
+            Assert.Single(filteredAffectedFiles);
+            Assert.Equal(projectFilePath, filteredAffectedFiles.Keys.First());
         }
     }
 }
