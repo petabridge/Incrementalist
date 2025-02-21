@@ -21,6 +21,9 @@ applies_to:
 
 ## Project Structure
 
+> [!IMPORTANT]
+> Don't just create new files willy-nilly, always look to see what exists first before deciding to create something new.
+
 ### Required Files
 ```
 ├── Directory.Build.props       # Central version and package metadata
