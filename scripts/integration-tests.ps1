@@ -4,7 +4,8 @@ param(
     [string]$Configuration = "Release"
 )
 
-$ErrorActionPreference = 'Stop'
+# Track overall success/failure
+$script:hasUnexpectedFailures = $false
 
 function Initialize-TestEnvironment {
     $testResultsDir = Join-Path $PSScriptRoot "..\TestResults"
@@ -36,20 +37,24 @@ function Invoke-IncrementalistTest {
     try {
         & $TestScript
         $exitCode = $LASTEXITCODE
+        
+        # Check for unexpected success or failure
         if ($exitCode -ne 0 -and -not $ExpectFailure) {
-            throw "Test failed with exit code $exitCode"
+            Write-Host "Test failed unexpectedly: $TestName (Exit code: $exitCode)" -ForegroundColor Red
+            $script:hasUnexpectedFailures = $true
         }
-        if ($exitCode -eq 0 -and $ExpectFailure) {
-            throw "Test was expected to fail but succeeded"
+        elseif ($exitCode -eq 0 -and $ExpectFailure) {
+            Write-Host "Test succeeded unexpectedly: $TestName (Expected failure)" -ForegroundColor Red
+            $script:hasUnexpectedFailures = $true
         }
-        # Don't propagate the error code if this was an expected failure
-        $LASTEXITCODE = 0
-        Write-Host "Test completed successfully: $TestName" -ForegroundColor Green
+        else {
+            Write-Host "Test completed as expected: $TestName" -ForegroundColor Green
+        }
     }
     catch {
-        Write-Host "Test failed: $TestName" -ForegroundColor Red
-        Write-Host $_.Exception.Message
-        throw
+        Write-Host "Test failed with exception: $TestName" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        $script:hasUnexpectedFailures = $true
     }
 }
 
@@ -96,7 +101,7 @@ function Test-ErrorHandling {
 }
 
 # Main execution
-Write-Host "Running Incrementalist integration tests..."
+Write-Host "Running Incrementalist integration tests..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
 
 $incrementalistProjects = Get-ChildItem -Path "src" -Filter "Incrementalist.Cmd.csproj" -Recurse
@@ -107,7 +112,8 @@ foreach ($project in $incrementalistProjects) {
     Write-Host "Building project..."
     dotnet build $project.FullName -c $Configuration
     if ($LASTEXITCODE -ne 0) {
-        throw "Failed to build Incrementalist.Cmd project"
+        Write-Host "Failed to build Incrementalist.Cmd project" -ForegroundColor Red
+        exit 1
     }
     
     # Run all test scenarios
@@ -118,4 +124,12 @@ foreach ($project in $incrementalistProjects) {
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
 }
 
-Write-Host "All integration tests completed successfully!" -ForegroundColor Green 
+# Final status report
+Write-Host "`nIntegration Test Summary:" -ForegroundColor Cyan
+if ($script:hasUnexpectedFailures) {
+    Write-Host "One or more integration tests failed unexpectedly!" -ForegroundColor Red
+    exit 1
+} else {
+    Write-Host "All integration tests completed with expected results." -ForegroundColor Green
+    exit 0
+} 
