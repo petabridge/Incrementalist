@@ -24,14 +24,21 @@ let solutionFile = FindFirstMatchingFile "*.sln" __SOURCE_DIRECTORY__  // dynami
 let buildNumber = environVarOrDefault "BUILD_NUMBER" "0"
 let hasTeamCity = (not (buildNumber = "0")) // check if we have the TeamCity environment variable for build # set
 let preReleaseVersionSuffix = "beta" + (if (not (buildNumber = "0")) then (buildNumber) else DateTime.UtcNow.Ticks.ToString())
-let versionSuffix = 
-    match (getBuildParam "nugetprerelease") with
-    | "dev" -> preReleaseVersionSuffix
-    | _ -> ""
 
 let releaseNotes =
-    File.ReadLines "./RELEASE_NOTES.md"
+    File.ReadLines (__SOURCE_DIRECTORY__ @@ "RELEASE_NOTES.md")
     |> ReleaseNotesHelper.parseReleaseNotes
+
+let versionFromReleaseNotes =
+    match releaseNotes.SemVer.PreRelease with
+    | Some r -> r.Origin
+    | None -> ""
+
+let versionSuffix =
+    match (getBuildParam "nugetprerelease") with
+    | "dev" -> preReleaseVersionSuffix
+    | "" -> versionFromReleaseNotes
+    | str -> str
 
 // Directories
 let toolsDir = __SOURCE_DIRECTORY__ @@ "tools"
