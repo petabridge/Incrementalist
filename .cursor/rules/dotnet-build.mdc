@@ -1,0 +1,215 @@
+---
+description: Rules and best practices for .NET build systems
+applies_to: 
+  - "**/*.sln"
+  - "**/*.csproj"
+  - "**/*.fsproj"
+  - "**/Directory.Build.props"
+  - "**/build.ps1"
+  - "**/.github/workflows/*.yaml"
+  - "**/.azure/*.yaml"
+  - "**/RELEASE_NOTES.md"
+---
+
+# .NET Build System Rules and Best Practices
+
+## Core Build Philosophy
+- Use native `dotnet` CLI commands as the primary build mechanism
+- Avoid complex build systems like CAKE, FAKE, or NUKE
+- Keep build scripts simple, maintainable, and cross-platform compatible
+- Use PowerShell for custom build tasks that can't be handled by `dotnet` CLI
+
+## Project Structure
+
+> [!IMPORTANT]
+> Don't just create new files willy-nilly, always look to see what exists first before deciding to create something new.
+
+### Required Files
+```
+├── Directory.Build.props       # Central version and package metadata
+├── RELEASE_NOTES.md           # Version history and release notes
+├── build.ps1                  # Main build script
+├── scripts/                   # PowerShell helper scripts
+│   ├── getReleaseNotes.ps1    # Parse release notes
+│   ├── bumpVersion.ps1        # Update assembly versions
+│   └── *.ps1                 # Other build helper scripts
+├── .github/workflows/         # GitHub Actions workflows
+│   ├── pr_validation.yaml    # PR and branch validation
+│   └── release.yaml         # Release workflow
+└── .azure/                   # Azure DevOps pipelines (if used)
+    └── *.yaml               # Pipeline definitions
+```
+
+## Release Notes Format
+RELEASE_NOTES.md should follow this format:
+```markdown
+#### 1.2.3 March 14 2024 ####
+* First change
+* Second change
+
+#### 1.2.2 March 10 2024 ####
+* Previous changes
+```
+
+This format is used by the build system to:
+1. Extract the current version number
+2. Update Directory.Build.props
+3. Generate release notes for NuGet packages
+4. Create GitHub releases
+
+## Build Script Guidelines
+
+### Main build.ps1
+- Should be minimal and focused on version management
+- Primary responsibilities:
+  1. Parse RELEASE_NOTES.md
+  2. Update version in Directory.Build.props
+  3. Call dotnet commands for build/test/pack
+
+Example build.ps1 structure:
+```powershell
+. "$PSScriptRoot\scripts\getReleaseNotes.ps1"
+. "$PSScriptRoot\scripts\bumpVersion.ps1"
+
+# Update version information
+$releaseNotes = Get-ReleaseNotes -MarkdownFile "RELEASE_NOTES.md"
+UpdateVersionAndReleaseNotes -ReleaseNotesResult $releaseNotes -XmlFilePath "Directory.Build.props"
+
+# Build commands
+dotnet build -c Release
+dotnet test -c Release
+dotnet pack -c Release
+```
+
+## CI/CD Patterns
+
+### GitHub Actions
+
+#### Pull Request Validation (pr_validation.yaml)
+```yaml
+name: pr_validation
+
+on:
+  push:
+    branches: [ master, main, dev ]
+  pull_request:
+    branches: [ master, main, dev ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: "./global.json"
+    
+    - run: ./build.ps1
+    - run: dotnet test -c Release --verbosity normal
+    - run: dotnet pack -c Release
+```
+
+#### Release Workflow (release.yaml)
+```yaml
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: "./global.json"
+    
+    - run: ./build.ps1
+    - run: dotnet pack -c Release
+    
+    - name: Push to NuGet
+      run: dotnet nuget push "**/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "**/*.nupkg"
+        body_path: RELEASE_NOTES.md
+```
+
+### Azure DevOps Pipelines
+
+#### Build and Test Pipeline (.azure/build.yaml)
+```yaml
+trigger:
+  branches:
+    include:
+      - master
+      - dev
+      - main
+pr: none
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+- task: UseDotNet@2
+  inputs:
+    useGlobalJson: true
+
+- powershell: ./build.ps1
+  displayName: 'Update Release Notes'
+
+- script: dotnet build -c Release
+  displayName: 'Build'
+
+- script: dotnet test -c Release
+  displayName: 'Test'
+
+- script: dotnet pack -c Release -o $(Build.ArtifactStagingDirectory)
+  displayName: 'Pack'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'nuget'
+```
+
+## Migration Guidelines
+
+### Moving from CAKE/FAKE/NUKE
+1. Identify build tasks in existing system
+2. Map complex tasks to PowerShell scripts
+3. Replace build system commands with native dotnet CLI
+4. Move signing configuration to separate file
+5. Update CI/CD pipeline to use new build structure
+
+### Directory Migration
+When moving Azure DevOps pipeline files:
+1. Check for existing pipeline files in non-standard locations
+2. Before moving to `.azure/`, confirm with team
+3. Update pipeline connection in Azure DevOps portal
+4. Test pipeline after migration
+
+## Code Signing
+- Keep signing configuration separate
+- Only include when `signsettings.json` or `SignClient` section exists
+- Use dedicated signing rules file for these scenarios
+
+## Additional Best Practices
+1. Use `Directory.Build.props` for central version management
+2. Keep PowerShell scripts focused and modular
+3. Implement cross-platform compatibility checks
+4. Use `dotnet tool` for specialized build tools
+5. Maintain clear separation between build and release pipelines
+6. Document build prerequisites in README.md
+7. Include example commands for local development
+8. Use matrix builds for multi-platform testing
+9. Implement proper error handling in PowerShell scripts
+10. Keep build artifacts in `./artifacts` or `./bin` directory 
