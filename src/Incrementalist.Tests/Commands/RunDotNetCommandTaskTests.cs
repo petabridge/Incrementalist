@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Tests.Helpers;
 using Microsoft.Extensions.Logging;
@@ -53,7 +52,7 @@ namespace Incrementalist.Tests.Commands
             var result = await task.Run(new IncrementalBuildResult(new[] { projectPath }));
 
             // Assert
-            result.Should().Be(0);
+            Assert.Equal(0, result);
         }
 
         [Fact]
@@ -67,7 +66,7 @@ namespace Incrementalist.Tests.Commands
             var result = await task.Run(new IncrementalBuildResult(new[] { "dummy.csproj" }));
 
             // Assert
-            result.Should().Be(1);
+            Assert.Equal(1, result);
         }
 
         [Fact]
@@ -93,7 +92,7 @@ namespace Incrementalist.Tests.Commands
             var result = await task.Run(new IncrementalBuildResult(projects));
 
             // Assert
-            result.Should().Be(0);
+            Assert.Equal(0, result);
         }
 
         [Fact]
@@ -108,7 +107,7 @@ namespace Incrementalist.Tests.Commands
             var result = await task.Run(new IncrementalBuildResult(projects));
 
             // Assert
-            result.Should().Be(1);
+            Assert.Equal(1, result);
         }
 
         [Fact]
@@ -138,7 +137,7 @@ EndGlobal";
             var result = await task.Run(new FullSolutionBuildResult(solutionPath));
 
             // Assert
-            result.Should().Be(0);
+            Assert.Equal(0, result);
         }
     }
 } 

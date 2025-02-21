@@ -9,7 +9,6 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using FluentAssertions;
 using Incrementalist.Git;
 using Incrementalist.Tests.Helpers;
 using Xunit;
@@ -36,9 +35,9 @@ namespace Incrementalist.Tests.Git
             Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber")
                 .Commit("Fuberized file");
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            diffedFiles.Count.Should().Be(1);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Path.GetFileName(file).Should().Be("fuber.txt");
+            Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
 
         [Fact(DisplayName = "Should detect files that have been modified in existing repo")]
@@ -52,9 +51,9 @@ namespace Incrementalist.Tests.Git
                 .Commit("Updated fuberized file");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            diffedFiles.Count.Should().Be(1);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Path.GetFileName(file).Should().Be("fuber.txt");
+            Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
 
         [Fact(DisplayName = "Should detect files that have been deleted in existing repo")]
@@ -68,9 +67,9 @@ namespace Incrementalist.Tests.Git
                 .Commit("Delete fuberized file");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            diffedFiles.Count.Should().Be(1);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Path.GetFileName(file).Should().Be("fuber.txt");
+            Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
 
         [Fact(DisplayName = "Should not detect any changes when none are present")]
@@ -79,7 +78,7 @@ namespace Incrementalist.Tests.Git
             Repository.CreateBranch("foo").CheckoutBranch("foo");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            diffedFiles.Count.Should().Be(0);
+            Assert.Empty(diffedFiles);
         }
 
         [Fact(DisplayName = "Detected files should report correct absolute path")]
@@ -88,10 +87,10 @@ namespace Incrementalist.Tests.Git
             Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber")
                 .Commit("Fuberized file");
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            diffedFiles.Count.Should().Be(1);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Path.GetFileName(file).Should().Be("fuber.txt");
-            file.Should().Be(Path.GetFullPath("fuber.txt", Repository.BasePath));
+            Assert.Equal("fuber.txt", Path.GetFileName(file));
+            Assert.Equal(Path.GetFullPath("fuber.txt", Repository.BasePath), file);
         }
     }
 }

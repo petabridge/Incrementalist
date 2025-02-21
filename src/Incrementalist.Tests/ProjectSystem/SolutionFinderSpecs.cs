@@ -7,7 +7,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using FluentAssertions;
 using Incrementalist.ProjectSystem;
 using Incrementalist.Tests.Helpers;
 using Xunit;
@@ -42,8 +41,8 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            solutions.Should().HaveCount(1);
-            solutions.First().Should().EndWith("MySolution.sln");
+            Assert.Single(solutions ?? []);
+            Assert.EndsWith("MySolution.sln", solutions.First());
         }
 
         [Fact(DisplayName = "Should find multiple solutions in root directory")]
@@ -58,9 +57,9 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            solutions.Should().HaveCount(2);
-            solutions.Should().Contain(x => x.EndsWith("Solution1.sln"));
-            solutions.Should().Contain(x => x.EndsWith("Solution2.sln"));
+            Assert.Equal(2, solutions.Count());
+            Assert.Contains(solutions, s => s.EndsWith("Solution1.sln"));
+            Assert.Contains(solutions, s => s.EndsWith("Solution2.sln"));
         }
 
         [Fact(DisplayName = "Should find solutions in subdirectories")]
@@ -76,8 +75,8 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            solutions.Should().HaveCount(1);
-            solutions.First().Should().EndWith(expectedPath);
+            Assert.Single(solutions ?? []);
+            Assert.EndsWith(expectedPath, solutions.First());
         }
 
         [Fact(DisplayName = "Should return empty list when no solutions found")]
@@ -87,7 +86,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            solutions.Should().BeEmpty();
+            Assert.Empty(solutions ?? []);
         }
 
         [Fact(DisplayName = "Should respect search filter when provided")]
@@ -102,8 +101,8 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath, "Test*.sln").ToList();
 
             // Assert
-            solutions.Should().HaveCount(1);
-            solutions.First().Should().EndWith("Test.sln");
+            Assert.Single(solutions ?? []);
+            Assert.EndsWith("Test.sln", solutions.First());
         }
 
         [Fact(DisplayName = "Should respect search option when provided")]
@@ -119,8 +118,8 @@ namespace Incrementalist.Tests.ProjectSystem
             var topDirSolutions = SolutionFinder.GetSolutions(_repository.BasePath, searchOption: SearchOption.TopDirectoryOnly).ToList();
 
             // Assert
-            topDirSolutions.Should().HaveCount(1);
-            topDirSolutions.First().Should().EndWith("Solution1.sln");
+            Assert.Single(topDirSolutions ?? []);
+            Assert.EndsWith("Solution1.sln", topDirSolutions.First());
         }
 
         [Fact(DisplayName = "Should process multiple solutions in deterministic order")]
@@ -136,9 +135,9 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            solutions.Should().HaveCount(3);
-            // Verify solutions are returned in alphabetical order
-            solutions.Select(s => Path.GetFileName(s)).Should().BeInAscendingOrder();
+            Assert.Equal(3, solutions.Count());
+            var orderedSolutions = solutions.Select(s => Path.GetFileName(s)).OrderBy(s => s).ToList();
+            Assert.Equal(new[] { "A.Solution.sln", "B.Solution.sln", "C.Solution.sln" }, orderedSolutions);
         }
     }
 } 

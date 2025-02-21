@@ -5,7 +5,6 @@
 // -----------------------------------------------------------------------
 
 using System;
-using FluentAssertions;
 using Incrementalist.Git;
 using Incrementalist.Tests.Helpers;
 using Xunit;
@@ -31,11 +30,11 @@ namespace Incrementalist.Tests.Git
         public void Should_detect_Repository()
         {
             var results = GitRunner.FindRepository(Repository.BasePath);
-            results.foundRepo.Should().BeTrue();
+            Assert.True(results.foundRepo);
 
             // note: due to what I believe is native interop here, the Repository.Info.WorkingDirectory
             // string appears to have an extra null terminator at the end
-            results.repo.Info.WorkingDirectory.Should().Contain(Repository.BasePath.Trim());
+            Assert.Contains(Repository.BasePath.Trim(), results.repo.Info.WorkingDirectory);
         }
     }
 }
