@@ -35,7 +35,7 @@ namespace Incrementalist.Tests.Git
             Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber")
                 .Commit("Fuberized file");
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            Assert.Equal(1, diffedFiles.Count);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
             Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
@@ -51,7 +51,7 @@ namespace Incrementalist.Tests.Git
                 .Commit("Updated fuberized file");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            Assert.Equal(1, diffedFiles.Count);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
             Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
@@ -67,7 +67,7 @@ namespace Incrementalist.Tests.Git
                 .Commit("Delete fuberized file");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            Assert.Equal(1, diffedFiles.Count);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
             Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
@@ -78,7 +78,7 @@ namespace Incrementalist.Tests.Git
             Repository.CreateBranch("foo").CheckoutBranch("foo");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            Assert.Equal(0, diffedFiles.Count);
+            Assert.Empty(diffedFiles);
         }
 
         [Fact(DisplayName = "Detected files should report correct absolute path")]
@@ -87,7 +87,7 @@ namespace Incrementalist.Tests.Git
             Repository.CreateBranch("foo").CheckoutBranch("foo").WriteFile("fuber.txt", "fuber")
                 .Commit("Fuberized file");
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
-            Assert.Equal(1, diffedFiles.Count);
+            Assert.Single(diffedFiles);
             var file = diffedFiles[0];
             Assert.Equal("fuber.txt", Path.GetFileName(file));
             Assert.Equal(Path.GetFullPath("fuber.txt", Repository.BasePath), file);
