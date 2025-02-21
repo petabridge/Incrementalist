@@ -9,14 +9,15 @@ trigger:
 pr:
   autoCancel: true # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
   branches:
-    include: [ dev, master ] # branch names which will trigger a build
+    include:
+      - dev
+      - master
 
 name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
 jobs:
-- template: azure-pipeline.template.yaml
-  parameters:
-    name: Windows
-    vmImage: 'windows-latest'
-    scriptFileName: build.cmd
-    scriptArgs: all
+  - template: azure-pipeline.template.yaml
+    parameters:
+      name: 'Windows'
+      vmImage: 'windows-latest'
+      runIntegrationTests: true

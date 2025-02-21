@@ -1,3 +1,10 @@
+#### 1.0.0-beta2 Feb 21 2025 ####
+
+* Added error handling for invalid git branches
+* Improved parallel execution performance
+* Fixed issue with Directory.Build.props detection in subdirectories
+* Added better logging for command execution failures
+
 #### 1.0.0-beta1 Feb 20 2025 ####
 
 Major new feature: Built-in `dotnet` command execution support! You can now run commands directly on affected projects:

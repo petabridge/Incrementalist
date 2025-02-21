@@ -25,12 +25,33 @@ steps:
   displayName: 'Use .NET SDK from global.json'
   inputs:
     useGlobalJson: true
-- task: BatchScript@1
-  displayName: 'FAKE Build'
-  inputs:
-    filename: build.cmd
-    arguments: 'Nuget nugetpublishurl=https://www.nuget.org/api/v2/package nugetkey=$(incrementalistKey)'
 
+# Version bump from release notes
+- task: PowerShell@2
+  displayName: 'Update version from RELEASE_NOTES.md'
+  inputs:
+    targetType: 'inline'
+    script: './build.ps1'
+
+# Create NuGet packages
+- task: PowerShell@2
+  displayName: 'Create NuGet packages'
+  inputs:
+    targetType: 'inline'
+    script: 'dotnet pack -c Release -o bin\nuget'
+
+# Push to NuGet
+- task: PowerShell@2
+  displayName: 'Push NuGet packages'
+  inputs:
+    targetType: 'inline'
+    script: |
+      $packages = Get-ChildItem -Path "bin\nuget\*.nupkg"
+      foreach ($package in $packages) {
+          dotnet nuget push $package --api-key "$(incrementalistKey)" --source "https://www.nuget.org/api/v2/package"
+      }
+
+# Create GitHub Release
 - task: GitHubRelease@0
   displayName: 'GitHub release (create)'
   inputs:
