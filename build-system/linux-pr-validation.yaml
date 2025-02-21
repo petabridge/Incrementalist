@@ -5,18 +5,27 @@ trigger:
     include:
       - dev
       - master
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/*'
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - dev
+      - master
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/*'
 
 name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
-pr:
-  autoCancel: true # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
-  branches:
-    include: [ dev, master ] # branch names which will trigger a build
-
 jobs:
-- template: azure-pipeline.template.yaml
-  parameters:
-    name: Ubuntu
-    vmImage: 'ubuntu-latest'
-    scriptFileName: ./build.sh
-    scriptArgs: all
+  - template: azure-pipeline.template.yaml
+    parameters:
+      name: 'Linux'
+      vmImage: 'ubuntu-latest'
+      runIntegrationTests: true

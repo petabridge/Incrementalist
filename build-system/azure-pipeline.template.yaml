@@ -1,9 +1,7 @@
 parameters:
   name: ''
   vmImage: ''
-  scriptFileName: ''
-  scriptArgs: 'all'
-  timeoutInMinutes: 120
+  timeoutInMinutes: 10
   runIntegrationTests: false
 
 jobs:
@@ -12,55 +10,74 @@ jobs:
     pool:
       vmImage: ${{ parameters.vmImage }}
     steps:
-      - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
-        clean: false  # whether to fetch clean each time
-        submodules: recursive  # set to 'true' for a single level of submodules or 'recursive' to get submodules of submodules
+      - checkout: self
+        clean: false
+        submodules: recursive
         persistCredentials: true
+        
       - task: UseDotNet@2
         displayName: 'Use .NET SDK from global.json'
         inputs:
           useGlobalJson: true
-      # Linux or macOS
-      - task: Bash@3 
-        displayName: Linux / OSX Build
+          
+      # Version bump
+      - task: PowerShell@2
+        displayName: 'Bump version from RELEASE_NOTES.md'
         inputs:
-          filePath: ${{ parameters.scriptFileName }}
-          arguments: ${{ parameters.scriptArgs }}
-        continueOnError: true
-        condition: in( variables['Agent.OS'], 'Linux', 'Darwin' )
-      # Windows
-      - task: BatchScript@1
-        displayName: Windows Build
+          targetType: 'inline'
+          script: './build.ps1'
+          
+      # Build and test
+      - task: PowerShell@2
+        displayName: 'Run unit tests'
         inputs:
-          filename: ${{ parameters.scriptFileName }}
-          arguments: ${{ parameters.scriptArgs }}
-        continueOnError: true
-        condition: eq( variables['Agent.OS'], 'Windows_NT' )
-      # Integration Tests
-      - task: BatchScript@1
-        displayName: Run Integration Tests
-        condition: and(succeeded(), eq(parameters.runIntegrationTests, true), eq(variables['Agent.OS'], 'Windows_NT'))
+          targetType: 'inline'
+          script: 'dotnet test -c Release --no-build --logger:trx --logger:"console;verbosity=normal" --results-directory $(Agent.TempDirectory)/TestResults -- -parallel none'
+          
+      # Integration tests (if enabled)
+      - task: PowerShell@2
+        displayName: 'Run integration tests'
+        condition: and(succeeded(), eq(${{ parameters.runIntegrationTests }}, true))
         inputs:
-          filename: integration-tests.ps1
-        continueOnError: false
+          targetType: 'inline'
+          script: './scripts/integration-tests.ps1 -Configuration Release'
+          
+      # Package
+      - task: PowerShell@2
+        displayName: 'Create NuGet packages'
+        condition: succeeded()
+        inputs:
+          targetType: 'inline'
+          script: 'dotnet pack -c Release -o bin\nuget'
+          
+      # Publish test results
       - task: PublishTestResults@2
+        displayName: 'Publish test results'
+        condition: succeededOrFailed()
         inputs:
           testRunner: VSTest
-          testResultsFiles: '**/*.trx' #TestResults folder usually
-          testRunTitle: ${{ parameters.name }}
+          testResultsFiles: '$(Agent.TempDirectory)/TestResults/*.trx'
+          testRunTitle: '${{ parameters.name }} - Unit Tests'
+          failTaskOnFailedTests: true
           mergeTestResults: true
+          publishRunAttachments: true
+          
+      # Copy build artifacts
       - task: CopyFiles@2
-        displayName: Copy affected files
+        displayName: 'Copy build artifacts'
+        condition: succeeded()
         inputs:
           Contents: |
+            bin/nuget/*.nupkg
             **/incrementalist-affected-folders.txt
             **/incrementalist-affected-files.txt
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
+          flattenFolders: true
+          
+      # Publish artifacts
       - task: PublishBuildArtifacts@1
+        condition: succeeded()
         inputs:
-          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-          artifactName: incrementalist-affected-files
-      - script: 'echo 1>&2'
-        failOnStderr: true
-        displayName: 'If above is partially succeeded, then fail'
-        condition: eq(variables['Agent.JobStatus'], 'SucceededWithIssues')
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          ArtifactName: 'drop'
+          publishLocation: 'Container'
