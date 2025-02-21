@@ -16,7 +16,19 @@ name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 jobs:
 - template: azure-pipeline.template.yaml
   parameters:
-    name: Windows
+    name: Windows_Build
     vmImage: 'windows-latest'
     scriptFileName: build.cmd
     scriptArgs: all
+    runIntegrationTests: false
+
+- template: azure-pipeline.template.yaml
+  parameters:
+    name: Windows_Integration_Tests
+    vmImage: 'windows-latest'
+    scriptFileName: build.cmd
+    scriptArgs: all
+    runIntegrationTests: true
+    timeoutInMinutes: 180
+    dependsOn: Windows_Build
+    condition: succeeded()

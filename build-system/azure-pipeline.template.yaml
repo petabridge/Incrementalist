@@ -4,6 +4,7 @@ parameters:
   scriptFileName: ''
   scriptArgs: 'all'
   timeoutInMinutes: 120
+  runIntegrationTests: false
 
 jobs:
   - job: ${{ parameters.name }}
@@ -35,6 +36,13 @@ jobs:
           arguments: ${{ parameters.scriptArgs }}
         continueOnError: true
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      # Integration Tests
+      - task: BatchScript@1
+        displayName: Run Integration Tests
+        condition: and(succeeded(), eq(parameters.runIntegrationTests, true), eq(variables['Agent.OS'], 'Windows_NT'))
+        inputs:
+          filename: integration-tests.ps1
+        continueOnError: false
       - task: PublishTestResults@2
         inputs:
           testRunner: VSTest
