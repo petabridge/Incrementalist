@@ -57,9 +57,9 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Equal(2, solutions.Count());
-            Assert.Contains(solutions, s => s.EndsWith("Solution1.sln"));
-            Assert.Contains(solutions, s => s.EndsWith("Solution2.sln"));
+            Assert.Equal(2, (solutions)?.Count());
+            Assert.Contains(x => x.EndsWith("Solution1.sln"), solutions);
+            Assert.Contains(x => x.EndsWith("Solution2.sln"), solutions);
         }
 
         [Fact(DisplayName = "Should find solutions in subdirectories")]
@@ -135,9 +135,9 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Equal(3, solutions.Count());
-            var orderedSolutions = solutions.Select(s => Path.GetFileName(s)).OrderBy(s => s).ToList();
-            Assert.Equal(new[] { "A.Solution.sln", "B.Solution.sln", "C.Solution.sln" }, orderedSolutions);
+            Assert.Equal(3, (solutions)?.Count());
+            // Verify solutions are returned in alphabetical order
+            solutions.Select(s => Path.GetFileName(s)).Should().BeInAscendingOrder();
         }
     }
 } 

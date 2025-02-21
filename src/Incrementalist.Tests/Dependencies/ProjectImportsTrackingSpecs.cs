@@ -69,8 +69,7 @@ namespace Incrementalist.Tests.Dependencies
                 [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
             };
             var filteredAffectedFiles = await cmd.Process(Task.FromResult(solutionFiles));
-            Assert.Single(filteredAffectedFiles);
-            Assert.Equal(projectFilePath, filteredAffectedFiles.Keys.First());
+            Assert.Equivalent(projectFilePath, filteredAffectedFiles.Should().HaveCount(1).And.Subject.Keys);
         }
     }
 }
