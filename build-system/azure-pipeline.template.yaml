@@ -27,7 +27,14 @@ jobs:
           targetType: 'inline'
           script: './build.ps1'
           
-      # Build and test
+      # Build solution
+      - task: PowerShell@2
+        displayName: 'Build solution'
+        inputs:
+          targetType: 'inline'
+          script: 'dotnet build -c Release'
+          
+      # Run unit tests
       - task: PowerShell@2
         displayName: 'Run unit tests'
         inputs:

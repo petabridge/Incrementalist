@@ -35,12 +35,15 @@ function Invoke-IncrementalistTest {
     Write-Host "Running test: $TestName..."
     try {
         & $TestScript
-        if ($LASTEXITCODE -ne 0 -and -not $ExpectFailure) {
-            throw "Test failed with exit code $LASTEXITCODE"
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0 -and -not $ExpectFailure) {
+            throw "Test failed with exit code $exitCode"
         }
-        if ($LASTEXITCODE -eq 0 -and $ExpectFailure) {
+        if ($exitCode -eq 0 -and $ExpectFailure) {
             throw "Test was expected to fail but succeeded"
         }
+        # Don't propagate the error code if this was an expected failure
+        $LASTEXITCODE = 0
         Write-Host "Test completed successfully: $TestName" -ForegroundColor Green
     }
     catch {
