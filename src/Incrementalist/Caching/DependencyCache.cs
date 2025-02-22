@@ -95,23 +95,33 @@ namespace Incrementalist.Caching
             foreach (var projectId in solution.ProjectIds)
             {
                 var project = solution.GetProject(projectId);
+                if (project?.FilePath == null) continue;
+
                 var dependencies = dependencyGraph
                     .GetProjectsThatThisProjectDirectlyDependsOn(projectId)
-                    .Select(depId => solution.GetProject(depId).FilePath)
+                    .Select(depId => solution.GetProject(depId)?.FilePath)
+                    .Where(path => path != null)
+                    .Cast<string>()
                     .ToImmutableList();
 
                 projectsBuilder.Add(project.FilePath, new ProjectNode(project.FilePath, dependencies));
             }
 
             // Calculate checksum for all project files
+            var projectPaths = solution.Projects
+                .Select(p => p.FilePath)
+                .Where(p => p != null)
+                .Cast<string>()
+                .ToList();
+
             var checksum = await ChecksumCalculator.CalculateChecksumAsync(
                 solution.FilePath,
-                solution.Projects.Select(p => p.FilePath),
+                projectPaths,
                 cancellationToken);
 
             return new DependencyCache(
                 Version: DependencyCacheIO.CurrentVersion,
-                SolutionPath: solution.FilePath,
+                SolutionPath: solution.FilePath!,
                 Checksum: checksum,
                 Projects: projectsBuilder.ToImmutable());
         }
