@@ -129,7 +129,9 @@ namespace Incrementalist.Cmd.Commands
                 Logger.LogInformation("Using cached dependency information");
                 
                 // Need to determine which projects need rebuilding based on the cache
-                
+                var cachedDependencyGraph = cache.GetProjectsToRebuild(affectedFiles);
+
+                return ComputeFinalProjectGraph(cachedDependencyGraph);
             }
 
             FullCompute:
@@ -138,10 +140,39 @@ namespace Incrementalist.Cmd.Commands
                 var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
 
                 // Convert the dependency graph to a list of affected projects
-                var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
+                var finalGraph = ComputeFinalProjectGraph(dependencyGraph);
+
+                try
+                {
+                    // Save the updated cache
+                    if (!Settings.NoCache)
+                    {
+                        var newCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+                        await DependencyCacheIO.SaveAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory), newCache);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // we can continue with our analysis even if there was an issue saving the cache
+                    Logger.LogWarning(ex, "Failed to save cache");
+                }
                 
-                Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
-                return new IncrementalBuildResult(projectsToRebuild);
+                return finalGraph;
+
+                BuildAnalysisResult ComputeFinalProjectGraph(Dictionary<string, ICollection<string>> graph)
+                {
+                    var projectsToRebuild = graph.SelectMany(x => x.Value).Distinct().ToList();
+                
+                    // check to see if all the projects to rebuild == every project in the solution, in which case we need a full build
+                    if (projectsToRebuild.Count == solution.Projects.Count())
+                    {
+                        Logger.LogInformation("All projects are affected. Full solution build required");
+                        return new FullSolutionBuildResult(solution.FilePath);
+                    }
+                    
+                    Logger.LogInformation("Incremental build possible. {ProjectCount} projects [{Projects}] need to be rebuilt", projectsToRebuild.Count, string.Join(", ", projectsToRebuild));
+                    return new IncrementalBuildResult(projectsToRebuild);
+                }
         }
     }
 }

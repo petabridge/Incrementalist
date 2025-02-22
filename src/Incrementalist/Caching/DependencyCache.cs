@@ -34,9 +34,9 @@ namespace Incrementalist.Caching
         /// </summary>
         /// <param name="affectedFiles">Dictionary of affected files and their types</param>
         /// <returns>Dictionary where keys are affected project paths and values are collections of projects that depend on them (including the project itself)</returns>
-        public Dictionary<string, HashSet<string>> GetProjectsToRebuild(Dictionary<string, SlnFile> affectedFiles)
+        public Dictionary<string, ICollection<string>> GetProjectsToRebuild(Dictionary<string, SlnFile> affectedFiles)
         {
-            var result = new Dictionary<string, HashSet<string>>();
+            var result = new Dictionary<string, ICollection<string>>();
 
             // Group affected files by their ProjectId or by their path for project files
             var affectedProjects = affectedFiles
