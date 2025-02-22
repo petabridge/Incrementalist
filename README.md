@@ -100,6 +100,9 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
   --fail-on-no-projects Optional. (Default: false) Fail if no projects are affected.
 
+  --no-cache           Optional. (Default: false) Ignore any existing cache file
+                      and perform a full Roslyn analysis.
+
   --help                Display help screen.
 
   --version             Display version information.

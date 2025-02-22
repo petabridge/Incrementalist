@@ -50,6 +50,9 @@ namespace Incrementalist.Cmd
         [Option("fail-on-no-projects", HelpText = "When running commands, fail if no projects are affected.", Default = false)]
         public bool FailOnNoProjects { get; set; }
 
+        [Option("no-cache", HelpText = "Ignore any existing cache file and perform a full Roslyn analysis.", Default = false)]
+        public bool NoCache { get; set; }
+
         // Property to store dotnet CLI arguments that come after --
         public string[] DotNetArgs { get; set; }
     }
