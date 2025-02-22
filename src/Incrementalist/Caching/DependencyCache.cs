@@ -36,10 +36,9 @@ namespace Incrementalist.Caching
     public static class DependencyCacheIO
     {
         public const string CurrentVersion = "1.0";
-        private const string CacheFileName = "dependency-graph.cache.json";
         
         public static string GetCachePath(string solutionDir) =>
-            Path.Combine(solutionDir, ".incrementalist", CacheFileName);
+            Path.Combine(solutionDir, IncrementalistFileConstants.IncrementalistDirectory, IncrementalistFileConstants.CacheFileName);
             
         public static async Task<DependencyCache?> LoadAsync(string path)
         {
