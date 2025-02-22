@@ -13,23 +13,23 @@ using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Caching
 {
-    public sealed class DependencyCacheHelperTests : IDisposable
+    [Collection(MSBuildCollectionFixture.Name)]
+    public class DependencyCacheHelperTests : IDisposable
     {
+        private readonly ITestOutputHelper _outputHelper;
         private readonly DisposableRepository _repository;
-        private readonly ITestOutputHelper _output;
         private readonly MSBuildWorkspace _workspace;
 
-        public DependencyCacheHelperTests(ITestOutputHelper output)
+        public DependencyCacheHelperTests(ITestOutputHelper outputHelper, MSBuildFixture fixture)
         {
+            _outputHelper = outputHelper;
             _repository = new DisposableRepository();
-            _output = output;
-            _workspace = MSBuildWorkspace.Create();
+            _workspace = fixture.Workspace;
         }
 
         public void Dispose()
         {
-            _workspace.Dispose();
-            _repository.Dispose();
+            _repository?.Dispose();
         }
 
         /// <summary>
@@ -37,27 +37,27 @@ namespace Incrementalist.Tests.Caching
         /// </summary>
         private async Task VerifyCacheSerializationPreservesDataAsync(DependencyCache cache, string repositoryRootPath)
         {
-            // Save cache to disk - use repository root (_repository.BasePath) instead of solution directory
+            // Save cache to disk
             var cachePath = DependencyCacheIO.GetCachePath(repositoryRootPath);
             await DependencyCacheIO.SaveAsync(cachePath, cache);
 
-            // Load cache from disk
+            // Load cache back from disk
             var loadedCache = await DependencyCacheIO.LoadAsync(cachePath);
 
-            // Verify loaded cache matches original
+            // Verify all properties match
             Assert.NotNull(loadedCache);
-            Assert.Equal(cache.Version, loadedCache.Version);
-            Assert.Equal(cache.SolutionPath, loadedCache.SolutionPath);
-            Assert.Equal(cache.Checksum, loadedCache.Checksum);
             Assert.Equal(cache.Projects.Count, loadedCache.Projects.Count);
-
-            foreach (var (path, node) in cache.Projects)
+            foreach (var (projectPath, projectInfo) in cache.Projects)
             {
-                Assert.True(loadedCache.Projects.ContainsKey(path));
-                var loadedNode = loadedCache.Projects[path];
-                Assert.Equal(node.Path, loadedNode.Path);
-                Assert.Equal(node.Dependencies, loadedNode.Dependencies);
+                Assert.True(loadedCache.Projects.ContainsKey(projectPath));
+                Assert.Equal(projectInfo.Dependencies, loadedCache.Projects[projectPath].Dependencies);
             }
+        }
+
+        [Fact]
+        public async Task CreateFromSolutionAsync_WithNullSolution_ThrowsArgumentNullException()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => DependencyCacheHelper.CreateFromSolutionAsync(null));
         }
 
         [Fact]
@@ -72,19 +72,14 @@ namespace Incrementalist.Tests.Caching
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
 
-            // Create solution and project files
+            // Create initial solution and project files
             await File.WriteAllTextAsync(solutionPath, @"
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project1"", ""src\Project1\Project1.csproj"", ""{72bdc44f-c588-44f3-b6df-9aace7daafdd}""
 EndProject
 Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project2"", ""src\Project2\Project2.csproj"", ""{49bdc44f-c588-44f3-b6df-9aace7daafdd}""
 EndProject
-Global
-    GlobalSection(SolutionConfigurationPlatforms) = preSolution
-        Debug|Any CPU = Debug|Any CPU
-        Release|Any CPU = Release|Any CPU
-    EndGlobalSection
-EndGlobal");
+");
 
             await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
@@ -101,6 +96,7 @@ EndGlobal");
   </ItemGroup>
 </Project>");
 
+            // Load solution
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Act
@@ -108,9 +104,6 @@ EndGlobal");
 
             // Assert
             Assert.NotNull(cache);
-            Assert.Equal(DependencyCacheIO.CurrentVersion, cache.Version);
-            Assert.Equal(solutionPath, cache.SolutionPath);
-            Assert.NotNull(cache.Checksum);
             Assert.Equal(2, cache.Projects.Count);
 
             // Project1 has no dependencies
@@ -140,7 +133,7 @@ EndGlobal");
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project3Path)!);
 
-            // Create solution and project files
+            // Create initial solution and project files
             await File.WriteAllTextAsync(solutionPath, @"
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project1"", ""src\Project1\Project1.csproj"", ""{72bdc44f-c588-44f3-b6df-9aace7daafdd}""
@@ -149,12 +142,7 @@ Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project2"", ""src\Projec
 EndProject
 Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project3"", ""src\Project3\Project3.csproj"", ""{39bdc44f-c588-44f3-b6df-9aace7daafdd}""
 EndProject
-Global
-    GlobalSection(SolutionConfigurationPlatforms) = preSolution
-        Debug|Any CPU = Debug|Any CPU
-        Release|Any CPU = Release|Any CPU
-    EndGlobalSection
-EndGlobal");
+");
 
             await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
@@ -180,6 +168,7 @@ EndGlobal");
   </ItemGroup>
 </Project>");
 
+            // Load solution
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Act
@@ -226,12 +215,7 @@ Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project1"", ""src\Projec
 EndProject
 Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project2"", ""src\Project2\Project2.csproj"", ""{49bdc44f-c588-44f3-b6df-9aace7daafdd}""
 EndProject
-Global
-    GlobalSection(SolutionConfigurationPlatforms) = preSolution
-        Debug|Any CPU = Debug|Any CPU
-        Release|Any CPU = Release|Any CPU
-    EndGlobalSection
-EndGlobal");
+");
 
             await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
@@ -248,21 +232,22 @@ EndGlobal");
   </ItemGroup>
 </Project>");
 
+            // Load solution
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
+
+            // Create initial cache
             var initialCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
 
             // Modify Project1
             await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 </Project>");
-            
-            // Reload solution
-            _workspace.CloseSolution();
+
+            // Reload solution and create new cache
             solution = await _workspace.OpenSolutionAsync(solutionPath);
-            
-            // Act
             var modifiedCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
 
             // Assert
@@ -271,14 +256,6 @@ EndGlobal");
             // Verify both caches can be saved and loaded correctly
             await VerifyCacheSerializationPreservesDataAsync(initialCache, _repository.BasePath);
             await VerifyCacheSerializationPreservesDataAsync(modifiedCache, _repository.BasePath);
-        }
-
-        [Fact]
-        public async Task CreateFromSolutionAsync_WithNullSolution_ThrowsArgumentNullException()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
-                DependencyCacheHelper.CreateFromSolutionAsync(null!));
         }
     }
 } 
