@@ -28,6 +28,9 @@ namespace Incrementalist
     {
         public AffectedFile(string path, FileType fileType, string project)
         {
+            ArgumentNullException.ThrowIfNull(path);
+            ArgumentNullException.ThrowIfNull(project);
+            
             Path = path;
             FileType = fileType;
             Project = project;
@@ -48,38 +51,36 @@ namespace Incrementalist
         /// </summary>
         public string Project { get; }
 
-        public bool Equals(AffectedFile other)
+        public bool Equals(AffectedFile? other)
         {
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return string.Equals(Path, other.Path) && FileType == other.FileType &&
                    string.Equals(Project, other.Project);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            return obj is AffectedFile other && Equals(other);
+            return ReferenceEquals(this, obj) || (obj is AffectedFile other && Equals(other));
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                var hashCode = Path != null ? Path.GetHashCode() : 0;
-                hashCode = (hashCode * 397) ^ (int) FileType;
-                hashCode = (hashCode * 397) ^ (Project != null ? Project.GetHashCode() : 0);
+                var hashCode = Path.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)FileType;
+                hashCode = (hashCode * 397) ^ Project.GetHashCode();
                 return hashCode;
             }
         }
 
-        public static bool operator ==(AffectedFile left, AffectedFile right)
+        public static bool operator ==(AffectedFile? left, AffectedFile? right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(AffectedFile left, AffectedFile right)
+        public static bool operator !=(AffectedFile? left, AffectedFile? right)
         {
             return !Equals(left, right);
         }

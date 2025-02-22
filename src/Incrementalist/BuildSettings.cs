@@ -20,8 +20,10 @@ namespace Incrementalist
         public BuildSettings(string targetBranch, string solutionFile, string workingDirectory,
             TimeSpan? timeoutDuration = null)
         {
-            Contract.Requires(targetBranch != null);
-            Contract.Requires(solutionFile != null);
+            ArgumentNullException.ThrowIfNull(targetBranch);
+            ArgumentNullException.ThrowIfNull(solutionFile);
+            ArgumentNullException.ThrowIfNull(workingDirectory);
+            
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
             WorkingDirectory = workingDirectory;
