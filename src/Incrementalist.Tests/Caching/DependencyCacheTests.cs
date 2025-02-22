@@ -8,8 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Incrementalist.Caching;
+using Incrementalist.Git;
+using Microsoft.CodeAnalysis;
 using Incrementalist.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,14 +43,17 @@ namespace Incrementalist.Tests.Caching
             {
                 ["src/Project1/Project1.csproj"] = new(
                     "src/Project1/Project1.csproj",
+                    ProjectId.CreateNewId(),
                     ImmutableList<string>.Empty),
                     
                 ["src/Project2/Project2.csproj"] = new(
                     "src/Project2/Project2.csproj",
+                    ProjectId.CreateNewId(),
                     ImmutableList.Create("src/Project1/Project1.csproj")),
                     
                 ["tests/Project1.Tests/Project1.Tests.csproj"] = new(
                     "tests/Project1.Tests/Project1.Tests.csproj",
+                    ProjectId.CreateNewId(),
                     ImmutableList.Create("src/Project1/Project1.csproj"))
             };
             

@@ -7,12 +7,14 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Incrementalist.ProjectSystem;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
@@ -25,13 +27,57 @@ namespace Incrementalist.Caching
         string Version,
         string SolutionPath,
         string Checksum,
-        ImmutableDictionary<string, ProjectNode> Projects);
+        ImmutableDictionary<string, ProjectNode> Projects)
+    {
+        /// <summary>
+        /// Determines which projects need to be rebuilt based on the affected files
+        /// </summary>
+        /// <param name="affectedFiles">Dictionary of affected files and their types</param>
+        /// <returns>Dictionary where keys are affected project paths and values are collections of projects that depend on them (including the project itself)</returns>
+        public Dictionary<string, HashSet<string>> GetProjectsToRebuild(Dictionary<string, SlnFile> affectedFiles)
+        {
+            var result = new Dictionary<string, HashSet<string>>();
+
+            // Group affected files by their ProjectId or by their path for project files
+            var affectedProjects = affectedFiles
+                .Where(x => x.Value.FileType == FileType.Project || x.Value.ProjectId != null)
+                .GroupBy(x => x.Value.FileType == FileType.Project ? x.Key : Projects.FirstOrDefault(p => p.Value.Id == x.Value.ProjectId).Key)
+                .Where(g => g.Key != null)
+                .Select(g => g.Key)
+                .ToList();
+
+            foreach (var affectedProject in affectedProjects)
+            {
+                var dependentProjects = new HashSet<string> { affectedProject };
+                bool hasChanges;
+                do
+                {
+                    hasChanges = false;
+                    foreach (var project in Projects)
+                    {
+                        // If this project depends on any affected project and isn't already included
+                        if (!dependentProjects.Contains(project.Key) &&
+                            project.Value.Dependencies.Any(dep => dependentProjects.Contains(dep)))
+                        {
+                            dependentProjects.Add(project.Key);
+                            hasChanges = true;
+                        }
+                    }
+                } while (hasChanges);
+
+                result[affectedProject] = dependentProjects;
+            }
+
+            return result;
+        }
+    }
 
     /// <summary>
     /// Represents a project and its direct dependencies in the solution
     /// </summary>
     public sealed record ProjectNode(
         string Path,
+        ProjectId Id,
         ImmutableList<string> Dependencies);
 
     /// <summary>
@@ -50,7 +96,9 @@ namespace Incrementalist.Caching
                 return null;
                 
             var json = await File.ReadAllTextAsync(path);
-            return JsonSerializer.Deserialize<DependencyCache>(json);
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ProjectIdJsonConverter());
+            return JsonSerializer.Deserialize<DependencyCache>(json, options);
         }
         
         public static async Task SaveAsync(string path, DependencyCache cache)
@@ -67,6 +115,7 @@ namespace Incrementalist.Caching
                 Directory.CreateDirectory(dir);
                 
             var options = new JsonSerializerOptions { WriteIndented = true };
+            options.Converters.Add(new ProjectIdJsonConverter());
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(cache, options));
         }
     }
@@ -172,7 +221,7 @@ namespace Incrementalist.Caching
                     .Cast<string>()
                     .ToImmutableList();
 
-                projectsBuilder.Add(project.FilePath, new ProjectNode(project.FilePath, dependencies));
+                projectsBuilder.Add(project.FilePath, new ProjectNode(project.FilePath, projectId, dependencies));
             }
 
             // Calculate checksum for all project files
