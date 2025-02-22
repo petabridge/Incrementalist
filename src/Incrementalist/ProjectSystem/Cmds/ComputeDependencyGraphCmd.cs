@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -24,12 +25,14 @@ namespace Incrementalist.ProjectSystem.Cmds
         public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, Solution solution) : base(
             "ResolveSlnDependencyGraph", logger, cancellationToken)
         {
+            ArgumentNullException.ThrowIfNull(solution);
             _solution = solution;
         }
 
         protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(Task<Dictionary<string, SlnFile>> previousTask)
         {
             var affectedSlnFiles = await previousTask;
+            ArgumentNullException.ThrowIfNull(affectedSlnFiles);
 
             // bail out early if we don't have any affected projects
             if (affectedSlnFiles.Count == 0)
@@ -45,25 +48,43 @@ namespace Incrementalist.ProjectSystem.Cmds
             if(affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
             {
                 foreach(var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
-                    additionalProjectIds.AddRange(_solution.Projects.Where(x => x.FilePath.Equals(proj.Key)).Select(x => x.Id));
+                {
+                    var matchingProjects = _solution.Projects
+                        .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key))
+                        .Select(x => x.Id);
+                    additionalProjectIds.AddRange(matchingProjects);
+                }
             }
 
             var ds = _solution.GetProjectDependencyGraph();
 
             // Special case: if the solution itself is modified, return all projects
-            if (affectedSlnFiles.ContainsKey(_solution.FilePath))
+            if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(_solution.FilePath))
             {
-                return new Dictionary<string, ICollection<string>>(){ {_solution.FilePath, _solution.Projects.Select(x => x.FilePath).ToList() } };
+                var projectPaths = _solution.Projects
+                    .Where(x => x.FilePath != null)
+                    .Select(x => x.FilePath!)  // We know FilePath is not null from Where clause
+                    .ToList();
+                return new Dictionary<string, ICollection<string>>() { { _solution.FilePath, projectPaths } };
             }
 
-            string GetProjectFilePath(ProjectId project)
+            string? GetProjectFilePath(ProjectId projectId)
             {
-                return _solution.GetProject(project).FilePath;
+                var project = _solution.GetProject(projectId);
+                return project?.FilePath;
             }
 
-            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Concat(additionalProjectIds).Distinct().ToList();
-            var graphs = uniqueProjectIds.ToDictionary(x => x,
-                v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
+            var uniqueProjectIds = affectedSlnFiles
+                .Select(x => x.Value.ProjectId)
+                .Where(x => x != null)
+                .Concat(additionalProjectIds)
+                .Distinct()
+                .ToList();
+
+            var graphs = uniqueProjectIds
+                .ToDictionary(
+                    x => x!,  // We know x is not null due to Where clause above
+                    v => ds.GetProjectsThatTransitivelyDependOnThisProject(v!).ToList());
 
             /*
              * Next: check to see if there any overlapping graphs and remove those from the final set
@@ -76,10 +97,16 @@ namespace Incrementalist.ProjectSystem.Cmds
 
             ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
             {
-                var results = new HashSet<string> { _solution.GetProject(root).FilePath };
+                var results = new HashSet<string>();
+                var rootPath = GetProjectFilePath(root);
+                if (!string.IsNullOrEmpty(rootPath))
+                    results.Add(rootPath);
+
                 foreach (var p in graph)
                 {
-                    results.Add(GetProjectFilePath(p));
+                    var path = GetProjectFilePath(p);
+                    if (!string.IsNullOrEmpty(path))
+                        results.Add(path);
                 }
 
                 return results;
@@ -92,21 +119,26 @@ namespace Incrementalist.ProjectSystem.Cmds
             foreach (var r in independentGraphs)
             {
                 var projectPath = GetProjectFilePath(r.Key);
+                if (string.IsNullOrEmpty(projectPath))
+                    continue;
+
                 /*
                  * BUGFIX for https://github.com/petabridge/Incrementalist/issues/63
                  *
                  */
                 if (finalResultSet.ContainsKey(projectPath))
                 {
-                    var exitingPaths = finalResultSet[projectPath];
+                    var existingPaths = finalResultSet[projectPath];
                     var newPaths = PrepareProjectPaths(r.Key, r.Value);
-                    finalResultSet[projectPath] = exitingPaths.Concat(newPaths).Distinct().ToList();
+                    finalResultSet[projectPath] = existingPaths.Concat(newPaths)
+                        .Where(p => !string.IsNullOrEmpty(p))  // Filter out any null paths
+                        .Distinct()
+                        .ToList();
                 }
                 else
                 {
                     finalResultSet[projectPath] = PrepareProjectPaths(r.Key, r.Value);
                 }
-                
             }                
 
             return finalResultSet;

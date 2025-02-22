@@ -27,6 +27,10 @@ namespace Incrementalist.Cmd.Commands
 
         public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentNullException.ThrowIfNull(workspace);
+            ArgumentNullException.ThrowIfNull(logger);
+
             Settings = settings;
             Workspace = workspace;
             Logger = logger;
@@ -45,6 +49,11 @@ namespace Incrementalist.Cmd.Commands
             _cts.CancelAfter(Settings.TimeoutDuration);
 
             var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
+            if (solution == null)
+            {
+                Logger.LogError("Failed to open solution file: {0}", Settings.SolutionFile);
+                return new IncrementalBuildResult(Array.Empty<string>());
+            }
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
@@ -70,7 +79,8 @@ namespace Incrementalist.Cmd.Commands
             if (detector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath);
+                var solutionPath = solution.FilePath ?? throw new InvalidOperationException("Solution path is null");
+                return new FullSolutionBuildResult(solutionPath);
             }
 
             // Get the list of affected projects
@@ -82,7 +92,8 @@ namespace Incrementalist.Cmd.Commands
             if (affectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath);
+                var solutionPath = solution.FilePath ?? throw new InvalidOperationException("Solution path is null");
+                return new FullSolutionBuildResult(solutionPath);
             }
 
             // For incremental builds, compute the dependency graph

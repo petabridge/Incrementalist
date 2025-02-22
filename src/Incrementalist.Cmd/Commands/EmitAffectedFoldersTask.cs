@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,9 @@ namespace Incrementalist.Cmd.Commands
 
         public EmitAffectedFoldersTask(BuildSettings settings, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentNullException.ThrowIfNull(logger);
+
             Settings = settings;
             Logger = logger;
             _cts = new CancellationTokenSource();
@@ -36,7 +40,7 @@ namespace Incrementalist.Cmd.Commands
             // load the git repository
             var repoResult = GitRunner.FindRepository(Settings.WorkingDirectory);
 
-            if (!repoResult.foundRepo)
+            if (!repoResult.foundRepo || repoResult.repo == null)
             {
                 Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", Settings.WorkingDirectory);
                 return new Dictionary<string, ICollection<string>>();

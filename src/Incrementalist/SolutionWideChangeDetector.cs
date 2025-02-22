@@ -36,12 +36,14 @@ namespace Incrementalist
         /// <summary>
         /// Creates a new instance of the SolutionWideChangeDetector using a Solution object.
         /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when solution is null.</exception>
         public SolutionWideChangeDetector(Solution solution)
         {
-            if (solution == null) throw new ArgumentNullException(nameof(solution));
+            ArgumentNullException.ThrowIfNull(solution);
             
             var projectFiles = solution.Projects
-                .Select(p => new SlnFileWithPath(p.FilePath, new SlnFile(FileType.Project, p.Id)))
+                .Where(p => p.FilePath != null)
+                .Select(p => new SlnFileWithPath(p.FilePath!, new SlnFile(FileType.Project, p.Id)))
                 .ToList();
             
             _projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
@@ -50,9 +52,11 @@ namespace Incrementalist
         /// <summary>
         /// Creates a new instance of the SolutionWideChangeDetector using pre-computed project imports.
         /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when projectImports is null.</exception>
         public SolutionWideChangeDetector(IReadOnlyDictionary<string, ImportedFile> projectImports)
         {
-            _projectImports = projectImports ?? throw new ArgumentNullException(nameof(projectImports));
+            ArgumentNullException.ThrowIfNull(projectImports);
+            _projectImports = projectImports;
         }
 
         /// <summary>
@@ -60,11 +64,12 @@ namespace Incrementalist
         /// </summary>
         /// <param name="changedFiles">The list of files that have changed.</param>
         /// <returns>True if a full solution build is required, false otherwise.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when changedFiles is null.</exception>
         public bool RequiresFullSolutionBuild(IEnumerable<string> changedFiles)
         {
-            if (changedFiles == null) throw new ArgumentNullException(nameof(changedFiles));
+            ArgumentNullException.ThrowIfNull(changedFiles);
 
-            foreach(var file in changedFiles)
+            foreach(var file in changedFiles.Where(f => !string.IsNullOrEmpty(f)))
             {
                 if (IsSolutionWideFile(file))
                     return true;
@@ -83,8 +88,11 @@ namespace Incrementalist
         /// <summary>
         /// Determines if a file is considered solution-wide based on its name or extension.
         /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when filePath is null.</exception>
         internal static bool IsSolutionWideFile(string filePath)
         {
+            ArgumentNullException.ThrowIfNull(filePath);
+
             var fileName = Path.GetFileName(filePath);
             var extension = Path.GetExtension(filePath);
 
@@ -95,12 +103,16 @@ namespace Incrementalist
         /// <summary>
         /// Determines if an imported file affects multiple projects or is imported by Directory.Build.props.
         /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when importedFile is null.</exception>
         internal static bool IsWidelyImportedFile(ImportedFile importedFile)
         {
+            ArgumentNullException.ThrowIfNull(importedFile);
+
             // If this props/targets file is imported by Directory.Build.props or affects multiple projects,
             // we should do a full solution build
             var isImportedByDirectoryBuildProps = importedFile.DependantProjects
-                .Any(p => Path.GetFileName(p.Path).Equals("Directory.Build.props", StringComparison.OrdinalIgnoreCase));
+                .Any(p => !string.IsNullOrEmpty(p.Path) && 
+                         Path.GetFileName(p.Path).Equals("Directory.Build.props", StringComparison.OrdinalIgnoreCase));
             
             var affectsMultipleProjects = importedFile.DependantProjects.Count > 1;
 
@@ -113,15 +125,16 @@ namespace Incrementalist
         /// <param name="solution">The solution being analyzed.</param>
         /// <param name="affectedProjects">The list of affected project paths.</param>
         /// <returns>A FullSolutionBuildResult if all projects are affected, otherwise an IncrementalBuildResult.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when solution or affectedProjects is null.</exception>
         public static BuildAnalysisResult CreateBuildResult(Solution solution, IReadOnlyList<string> affectedProjects)
         {
-            if (solution == null) throw new ArgumentNullException(nameof(solution));
-            if (affectedProjects == null) throw new ArgumentNullException(nameof(affectedProjects));
+            ArgumentNullException.ThrowIfNull(solution);
+            ArgumentNullException.ThrowIfNull(affectedProjects);
 
             var totalProjects = solution.Projects.Count();
             
-            // If all projects are affected, return a full solution build result
-            if (affectedProjects.Count == totalProjects)
+            // If all projects are affected and we have a valid solution file path, return a full solution build result
+            if (affectedProjects.Count == totalProjects && !string.IsNullOrEmpty(solution.FilePath))
             {
                 return new FullSolutionBuildResult(solution.FilePath);
             }

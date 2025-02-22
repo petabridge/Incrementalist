@@ -11,8 +11,35 @@ using CommandLine;
 
 namespace Incrementalist.Cmd
 {
+    /// <summary>
+    /// Command line options for the Incrementalist tool.
+    /// </summary>
     public sealed class SlnOptions
     {
+        /// <summary>
+        /// Creates a new instance of SlnOptions with default values.
+        /// </summary>
+        public SlnOptions()
+        {
+            // Initialize non-nullable properties with default values
+            SolutionFilePath = string.Empty;
+            OutputFile = string.Empty;
+            GitBranch = "dev";  // Default value from attribute
+            WorkingDirectory = string.Empty;
+            DotNetArgs = [];
+            
+            // Boolean properties are automatically initialized to false
+            ListFolders = false;
+            Verbose = false;
+            RunCommand = false;
+            ContinueOnError = true;  // Default value from attribute
+            RunInParallel = false;
+            FailOnNoProjects = false;
+            
+            // Numeric properties
+            TimeoutMinutes = 2;  // Default value from attribute
+        }
+
         [Option('s', "sln", HelpText = "The name of the Solution file to be analyzed by Incrementalist.",
             Required = false)]
         public string SolutionFilePath { get; set; }
@@ -50,7 +77,10 @@ namespace Incrementalist.Cmd
         [Option("fail-on-no-projects", HelpText = "When running commands, fail if no projects are affected.", Default = false)]
         public bool FailOnNoProjects { get; set; }
 
-        // Property to store dotnet CLI arguments that come after --
+        /// <summary>
+        /// Arguments to be passed to the dotnet CLI when running commands.
+        /// These come after the -- separator in the command line.
+        /// </summary>
         public string[] DotNetArgs { get; set; }
     }
 }

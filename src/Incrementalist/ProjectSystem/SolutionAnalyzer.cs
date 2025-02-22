@@ -48,29 +48,50 @@ namespace Incrementalist.ProjectSystem
             ArgumentNullException.ThrowIfNull(sln);
             ArgumentNullException.ThrowIfNull(workingFolder);
 
-            var allPossibleFiles = sln.Projects
+            // Get all document files
+            var documentFiles = sln.Projects
                 .SelectMany(x => x.Documents)
                 .Where(x => x.FilePath != null)
-                .GroupBy(x => x.FilePath,
-                    document => new SlnFile(
-                        document.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
-                        document.Project.Id))
-                .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First())
-                .ToList()
-                .Concat(sln.Projects
-                    .Where(x => x.FilePath != null)
-                    .Select(x => new KeyValuePair<string, SlnFile>(
-                        Path.GetFullPath(x.FilePath), 
-                        new SlnFile(FileType.Project, x.Id))))
-                .Concat(sln.FilePath != null 
-                    ? new[] { new KeyValuePair<string, SlnFile>(
-                        Path.GetFullPath(sln.FilePath), 
-                        new SlnFile(FileType.Solution, null)) }
-                    : Array.Empty<KeyValuePair<string, SlnFile>>());
+                .Select(x => new
+                {
+                    Path = x.FilePath!,  // We know it's not null from the Where clause
+                    SlnFile = new SlnFile(
+                        x.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
+                        x.Project.Id)
+                })
+                .ToDictionary(x => Path.GetFullPath(x.Path), x => x.SlnFile);
 
-            // need to de-duplicate
+            // Get all project files
+            var projectFiles = sln.Projects
+                .Where(x => x.FilePath != null)
+                .Select(x => new KeyValuePair<string, SlnFile>(
+                    Path.GetFullPath(x.FilePath!),  // We know it's not null from the Where clause
+                    new SlnFile(FileType.Project, x.Id)));
+
+            // Get solution file if it exists
+            var solutionFile = sln.FilePath != null
+                ? new[] { new KeyValuePair<string, SlnFile>(
+                    Path.GetFullPath(sln.FilePath),
+                    new SlnFile(FileType.Solution, null)) }
+                : Array.Empty<KeyValuePair<string, SlnFile>>();
+
+            // Combine all files and de-duplicate
             var finalFiles = new Dictionary<string, SlnFile>();
-            foreach (var file in allPossibleFiles)
+
+            // Add document files
+            foreach (var file in documentFiles)
+            {
+                finalFiles[file.Key] = file.Value;
+            }
+
+            // Add project files
+            foreach (var file in projectFiles)
+            {
+                finalFiles[file.Key] = file.Value;
+            }
+
+            // Add solution file if it exists
+            foreach (var file in solutionFile)
             {
                 finalFiles[file.Key] = file.Value;
             }

@@ -25,7 +25,7 @@ namespace Incrementalist.Cmd
 {
     internal class Program
     {
-        private static string _originalTitle;
+        private static string _originalTitle = string.Empty;
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         private static void SetTitle()
@@ -45,6 +45,7 @@ namespace Incrementalist.Cmd
 
         private static async Task<int> Main(string[] args)
         {
+            ArgumentNullException.ThrowIfNull(args);
             SetTitle();
 
             // Split args at -- to separate incrementalist args from dotnet args
@@ -52,7 +53,7 @@ namespace Incrementalist.Cmd
             var incrementalistArgs = splitIndex >= 0 ? args.Take(splitIndex).ToArray() : args;
             var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : Array.Empty<string>();
 
-            SlnOptions options = null;
+            SlnOptions? options = null;
             var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
             {
                 options = r;
@@ -60,7 +61,7 @@ namespace Incrementalist.Cmd
                 return 0;
             }, _ => 1);
 
-            if (result != 0)
+            if (result != 0 || options == null)
             {
                 ResetTitle();
                 return result;
@@ -74,6 +75,8 @@ namespace Incrementalist.Cmd
 
         private static async Task<int> RunIncrementalist(SlnOptions options)
         {
+            ArgumentNullException.ThrowIfNull(options);
+
             // Create a logger factory instance
             var loggerFactory = LoggerFactory.Create(builder =>
             {
@@ -94,15 +97,25 @@ namespace Incrementalist.Cmd
                     return -2;
                 }
 
-
                 var repoFolder = Repository.Discover(pwd);
-                var workingFolder = Directory.GetParent(repoFolder).Parent;
-
-                var repoResult = GitRunner.FindRepository(workingFolder.FullName);
-
-                if (!repoResult.foundRepo)
+                if (string.IsNullOrEmpty(repoFolder))
                 {
-                    logger.LogError("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
+                    logger.LogError("Unable to discover Git repository in {0}. Shutting down.", pwd);
+                    return -3;
+                }
+
+                var workingFolder = Directory.GetParent(repoFolder);
+                if (workingFolder?.Parent == null)
+                {
+                    logger.LogError("Unable to determine working folder from repository path {0}. Shutting down.", repoFolder);
+                    return -3;
+                }
+
+                var repoResult = GitRunner.FindRepository(workingFolder.Parent.FullName);
+
+                if (!repoResult.foundRepo || repoResult.repo == null)
+                {
+                    logger.LogError("Unable to find Git repository located in {0}. Shutting down.", workingFolder.Parent.FullName);
                     return -3;
                 }
 
@@ -125,13 +138,9 @@ namespace Incrementalist.Cmd
                     }
                 }
 
-                if (!string.IsNullOrEmpty(repoFolder))
-                {
-                    if (options.ListFolders)
-                        await AnalyzeFolderDiff(options, workingFolder, logger);
-                    else
-                        await AnaylzeSolutionDIff(options, workingFolder, logger);
-                }
+                await (options.ListFolders
+                    ? AnalyzeFolderDiff(options, workingFolder.Parent, logger)
+                    : AnaylzeSolutionDIff(options, workingFolder.Parent, logger));
 
                 return 0;
             }
@@ -144,10 +153,14 @@ namespace Incrementalist.Cmd
 
         private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(workingFolder);
+            ArgumentNullException.ThrowIfNull(logger);
+
             var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
-            var affectedFiles = (await emitTask.Run());
+            var affectedFiles = await emitTask.Run();
 
             var affectedFilesStr = string.Join(",", affectedFiles.Keys);
 
@@ -156,6 +169,10 @@ namespace Incrementalist.Cmd
 
         private static async Task AnaylzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(workingFolder);
+            ArgumentNullException.ThrowIfNull(logger);
+
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
 
@@ -163,13 +180,27 @@ namespace Incrementalist.Cmd
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
                 await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
             else
-                foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
+            {
+                var solutions = SolutionFinder.GetSolutions(workingFolder.FullName).ToList();
+                if (solutions.Count == 0)
+                {
+                    logger.LogWarning("No solution files found in {0}", workingFolder.FullName);
+                    return;
+                }
+                foreach (var sln in solutions)
                     await ProcessSln(options, sln, workingFolder, msBuild, logger);
+            }
         }
 
         private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
             MSBuildWorkspace msBuild, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(sln);
+            ArgumentNullException.ThrowIfNull(workingFolder);
+            ArgumentNullException.ThrowIfNull(msBuild);
+            ArgumentNullException.ThrowIfNull(logger);
+
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
@@ -193,7 +224,10 @@ namespace Incrementalist.Cmd
                 {
                     case FullSolutionBuildResult _:
                         buildType = "Full solution build";
-                        projectsToRebuild = msBuild.CurrentSolution.Projects.Select(p => p.FilePath);
+                        projectsToRebuild = msBuild.CurrentSolution.Projects
+                            .Select(p => p.FilePath)
+                            .Where(p => !string.IsNullOrEmpty(p))
+                            .ToList()!;
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";
@@ -230,6 +264,10 @@ namespace Incrementalist.Cmd
 
         private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(affectedFilesStr);
+            ArgumentNullException.ThrowIfNull(logger);
+
             if (affectedFilesCount == 0)
             {
                 logger.LogInformation("No changes detected by Incrementalist when analyzing {0}.",

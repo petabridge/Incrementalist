@@ -15,8 +15,9 @@ namespace Incrementalist.Cmd
     /// </summary>
     internal static class StartupData
     {
-        public static readonly string VersionNumber =
-            FileVersionInfo.GetVersionInfo(typeof(StartupData).Assembly.Location).FileVersion;
+        public static readonly string VersionNumber = FileVersionInfo
+            .GetVersionInfo(typeof(StartupData).Assembly.Location)
+            .FileVersion ?? "0.0.0.0";
 
         public static readonly string ConsoleWindowTitle = $"Incrementalist {VersionNumber}";
 

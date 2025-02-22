@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,12 +25,15 @@ namespace Incrementalist.ProjectSystem
         ///     Enumerate all of the MSBuild solution files in a given folder.
         /// </summary>
         /// <param name="folderPath">The top level path to search.</param>
-        /// <param name="searchFilter">Optional. A wildcard filter in the form of "*.sln".</param>
-        /// <param name="searchOption">Optional. Specifies whether to recurse sub-directories or not.</param>
+        /// <param name="searchFilter">Optional. A wildcard filter in the form of "*.sln". If null, uses DefaultSolutionFilter.</param>
+        /// <param name="searchOption">Optional. Specifies whether to recurse sub-directories or not. If null, uses SearchOption.AllDirectories.</param>
         /// <returns>If any solutions are found, will return an enumerable list of them in order in which they are discovered.</returns>
-        public static IEnumerable<string> GetSolutions(string folderPath, string searchFilter = null,
+        /// <exception cref="ArgumentNullException">Thrown when folderPath is null.</exception>
+        public static IEnumerable<string> GetSolutions(string folderPath, string? searchFilter = null,
             SearchOption? searchOption = null)
         {
+            ArgumentNullException.ThrowIfNull(folderPath);
+
             if (string.IsNullOrEmpty(searchFilter))
                 return Directory.EnumerateFileSystemEntries(folderPath, DefaultSolutionFilter,
                     searchOption ?? SearchOption.AllDirectories).OrderBy(Path.GetFileName);
