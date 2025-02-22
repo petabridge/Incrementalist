@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace Incrementalist.ProjectSystem
 {
     public struct SlnFile
     {
-        public SlnFile(FileType fileType, ProjectId projectId)
+        public SlnFile(FileType fileType, ProjectId? projectId)
         {
             FileType = fileType;
             ProjectId = projectId;
@@ -28,7 +29,7 @@ namespace Incrementalist.ProjectSystem
         /// <remarks>
         ///     Will be <c>null</c> when <see cref="FileType" /> is Solution file.
         /// </remarks>
-        public ProjectId ProjectId { get; }
+        public ProjectId? ProjectId { get; }
     }
 
     /// <summary>
@@ -44,16 +45,28 @@ namespace Incrementalist.ProjectSystem
         /// <returns>A flattened list of all files inside the solution.</returns>
         public static Dictionary<string, SlnFile> AllSolutionFiles(Solution sln, string workingFolder)
         {
-            var allPossibleFiles = sln.Projects.SelectMany(x => x.Documents)
+            ArgumentNullException.ThrowIfNull(sln);
+            ArgumentNullException.ThrowIfNull(workingFolder);
+
+            var allPossibleFiles = sln.Projects
+                .SelectMany(x => x.Documents)
+                .Where(x => x.FilePath != null)
                 .GroupBy(x => x.FilePath,
                     document => new SlnFile(
                         document.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
                         document.Project.Id))
-                .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First()).ToList()
-                .Concat(sln.Projects.Select(x => new KeyValuePair<string, SlnFile>(Path.GetFullPath(x.FilePath), new SlnFile(FileType.Project, x.Id)))
-                .Concat(new []{new KeyValuePair<string, SlnFile>
-
-                        (Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null))}));
+                .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First())
+                .ToList()
+                .Concat(sln.Projects
+                    .Where(x => x.FilePath != null)
+                    .Select(x => new KeyValuePair<string, SlnFile>(
+                        Path.GetFullPath(x.FilePath), 
+                        new SlnFile(FileType.Project, x.Id))))
+                .Concat(sln.FilePath != null 
+                    ? new[] { new KeyValuePair<string, SlnFile>(
+                        Path.GetFullPath(sln.FilePath), 
+                        new SlnFile(FileType.Solution, null)) }
+                    : Array.Empty<KeyValuePair<string, SlnFile>>());
 
             // need to de-duplicate
             var finalFiles = new Dictionary<string, SlnFile>();

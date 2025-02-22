@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -13,6 +14,7 @@ namespace Incrementalist.ProjectSystem
     {
         public SlnFileWithPath(string path, SlnFile file)
         {
+            ArgumentNullException.ThrowIfNull(path);
             Path = path;
             File = file;
         }
@@ -25,6 +27,8 @@ namespace Incrementalist.ProjectSystem
     {
         public ImportedFile(string path, IImmutableList<SlnFileWithPath> dependantProjects)
         {
+            ArgumentNullException.ThrowIfNull(path);
+            ArgumentNullException.ThrowIfNull(dependantProjects);
             DependantProjects = dependantProjects;
             Path = path;
         }
@@ -51,6 +55,7 @@ namespace Incrementalist.ProjectSystem
         /// <returns>Doctionary of imported files with their paths</returns>
         public static Dictionary<string, ImportedFile> FindProjectImports(IEnumerable<SlnFileWithPath> projectFiles)
         {
+            ArgumentNullException.ThrowIfNull(projectFiles);
             var imports = new ConcurrentDictionary<string, IImmutableList<SlnFileWithPath>>();
             
             Parallel.ForEach(projectFiles, projectFile =>
@@ -59,14 +64,22 @@ namespace Incrementalist.ProjectSystem
                     return;
 
                 var xmlDoc = ParseXmlDocument(projectFile.Path);
-                
                 var projectDir = Path.GetDirectoryName(projectFile.Path);
+                if (projectDir == null || xmlDoc.DocumentElement == null)
+                    return;
 
                 // Collecting all projects that contain imports, like <Import Project="../../common.props">
                 var importTags = xmlDoc.DocumentElement.SelectNodes("//Import");
-                foreach (XmlNode importTag in importTags)
+                if (importTags == null)
+                    return;
+
+                foreach (XmlNode? importTag in importTags)
                 {
-                    var importedFilePath = importTag.Attributes?.GetNamedItem("Project")?.Value;
+                    if (importTag?.Attributes == null)
+                        continue;
+
+                    var projectAttr = importTag.Attributes.GetNamedItem("Project");
+                    var importedFilePath = projectAttr?.Value;
                     if (string.IsNullOrEmpty(importedFilePath))
                         continue;
                     
@@ -82,6 +95,7 @@ namespace Incrementalist.ProjectSystem
 
         private static XmlDocument ParseXmlDocument(string projectFilePath)
         {
+            ArgumentNullException.ThrowIfNull(projectFilePath);
             var fileContent = File.ReadAllText(projectFilePath);
             var xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(fileContent);
