@@ -26,6 +26,63 @@ All build and test procedures are documented in `/docs/building.md`. This is the
 - Creating and verifying packages
 - Publishing releases
 
+## MSBuild Testing Best Practices
+1. Always use the `MSBuildCollectionFixture` for tests that require `MSBuildWorkspace`:
+   ```csharp
+   [Collection(MSBuildCollectionFixture.Name)]
+   public class YourTestClass : IDisposable
+   {
+       private readonly MSBuildWorkspace _workspace;
+       
+       public YourTestClass(ITestOutputHelper outputHelper, MSBuildFixture fixture)
+       {
+           _workspace = fixture.Workspace;
+       }
+   }
+   ```
+
+2. Benefits of using the collection fixture:
+   - Ensures MSBuild initialization happens exactly once
+   - Prevents parallel execution of MSBuild-dependent tests
+   - Properly manages workspace lifecycle
+   - Avoids "MSBuild already loaded" errors
+
+3. Common patterns:
+   ```csharp
+   // For solution analysis tests
+   var solution = await _workspace.OpenSolutionAsync(solutionPath);
+   
+   // For project analysis tests
+   var project = await _workspace.OpenProjectAsync(projectPath);
+   ```
+
+4. Example test structure:
+   ```csharp
+   [Collection(MSBuildCollectionFixture.Name)]
+   public class DependencyTests : IDisposable
+   {
+       private readonly MSBuildWorkspace _workspace;
+       private readonly DisposableRepository _repository;
+
+       public DependencyTests(MSBuildFixture fixture)
+       {
+           _workspace = fixture.Workspace;
+           _repository = new DisposableRepository();
+       }
+
+       public void Dispose()
+       {
+           _repository?.Dispose();
+       }
+
+       [Fact]
+       public async Task AnalyzeDependencies_ShouldWork()
+       {
+           // Test implementation
+       }
+   }
+   ```
+
 ## Verification Requirements
 1. Always follow the verification process in `/docs/building.md`
 2. For any code changes:
