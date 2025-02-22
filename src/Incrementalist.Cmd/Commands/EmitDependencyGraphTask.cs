@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
+using Incrementalist.Caching;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,20 @@ namespace Incrementalist.Cmd.Commands
             _cts.CancelAfter(Settings.TimeoutDuration);
 
             var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
+
+            // Try to use cache if enabled
+            if (!Settings.NoCache)
+            {
+                var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
+                var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
+
+                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Logger, _cts.Token))
+                {
+                    Logger.LogInformation("Using cached dependency information");
+                    // TODO: Process using existingCache.Projects
+                    // This will be implemented in the next step
+                }
+            }
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);

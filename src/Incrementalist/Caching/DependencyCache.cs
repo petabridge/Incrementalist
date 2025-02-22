@@ -14,6 +14,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Caching
 {
@@ -75,6 +76,73 @@ namespace Incrementalist.Caching
     /// </summary>
     public static class DependencyCacheHelper
     {
+        /// <summary>
+        /// Validates whether a cache is still valid for the current solution
+        /// </summary>
+        /// <param name="cache">The cache to validate, or null if no cache exists</param>
+        /// <param name="solution">The current solution to validate against</param>
+        /// <param name="logger">Optional logger for diagnostic information</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns>True if the cache is valid and can be used, false if it needs to be regenerated</returns>
+        public static async Task<bool> IsCacheValidAsync(
+            DependencyCache? cache,
+            Solution solution,
+            ILogger? logger = null,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(solution);
+
+            // No cache exists
+            if (cache is null)
+            {
+                logger?.LogDebug("No existing cache found");
+                return false;
+            }
+
+            // Version mismatch
+            if (cache.Version != DependencyCacheIO.CurrentVersion)
+            {
+                logger?.LogInformation(
+                    "Cache version mismatch. Expected {ExpectedVersion}, found {ActualVersion}",
+                    DependencyCacheIO.CurrentVersion,
+                    cache.Version);
+                return false;
+            }
+
+            // Solution path mismatch
+            if (!string.Equals(cache.SolutionPath, solution.FilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                logger?.LogInformation(
+                    "Cache is for different solution. Expected {ExpectedPath}, found {ActualPath}",
+                    solution.FilePath,
+                    cache.SolutionPath);
+                return false;
+            }
+
+            // Calculate current checksum
+            var projectPaths = solution.Projects
+                .Select(p => p.FilePath)
+                .Where(p => p != null)
+                .Cast<string>()
+                .ToList();
+
+            var currentChecksum = await ChecksumCalculator.CalculateChecksumAsync(
+                solution.FilePath,
+                projectPaths,
+                cancellationToken);
+
+            // Checksum mismatch
+            if (currentChecksum != cache.Checksum)
+            {
+                logger?.LogInformation(
+                    "Solution or project files have changed. Cache needs to be regenerated");
+                return false;
+            }
+
+            logger?.LogDebug("Cache is valid");
+            return true;
+        }
+
         /// <summary>
         /// Creates a new DependencyCache from a Solution object
         /// </summary>
