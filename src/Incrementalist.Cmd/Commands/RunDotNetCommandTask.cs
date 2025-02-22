@@ -118,14 +118,32 @@ namespace Incrementalist.Cmd.Commands
                 {
                     FileName = "dotnet",
                     Arguments = args,
-                    UseShellExecute = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
                     WorkingDirectory = _settings.WorkingDirectory
                 }
             };
 
-            try
+            // Redirect to console streams directly
+            process.OutputDataReceived += (_, e) =>
             {
+                if (!string.IsNullOrEmpty(e.Data))
+                    Console.Out.WriteLine(e.Data);
+            };
+
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                    Console.Error.WriteLine(e.Data);
+            };
+
+            try
+            {                
                 process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
                 await process.WaitForExitAsync();
                 
                 if (process.ExitCode != 0)
