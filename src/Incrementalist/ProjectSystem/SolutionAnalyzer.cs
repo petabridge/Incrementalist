@@ -3,7 +3,7 @@
 //      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
-
+#nullable enable
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,15 +11,9 @@ using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.ProjectSystem
 {
-    public struct SlnFile
+    public readonly struct SlnFile(FileType fileType, ProjectId? projectId)
     {
-        public SlnFile(FileType fileType, ProjectId projectId)
-        {
-            FileType = fileType;
-            ProjectId = projectId;
-        }
-
-        public FileType FileType { get; }
+        public FileType FileType { get; } = fileType;
 
         /// <summary>
         ///     The ID of the project to which this file belongs.
@@ -28,7 +22,7 @@ namespace Incrementalist.ProjectSystem
         /// <remarks>
         ///     Will be <c>null</c> when <see cref="FileType" /> is Solution file.
         /// </remarks>
-        public ProjectId ProjectId { get; }
+        public ProjectId? ProjectId { get; } = projectId;
     }
 
     /// <summary>
@@ -51,9 +45,11 @@ namespace Incrementalist.ProjectSystem
                         document.Project.Id))
                 .ToDictionary(x => Path.GetFullPath(x.Key), x => x.First()).ToList()
                 .Concat(sln.Projects.Select(x => new KeyValuePair<string, SlnFile>(Path.GetFullPath(x.FilePath), new SlnFile(FileType.Project, x.Id)))
-                .Concat(new []{new KeyValuePair<string, SlnFile>
+                .Concat([
+                    new KeyValuePair<string, SlnFile>
 
-                        (Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null))}));
+                        (Path.GetFullPath(sln.FilePath), new SlnFile(FileType.Solution, null))
+                ]));
 
             // need to de-duplicate
             var finalFiles = new Dictionary<string, SlnFile>();

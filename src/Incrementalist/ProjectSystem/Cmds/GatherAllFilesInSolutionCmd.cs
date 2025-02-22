@@ -29,9 +29,9 @@ namespace Incrementalist.ProjectSystem.Cmds
         protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Solution> previousTask)
         {
             var slnObject = await previousTask;
-            Contract.Assert(slnObject is Solution s && s != null,
+            Contract.Assert(slnObject is not null,
                 $"Expected previous task to return a Solution object, but found {slnObject} instead.");
-            var solution = (Solution) slnObject;
+            var solution = slnObject;
 
             return SolutionAnalyzer.AllSolutionFiles(solution, _workingDirectory);
         }
