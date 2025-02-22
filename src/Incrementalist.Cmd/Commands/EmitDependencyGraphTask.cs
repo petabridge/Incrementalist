@@ -53,7 +53,7 @@ namespace Incrementalist.Cmd.Commands
                 var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
                 var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
 
-                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Logger, _cts.Token))
+                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Settings.WorkingDirectory, Logger, _cts.Token))
                 {
                     Logger.LogInformation("Using cached dependency information");
                     // TODO: Process using existingCache.Projects
@@ -117,7 +117,7 @@ namespace Incrementalist.Cmd.Commands
             }
             
             // Check if the cache is still valid
-            var cacheIsValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, Logger, _cts.Token);
+            var cacheIsValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, Settings.WorkingDirectory, Logger, _cts.Token);
             if (!cacheIsValid)
             {
                 Logger.LogInformation("Cache is invalid. Full solution analysis required");
@@ -147,7 +147,7 @@ namespace Incrementalist.Cmd.Commands
                     // Save the updated cache
                     if (!Settings.NoCache)
                     {
-                        var newCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+                        var newCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, Settings.WorkingDirectory);
                         await DependencyCacheIO.SaveAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory), newCache);
                     }
                 }

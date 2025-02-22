@@ -46,25 +46,25 @@ namespace Incrementalist.Tests.Caching
             // Arrange
             var projects = new Dictionary<string, ProjectNode>
             {
-                ["src/Project1/Project1.csproj"] = new(
-                    "src/Project1/Project1.csproj",
+                ["Project1/Project1.csproj"] = new(
+                    "Project1/Project1.csproj",
                     ProjectId.CreateNewId(),
                     ImmutableList<string>.Empty),
                     
-                ["src/Project2/Project2.csproj"] = new(
-                    "src/Project2/Project2.csproj",
+                ["Project2/Project2.csproj"] = new(
+                    "Project2/Project2.csproj",
                     ProjectId.CreateNewId(),
-                    ImmutableList.Create("src/Project1/Project1.csproj")),
+                    ImmutableList.Create("Project1/Project1.csproj")),
                     
-                ["tests/Project1.Tests/Project1.Tests.csproj"] = new(
-                    "tests/Project1.Tests/Project1.Tests.csproj",
+                ["Project1.Tests/Project1.Tests.csproj"] = new(
+                    "Project1.Tests/Project1.Tests.csproj",
                     ProjectId.CreateNewId(),
-                    ImmutableList.Create("src/Project1/Project1.csproj"))
+                    ImmutableList.Create("Project1/Project1.csproj"))
             };
             
             var cache = new DependencyCache(
                 DependencyCacheIO.CurrentVersion,
-                "src/MySolution.sln",
+                "MySolution.sln",
                 "sample-checksum",
                 projects.ToImmutableDictionary());
                 
@@ -194,13 +194,12 @@ namespace Incrementalist.Tests.Caching
             var affectedProjectId = project1Id;
             var dependentProjectIds = dependencyGraph.GetProjectsThatTransitivelyDependOnThisProject(affectedProjectId);
             var liveResult = new Dictionary<string, HashSet<string>>();
-            var affectedProjectPath = solution.GetProject(affectedProjectId).FilePath;
+            var affectedProjectPath = Path.GetRelativePath(_repository.BasePath, solution.GetProject(affectedProjectId).FilePath!);
             var dependentPaths = dependentProjectIds
-                .Select(id => solution.GetProject(id).FilePath)
-                .Where(path => path != null)
+                .Select(id => Path.GetRelativePath(_repository.BasePath, solution.GetProject(id).FilePath!))
                 .ToHashSet();
-            dependentPaths.Add(affectedProjectPath!);
-            liveResult[affectedProjectPath!] = dependentPaths;
+            dependentPaths.Add(affectedProjectPath);
+            liveResult[affectedProjectPath] = dependentPaths;
 
             // Assert
             Assert.Equal(liveResult.Count, cacheResult.Count);
@@ -212,10 +211,14 @@ namespace Incrementalist.Tests.Caching
             }
 
             // Verify the specific dependency chain
-            var project1Dependents = cacheResult[project1Path];
-            Assert.Contains(project1Path, project1Dependents);
-            Assert.Contains(project2Path, project1Dependents);
-            Assert.Contains(project3Path, project1Dependents);
+            var project1RelativePath = Path.GetRelativePath(_repository.BasePath, project1Path);
+            var project2RelativePath = Path.GetRelativePath(_repository.BasePath, project2Path);
+            var project3RelativePath = Path.GetRelativePath(_repository.BasePath, project3Path);
+
+            var project1Dependents = cacheResult[project1RelativePath];
+            Assert.Contains(project1RelativePath, project1Dependents);
+            Assert.Contains(project2RelativePath, project1Dependents);
+            Assert.Contains(project3RelativePath, project1Dependents);
         }
     }
 } 

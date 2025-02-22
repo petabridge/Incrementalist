@@ -57,7 +57,14 @@ namespace Incrementalist.Tests.Caching
         [Fact]
         public async Task CreateFromSolutionAsync_WithNullSolution_ThrowsArgumentNullException()
         {
-            await Assert.ThrowsAsync<ArgumentNullException>(() => DependencyCacheHelper.CreateFromSolutionAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => DependencyCacheHelper.CreateFromSolutionAsync(null!, "dummy"));
+        }
+
+        [Fact]
+        public async Task CreateFromSolutionAsync_WithNullRepositoryRootPath_ThrowsArgumentNullException()
+        {
+            var solution = await _workspace.OpenSolutionAsync("dummy.sln");
+            await Assert.ThrowsAsync<ArgumentNullException>(() => DependencyCacheHelper.CreateFromSolutionAsync(solution, null!));
         }
 
         [Fact]
@@ -100,20 +107,23 @@ EndProject
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Act
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
 
             // Assert
             Assert.NotNull(cache);
             Assert.Equal(2, cache.Projects.Count);
 
+            var relativeProject1Path = "src/Project1/Project1.csproj";
+            var relativeProject2Path = "src/Project2/Project2.csproj";
+
             // Project1 has no dependencies
-            Assert.True(cache.Projects.ContainsKey(project1Path));
-            Assert.Empty(cache.Projects[project1Path].Dependencies);
+            Assert.True(cache.Projects.ContainsKey(relativeProject1Path));
+            Assert.Empty(cache.Projects[relativeProject1Path].Dependencies);
 
             // Project2 depends on Project1
-            Assert.True(cache.Projects.ContainsKey(project2Path));
-            Assert.Single(cache.Projects[project2Path].Dependencies);
-            Assert.Equal(project1Path, cache.Projects[project2Path].Dependencies[0]);
+            Assert.True(cache.Projects.ContainsKey(relativeProject2Path));
+            Assert.Single(cache.Projects[relativeProject2Path].Dependencies);
+            Assert.Equal(relativeProject1Path, cache.Projects[relativeProject2Path].Dependencies[0]);
 
             // Verify cache can be saved and loaded correctly
             await VerifyCacheSerializationPreservesDataAsync(cache, _repository.BasePath);
@@ -172,25 +182,29 @@ EndProject
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Act
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
 
             // Assert
             Assert.NotNull(cache);
             Assert.Equal(3, cache.Projects.Count);
 
+            var relativeProject1Path = "src/Project1/Project1.csproj";
+            var relativeProject2Path = "src/Project2/Project2.csproj";
+            var relativeProject3Path = "src/Project3/Project3.csproj";
+
             // Project1 has no dependencies
-            Assert.True(cache.Projects.ContainsKey(project1Path));
-            Assert.Empty(cache.Projects[project1Path].Dependencies);
+            Assert.True(cache.Projects.ContainsKey(relativeProject1Path));
+            Assert.Empty(cache.Projects[relativeProject1Path].Dependencies);
 
             // Project2 depends on Project1
-            Assert.True(cache.Projects.ContainsKey(project2Path));
-            Assert.Single(cache.Projects[project2Path].Dependencies);
-            Assert.Equal(project1Path, cache.Projects[project2Path].Dependencies[0]);
+            Assert.True(cache.Projects.ContainsKey(relativeProject2Path));
+            Assert.Single(cache.Projects[relativeProject2Path].Dependencies);
+            Assert.Equal(relativeProject1Path, cache.Projects[relativeProject2Path].Dependencies[0]);
 
             // Project3 depends on Project2 (but not directly on Project1)
-            Assert.True(cache.Projects.ContainsKey(project3Path));
-            Assert.Single(cache.Projects[project3Path].Dependencies);
-            Assert.Equal(project2Path, cache.Projects[project3Path].Dependencies[0]);
+            Assert.True(cache.Projects.ContainsKey(relativeProject3Path));
+            Assert.Single(cache.Projects[relativeProject3Path].Dependencies);
+            Assert.Equal(relativeProject2Path, cache.Projects[relativeProject3Path].Dependencies[0]);
 
             // Verify cache can be saved and loaded correctly
             await VerifyCacheSerializationPreservesDataAsync(cache, _repository.BasePath);
@@ -236,7 +250,7 @@ EndProject
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Create initial cache
-            var initialCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var initialCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
 
             // Modify Project1
             await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
@@ -248,7 +262,7 @@ EndProject
 
             // Reload solution and create new cache
             solution = await _workspace.OpenSolutionAsync(solutionPath);
-            var modifiedCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var modifiedCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
 
             // Assert
             Assert.NotEqual(initialCache.Checksum, modifiedCache.Checksum);

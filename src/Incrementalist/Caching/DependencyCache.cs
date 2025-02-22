@@ -126,20 +126,85 @@ namespace Incrementalist.Caching
     public static class DependencyCacheHelper
     {
         /// <summary>
+        /// Creates a new DependencyCache from a Solution object
+        /// </summary>
+        /// <param name="solution">The solution to analyze</param>
+        /// <param name="repositoryRootPath">The root path of the repository, used for calculating relative paths</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns>A new DependencyCache instance</returns>
+        public static async Task<DependencyCache> CreateFromSolutionAsync(
+            Solution solution,
+            string repositoryRootPath,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(solution);
+            ArgumentNullException.ThrowIfNull(solution.FilePath);
+            ArgumentNullException.ThrowIfNull(repositoryRootPath);
+
+            // Get the dependency graph from Roslyn
+            var dependencyGraph = solution.GetProjectDependencyGraph();
+
+            // Build the Projects dictionary
+            var projectsBuilder = ImmutableDictionary.CreateBuilder<string, ProjectNode>();
+            foreach (var projectId in solution.ProjectIds)
+            {
+                var project = solution.GetProject(projectId);
+                if (project?.FilePath == null) continue;
+
+                // Convert project path to relative to repository root
+                var relativePath = Path.GetRelativePath(repositoryRootPath, project.FilePath);
+
+                var dependencies = dependencyGraph
+                    .GetProjectsThatThisProjectDirectlyDependsOn(projectId)
+                    .Select(depId => solution.GetProject(depId)?.FilePath)
+                    .Where(path => path != null)
+                    .Select(path => Path.GetRelativePath(repositoryRootPath, path!))
+                    .ToImmutableList();
+
+                projectsBuilder.Add(relativePath, new ProjectNode(relativePath, projectId, dependencies));
+            }
+
+            // Calculate checksum for all project files
+            var projectPaths = solution.Projects
+                .Select(p => p.FilePath)
+                .Where(p => p != null)
+                .Cast<string>()
+                .ToList();
+
+            var checksum = await ChecksumCalculator.CalculateChecksumAsync(
+                solution.FilePath,
+                projectPaths,
+                cancellationToken);
+
+            // Store solution path as relative to repository root
+            var relativeSolutionPath = Path.GetRelativePath(repositoryRootPath, solution.FilePath);
+
+            return new DependencyCache(
+                Version: DependencyCacheIO.CurrentVersion,
+                SolutionPath: relativeSolutionPath,
+                Checksum: checksum,
+                Projects: projectsBuilder.ToImmutable());
+        }
+
+        /// <summary>
         /// Validates whether a cache is still valid for the current solution
         /// </summary>
         /// <param name="cache">The cache to validate, or null if no cache exists</param>
         /// <param name="solution">The current solution to validate against</param>
+        /// <param name="repositoryRootPath">The root path of the repository, used for calculating relative paths</param>
         /// <param name="logger">Optional logger for diagnostic information</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>True if the cache is valid and can be used, false if it needs to be regenerated</returns>
         public static async Task<bool> IsCacheValidAsync(
             DependencyCache? cache,
             Solution solution,
+            string repositoryRootPath,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(solution);
+            ArgumentNullException.ThrowIfNull(solution.FilePath);
+            ArgumentNullException.ThrowIfNull(repositoryRootPath);
 
             // No cache exists
             if (cache is null)
@@ -158,13 +223,16 @@ namespace Incrementalist.Caching
                 return false;
             }
 
+            // Convert cached solution path to absolute for comparison
+            var absoluteCachedSolutionPath = Path.GetFullPath(Path.Combine(repositoryRootPath, cache.SolutionPath));
+
             // Solution path mismatch
-            if (!string.Equals(cache.SolutionPath, solution.FilePath, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(absoluteCachedSolutionPath, solution.FilePath, StringComparison.OrdinalIgnoreCase))
             {
                 logger?.LogInformation(
                     "Cache is for different solution. Expected {ExpectedPath}, found {ActualPath}",
                     solution.FilePath,
-                    cache.SolutionPath);
+                    absoluteCachedSolutionPath);
                 return false;
             }
 
@@ -190,57 +258,6 @@ namespace Incrementalist.Caching
 
             logger?.LogDebug("Cache is valid");
             return true;
-        }
-
-        /// <summary>
-        /// Creates a new DependencyCache from a Solution object
-        /// </summary>
-        /// <param name="solution">The solution to analyze</param>
-        /// <param name="cancellationToken">Optional cancellation token</param>
-        /// <returns>A new DependencyCache instance</returns>
-        public static async Task<DependencyCache> CreateFromSolutionAsync(
-            Solution solution,
-            CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(solution);
-
-            // Get the dependency graph from Roslyn
-            var dependencyGraph = solution.GetProjectDependencyGraph();
-
-            // Build the Projects dictionary
-            var projectsBuilder = ImmutableDictionary.CreateBuilder<string, ProjectNode>();
-            foreach (var projectId in solution.ProjectIds)
-            {
-                var project = solution.GetProject(projectId);
-                if (project?.FilePath == null) continue;
-
-                var dependencies = dependencyGraph
-                    .GetProjectsThatThisProjectDirectlyDependsOn(projectId)
-                    .Select(depId => solution.GetProject(depId)?.FilePath)
-                    .Where(path => path != null)
-                    .Cast<string>()
-                    .ToImmutableList();
-
-                projectsBuilder.Add(project.FilePath, new ProjectNode(project.FilePath, projectId, dependencies));
-            }
-
-            // Calculate checksum for all project files
-            var projectPaths = solution.Projects
-                .Select(p => p.FilePath)
-                .Where(p => p != null)
-                .Cast<string>()
-                .ToList();
-
-            var checksum = await ChecksumCalculator.CalculateChecksumAsync(
-                solution.FilePath,
-                projectPaths,
-                cancellationToken);
-
-            return new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
-                SolutionPath: solution.FilePath!,
-                Checksum: checksum,
-                Projects: projectsBuilder.ToImmutable());
         }
     }
 } 
