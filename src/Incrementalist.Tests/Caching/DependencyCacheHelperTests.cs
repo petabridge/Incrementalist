@@ -32,6 +32,34 @@ namespace Incrementalist.Tests.Caching
             _repository.Dispose();
         }
 
+        /// <summary>
+        /// Verifies that a cache can be serialized to disk and deserialized back with all data preserved exactly
+        /// </summary>
+        private async Task VerifyCacheSerializationPreservesDataAsync(DependencyCache cache, string repositoryRootPath)
+        {
+            // Save cache to disk - use repository root (_repository.BasePath) instead of solution directory
+            var cachePath = DependencyCacheIO.GetCachePath(repositoryRootPath);
+            await DependencyCacheIO.SaveAsync(cachePath, cache);
+
+            // Load cache from disk
+            var loadedCache = await DependencyCacheIO.LoadAsync(cachePath);
+
+            // Verify loaded cache matches original
+            Assert.NotNull(loadedCache);
+            Assert.Equal(cache.Version, loadedCache.Version);
+            Assert.Equal(cache.SolutionPath, loadedCache.SolutionPath);
+            Assert.Equal(cache.Checksum, loadedCache.Checksum);
+            Assert.Equal(cache.Projects.Count, loadedCache.Projects.Count);
+
+            foreach (var (path, node) in cache.Projects)
+            {
+                Assert.True(loadedCache.Projects.ContainsKey(path));
+                var loadedNode = loadedCache.Projects[path];
+                Assert.Equal(node.Path, loadedNode.Path);
+                Assert.Equal(node.Dependencies, loadedNode.Dependencies);
+            }
+        }
+
         [Fact]
         public async Task CreateFromSolutionAsync_WithSimpleSolution_CreatesValidCache()
         {
@@ -93,6 +121,9 @@ EndGlobal");
             Assert.True(cache.Projects.ContainsKey(project2Path));
             Assert.Single(cache.Projects[project2Path].Dependencies);
             Assert.Equal(project1Path, cache.Projects[project2Path].Dependencies[0]);
+
+            // Verify cache can be saved and loaded correctly
+            await VerifyCacheSerializationPreservesDataAsync(cache, _repository.BasePath);
         }
 
         [Fact]
@@ -171,6 +202,9 @@ EndGlobal");
             Assert.True(cache.Projects.ContainsKey(project3Path));
             Assert.Single(cache.Projects[project3Path].Dependencies);
             Assert.Equal(project2Path, cache.Projects[project3Path].Dependencies[0]);
+
+            // Verify cache can be saved and loaded correctly
+            await VerifyCacheSerializationPreservesDataAsync(cache, _repository.BasePath);
         }
 
         [Fact]
@@ -233,6 +267,10 @@ EndGlobal");
 
             // Assert
             Assert.NotEqual(initialCache.Checksum, modifiedCache.Checksum);
+
+            // Verify both caches can be saved and loaded correctly
+            await VerifyCacheSerializationPreservesDataAsync(initialCache, _repository.BasePath);
+            await VerifyCacheSerializationPreservesDataAsync(modifiedCache, _repository.BasePath);
         }
 
         [Fact]
