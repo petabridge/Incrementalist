@@ -27,8 +27,13 @@ namespace Incrementalist.Git.Cmds
         {
             var affectedFiles = await previousTask;
 
-            return affectedFiles.GroupBy(x => Path.GetDirectoryName(x))
-                .ToDictionary(x => x.Key, grouping => (ICollection<string>)grouping.Distinct().ToList());
+            return affectedFiles
+                .Select(x => new { Path = x, Directory = Path.GetDirectoryName(x) })
+                .Where(x => x.Directory != null)
+                .GroupBy(x => x.Directory)
+                .ToDictionary(
+                    x => x.Key,
+                    grouping => (ICollection<string>)grouping.Select(x => x.Path).Distinct().ToList());
         }
     }
 }

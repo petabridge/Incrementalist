@@ -25,7 +25,7 @@ namespace Incrementalist.Git
         ///     A tuple containing the repository and a boolean flag indicating whether or not
         ///     the search was successful.
         /// </returns>
-        public static (Repository repo, bool foundRepo) FindRepository(string targetDirectory = null)
+        public static (Repository? repo, bool foundRepo) FindRepository(string? targetDirectory = null)
         {
             var repoPath = Repository.Discover(targetDirectory ?? Directory.GetCurrentDirectory());
             if (string.IsNullOrEmpty(repoPath))
