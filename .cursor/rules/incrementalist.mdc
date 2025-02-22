@@ -2,7 +2,7 @@
 description: Incrementalist-specific rules and guidance
 globs: 
 ---
- # Incrementalist Rules
+# Incrementalist Rules
 
 Role Definition:
  - Build System Expert
@@ -13,184 +13,39 @@ Role Definition:
 General:
   Description: >
     Incrementalist is a command-line tool for computing incremental build steps in large .NET solutions.
-    These rules ensure consistent development practices, reliable testing, and proper documentation.
+    All build, test, and verification procedures are documented in /docs/building.md.
+    Always refer to this document for the most up-to-date instructions.
 
-# Build System Documentation
+# Build and Test Process
 
-## Purpose
-Ensure clear documentation for building and running Incrementalist locally.
+## Primary Documentation
+All build and test procedures are documented in `/docs/building.md`. This is the source of truth for:
+- Building from source
+- Running unit tests
+- Running integration tests
+- Creating and verifying packages
+- Publishing releases
 
-## Requirements
-1. Build instructions in README.md must include:
-   - Prerequisites (.NET 8.0 SDK, Git)
-   - Installation via `dotnet tool install --global Incrementalist.Cmd`
-   - Basic usage examples with common scenarios
+## Verification Requirements
+1. Always follow the verification process in `/docs/building.md`
+2. For any code changes:
+   - Follow the "Basic Verification" steps
+   - For changes affecting core functionality, follow the "Full Verification" steps
+   - For release preparation, follow the "Package Verification" steps
 
-2. Build script documentation in `/docs/build.md` must cover:
-   - Available FAKE build targets and their purposes
-   - Build configuration options
-   - Code signing process for NuGet packages
-   - CI/CD integration guidelines
+## Integration Testing
+1. Integration tests must be run using the scripts and procedures specified in `/docs/building.md`
+2. Follow the documented test cases and expected outputs
+3. Pay attention to the exit codes and test summaries
 
-3. All command-line options must be documented in README.md with:
-   - Clear descriptions
-   - Example usage
-   - Common use cases
+## Version Management
+Follow the version management procedures in `/docs/building.md` for:
+- Updating versions
+- Managing release notes
+- Package metadata
 
-# Command Line Interface Documentation
-
-## Purpose
-Maintain accurate documentation for Incrementalist's command-line interface.
-
-## Requirements
-1. All CLI options must be documented in README.md:
-   - Required vs optional arguments
-   - Default values
-   - Environment variable overrides
-
-2. Common usage patterns must be documented:
-   - Basic project/folder analysis
-   - Integration with build systems
-   - Running commands against affected projects
-   - Parallel execution options
-
-3. Exit codes must be documented:
-   - 0: Success
-   - -1: General error
-   - -2: Git repository not found
-   - -3: Repository location error
-   - -4: Branch not found
-   - Other specific error codes
-
-# Git Integration
-
-## Purpose
-Ensure reliable Git operations across different environments.
-
-## Requirements
-1. Git Operations:
-   - Support both libgit2sharp and command-line git
-   - Handle repository edge cases (shallow clones, submodules)
-   - Support common CI/CD platforms (GitHub Actions, Azure DevOps, etc.)
-
-2. Branch Handling:
-   - Support for remote branches (origin/branch-name)
-   - Handle detached HEAD states
-   - Clear error messages for missing branches
-
-3. Performance:
-   - Efficient diff computation
-   - Caching of repository info where appropriate
-   - Proper cleanup of Git resources
-
-# Testing
-
-## Purpose
-Maintain comprehensive test coverage for core functionality.
-
-## Requirements
-1. Test Coverage:
-   - Unit tests for core Git operations
-   - Integration tests for MSBuild analysis
-   - End-to-end tests for common scenarios
-   - Performance benchmarks for large solutions
-
-2. Test Organization:
-   - Unit tests in *.Tests.csproj
-   - Integration tests in build.fsx
-   - Performance tests in *.Tests.Performance.csproj
-
-3. Test Data:
-   - Sample solutions for testing
-   - Mock Git repositories
-   - Various project types (C#, F#)
-
-# Performance
-
-## Purpose
-Ensure Incrementalist remains fast and efficient for large solutions.
-
-## Requirements
-1. Solution Analysis:
-   - Efficient project dependency graph computation
-   - Smart caching of MSBuild data
-   - Parallel processing where beneficial
-
-2. Resource Management:
-   - Proper disposal of MSBuild workspaces
-   - Cleanup of temporary files
-   - Memory usage monitoring
-
-3. Benchmarks:
-   - Track performance on large solutions
-   - Compare parallel vs sequential execution
-   - Monitor memory usage patterns
-
-# Change Verification
-
-## Purpose
-Ensure code changes are properly verified through compilation, unit tests, and integration tests before completion.
-
-## Requirements
-1. After Code Changes:
-   - Always run `dotnet build` to verify compilation
-   - Run `dotnet test` to execute unit tests
-   - Run integration tests via FAKE build system for changes affecting:
-     * Git integration
-     * Project analysis
-     * Command execution
-     * Solution loading
-
-2. Build Verification:
-   ```bash
-   # Basic verification (all platforms)
-   dotnet build
-   dotnet test
-   
-   # Full verification including integration tests
-   
-   # Windows (PowerShell)
-   ./build.ps1 RunTests
-   ./build.ps1 IntegrationTests
-   
-   # Linux/macOS (Bash)
-   ./build.sh RunTests
-   ./build.sh IntegrationTests
-   ```
-
-3. Test Coverage:
-   - Unit tests must be run for all code changes
-   - Integration tests must be run for changes affecting:
-     * Project/folder analysis
-     * Git operations
-     * MSBuild integration
-     * Command execution features
-
-4. Verification Order:
-   1. Compilation (`dotnet build`)
-   2. Unit tests (`dotnet test`)
-   3. Integration tests:
-      - Windows: `./build.ps1 IntegrationTests`
-      - Linux/macOS: `./build.sh IntegrationTests`
-   4. Performance tests if relevant:
-      - Windows: `./build.ps1 NBench`
-      - Linux/macOS: `./build.sh NBench`
-
-5. Error Handling:
-   - All build errors must be addressed
-   - Test failures must be investigated and fixed
-   - Integration test failures must be thoroughly analyzed
-
-6. CI/CD Alignment:
-   - Local verification should match CI pipeline steps
-   - Use same SDK version as CI environment
-   - Run tests in Release configuration when appropriate
-
-7. Full Build:
-   ```bash
-   # Windows (PowerShell)
-   ./build.ps1 all    # Runs all targets including tests and packaging
-
-   # Linux/macOS (Bash)
-   ./build.sh all     # Runs all targets including tests and packaging
-   ```
+## Publishing
+Follow the publishing procedures in `/docs/building.md` for:
+- Creating release packages
+- Publishing to NuGet
+- Package verification

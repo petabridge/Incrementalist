@@ -72,6 +72,28 @@ namespace Incrementalist.Tests.Git
             Assert.Equal("fuber.txt", Path.GetFileName(file));
         }
 
+        [Fact(DisplayName = "Should detect unstaged changes in working directory")]
+        public void Should_detect_unstaged_changes()
+        {
+            // Create and commit a file on master
+            Repository.WriteFile("committed.txt", "committed")
+                .Commit("Add committed file");
+
+            // Create a branch and add a staged file
+            Repository.CreateBranch("foo")
+                .CheckoutBranch("foo")
+                .WriteFile("staged.txt", "staged");
+
+            // Create an unstaged file
+            var unstagedPath = Path.Combine(Repository.BasePath, "unstaged.txt");
+            File.WriteAllText(unstagedPath, "unstaged");
+
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
+            Assert.Equal(2, diffedFiles.Count);
+            Assert.Contains(diffedFiles, f => Path.GetFileName(f) == "staged.txt");
+            Assert.Contains(diffedFiles, f => Path.GetFileName(f) == "unstaged.txt");
+        }
+
         [Fact(DisplayName = "Should not detect any changes when none are present")]
         public void Should_not_detect_any_changes_when_none_present()
         {
