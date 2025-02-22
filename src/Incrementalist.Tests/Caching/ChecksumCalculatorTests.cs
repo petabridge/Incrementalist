@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -134,12 +136,12 @@ namespace Incrementalist.Tests.Caching
 
         [Theory]
         [InlineData(null)]
-        public async Task CalculateChecksum_WithNullSolutionPath_ThrowsArgumentNullException(string solutionPath)
+        public async Task CalculateChecksum_WithNullSolutionPath_ThrowsArgumentNullException(string? solutionPath)
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 ChecksumCalculator.CalculateChecksumAsync(
-                    solutionPath,
+                    solutionPath!,
                     Array.Empty<string>()));
         }
 

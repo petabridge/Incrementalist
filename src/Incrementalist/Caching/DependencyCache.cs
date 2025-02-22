@@ -9,8 +9,11 @@
 using System;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Caching
 {
@@ -64,6 +67,53 @@ namespace Incrementalist.Caching
                 
             var options = new JsonSerializerOptions { WriteIndented = true };
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(cache, options));
+        }
+    }
+
+    /// <summary>
+    /// Helper methods for creating and manipulating dependency caches
+    /// </summary>
+    public static class DependencyCacheHelper
+    {
+        /// <summary>
+        /// Creates a new DependencyCache from a Solution object
+        /// </summary>
+        /// <param name="solution">The solution to analyze</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns>A new DependencyCache instance</returns>
+        public static async Task<DependencyCache> CreateFromSolutionAsync(
+            Solution solution,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(solution);
+
+            // Get the dependency graph from Roslyn
+            var dependencyGraph = solution.GetProjectDependencyGraph();
+
+            // Build the Projects dictionary
+            var projectsBuilder = ImmutableDictionary.CreateBuilder<string, ProjectNode>();
+            foreach (var projectId in solution.ProjectIds)
+            {
+                var project = solution.GetProject(projectId);
+                var dependencies = dependencyGraph
+                    .GetProjectsThatThisProjectDirectlyDependsOn(projectId)
+                    .Select(depId => solution.GetProject(depId).FilePath)
+                    .ToImmutableList();
+
+                projectsBuilder.Add(project.FilePath, new ProjectNode(project.FilePath, dependencies));
+            }
+
+            // Calculate checksum for all project files
+            var checksum = await ChecksumCalculator.CalculateChecksumAsync(
+                solution.FilePath,
+                solution.Projects.Select(p => p.FilePath),
+                cancellationToken);
+
+            return new DependencyCache(
+                Version: DependencyCacheIO.CurrentVersion,
+                SolutionPath: solution.FilePath,
+                Checksum: checksum,
+                Projects: projectsBuilder.ToImmutable());
         }
     }
 } 
