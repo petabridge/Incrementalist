@@ -18,8 +18,32 @@ namespace Incrementalist.Git
     {
         public static IEnumerable<string> ChangedFiles(Repository repo, string targetBranch)
         {
-            return repo.Diff.Compare<TreeChanges>(repo.Branches[targetBranch].Tip.Tree, DiffTargets.Index)
-                .Select(x => Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, x.Path)));
+            var targetTree = repo.Branches[targetBranch].Tip.Tree;
+            var changes = new HashSet<string>();
+
+            // Get all changes between target branch and current state (including both staged and unstaged)
+            var status = repo.RetrieveStatus();
+            
+            // Add staged changes
+            foreach (var staged in status.Staged)
+            {
+                changes.Add(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, staged.FilePath)));
+            }
+
+            // Add unstaged changes
+            foreach (var unstaged in status.Modified.Concat(status.Added).Concat(status.Untracked))
+            {
+                changes.Add(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, unstaged.FilePath)));
+            }
+
+            // Add changes between target branch and HEAD
+            var branchDiff = repo.Diff.Compare<TreeChanges>(targetTree, repo.Head.Tip.Tree);
+            foreach (var change in branchDiff)
+            {
+                changes.Add(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, change.Path)));
+            }
+
+            return changes;
         }
 
         public static bool HasBranch(Repository repo, string targetBranch)
