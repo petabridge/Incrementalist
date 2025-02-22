@@ -99,16 +99,49 @@ namespace Incrementalist.Cmd.Commands
                 Logger.LogInformation("All projects are affected. Full solution build required");
                 return new FullSolutionBuildResult(solution.FilePath);
             }
-
-            // For incremental builds, compute the dependency graph
-            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
-            var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
-
-            // Convert the dependency graph to a list of affected projects
-            var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
             
-            Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
-            return new IncrementalBuildResult(projectsToRebuild);
+            /* INCREMENTAL BUILDS */
+
+            if (Settings.NoCache)
+            {
+                goto FullCompute;
+            }
+            
+            // If we have a cache, we can try to use it to determine the incremental build
+            // We also have to check to see that the cache is still valid
+            var cache = await DependencyCacheIO.LoadAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory));
+            if (cache is null)
+            {
+                Logger.LogInformation("No cache found. Full solution analysis required");
+                goto FullCompute;
+            }
+            
+            // Check if the cache is still valid
+            var cacheIsValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, Logger, _cts.Token);
+            if (!cacheIsValid)
+            {
+                Logger.LogInformation("Cache is invalid. Full solution analysis required");
+                goto FullCompute;
+            }
+            else
+            {
+                // Happy path: cache is valid and we can use it to determine the incremental build
+                Logger.LogInformation("Using cached dependency information");
+                
+                // Need to determine which projects need rebuilding based on the cache
+                
+            }
+
+            FullCompute:
+                // For incremental builds, compute the dependency graph
+                var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+                var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
+
+                // Convert the dependency graph to a list of affected projects
+                var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
+                
+                Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
+                return new IncrementalBuildResult(projectsToRebuild);
         }
     }
 }
