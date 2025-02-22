@@ -1,12 +1,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Immutable;
 using System.IO;
 using System.Threading.Tasks;
 using Incrementalist.Caching;
 using Incrementalist.Tests.Helpers;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Xunit;
 using Xunit.Abstractions;
@@ -46,11 +44,18 @@ namespace Incrementalist.Tests.Caching
 
             // Verify all properties match
             Assert.NotNull(loadedCache);
+            Assert.Equal(cache.Version, loadedCache.Version);
+            Assert.Equal(cache.SolutionPath, loadedCache.SolutionPath);
+            Assert.Equal(cache.Checksum, loadedCache.Checksum);
             Assert.Equal(cache.Projects.Count, loadedCache.Projects.Count);
+
             foreach (var (projectPath, projectInfo) in cache.Projects)
             {
-                Assert.True(loadedCache.Projects.ContainsKey(projectPath));
-                Assert.Equal(projectInfo.Dependencies, loadedCache.Projects[projectPath].Dependencies);
+                Assert.True(loadedCache.Projects.ContainsKey(projectPath), $"Project {projectPath} not found in loaded cache");
+                var loadedProject = loadedCache.Projects[projectPath];
+                Assert.Equal(projectInfo.Path, loadedProject.Path);
+                Assert.Equal(projectInfo.Id.Id, loadedProject.Id.Id);
+                Assert.Equal(projectInfo.Dependencies, loadedProject.Dependencies);
             }
         }
 
@@ -63,7 +68,18 @@ namespace Incrementalist.Tests.Caching
         [Fact]
         public async Task CreateFromSolutionAsync_WithNullRepositoryRootPath_ThrowsArgumentNullException()
         {
-            var solution = await _workspace.OpenSolutionAsync("dummy.sln");
+            // Arrange
+            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
+
+            // Create project directories and files
+            Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", new[] { "Project1" }));
+            await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
+
+            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+
+            // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() => DependencyCacheHelper.CreateFromSolutionAsync(solution, null!));
         }
 
@@ -113,8 +129,9 @@ EndProject
             Assert.NotNull(cache);
             Assert.Equal(2, cache.Projects.Count);
 
-            var relativeProject1Path = "src/Project1/Project1.csproj";
-            var relativeProject2Path = "src/Project2/Project2.csproj";
+            // Can't just stringify the paths due to x-plat issues
+            var relativeProject1Path = Path.Join("src", "Project1", "Project1.csproj");
+            var relativeProject2Path = Path.Join("src", "Project2", "Project2.csproj");
 
             // Project1 has no dependencies
             Assert.True(cache.Projects.ContainsKey(relativeProject1Path));
@@ -144,39 +161,11 @@ EndProject
             Directory.CreateDirectory(Path.GetDirectoryName(project3Path)!);
 
             // Create initial solution and project files
-            await File.WriteAllTextAsync(solutionPath, @"
-Microsoft Visual Studio Solution File, Format Version 12.00
-Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project1"", ""src\Project1\Project1.csproj"", ""{72bdc44f-c588-44f3-b6df-9aace7daafdd}""
-EndProject
-Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project2"", ""src\Project2\Project2.csproj"", ""{49bdc44f-c588-44f3-b6df-9aace7daafdd}""
-EndProject
-Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""Project3"", ""src\Project3\Project3.csproj"", ""{39bdc44f-c588-44f3-b6df-9aace7daafdd}""
-EndProject
-");
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", new[] { "Project1", "Project2", "Project3" }));
 
-            await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-  </PropertyGroup>
-</Project>");
-
-            await File.WriteAllTextAsync(project2Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include=""..\Project1\Project1.csproj"" />
-  </ItemGroup>
-</Project>");
-
-            await File.WriteAllTextAsync(project3Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include=""..\Project2\Project2.csproj"" />
-  </ItemGroup>
-</Project>");
+            await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
+            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", new[] { "Project1" }));
+            await File.WriteAllTextAsync(project3Path, ProjectSampleGenerator.CreateProjectFile("Project3", new[] { "Project2" }));
 
             // Load solution
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
@@ -188,9 +177,10 @@ EndProject
             Assert.NotNull(cache);
             Assert.Equal(3, cache.Projects.Count);
 
-            var relativeProject1Path = "src/Project1/Project1.csproj";
-            var relativeProject2Path = "src/Project2/Project2.csproj";
-            var relativeProject3Path = "src/Project3/Project3.csproj";
+            // Can't just stringify the paths due to x-plat issues
+            var relativeProject1Path = Path.Join("src", "Project1", "Project1.csproj");
+            var relativeProject2Path = Path.Join("src", "Project2", "Project2.csproj");
+            var relativeProject3Path = Path.Join("src", "Project3", "Project3.csproj");
 
             // Project1 has no dependencies
             Assert.True(cache.Projects.ContainsKey(relativeProject1Path));

@@ -41,7 +41,11 @@ namespace Incrementalist.Tests.Caching
             var logger = new TestOutputLogger(_output);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(
+                null,
+                solution,
+                _repository.BasePath,
+                logger);
 
             // Assert
             Assert.False(isValid);
@@ -60,7 +64,11 @@ namespace Incrementalist.Tests.Caching
                 Projects: ImmutableDictionary<string, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(
+                cache,
+                solution,
+                _repository.BasePath,
+                logger);
 
             // Assert
             Assert.False(isValid);
@@ -79,7 +87,11 @@ namespace Incrementalist.Tests.Caching
                 Projects: ImmutableDictionary<string, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(
+                cache,
+                solution,
+                _repository.BasePath,
+                logger);
 
             // Assert
             Assert.False(isValid);
@@ -112,7 +124,11 @@ namespace Incrementalist.Tests.Caching
                 Projects: ImmutableDictionary<string, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(
+                cache,
+                solution,
+                _repository.BasePath,
+                logger);
 
             // Assert
             Assert.False(isValid);
@@ -138,10 +154,14 @@ namespace Incrementalist.Tests.Caching
             var logger = new TestOutputLogger(_output);
 
             // Create valid cache
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(
+                cache,
+                solution,
+                _repository.BasePath,
+                logger);
 
             // Assert
             Assert.True(isValid);

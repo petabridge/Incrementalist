@@ -176,7 +176,7 @@ namespace Incrementalist.Tests.Caching
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Create cache
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
 
             // Create affected files (source files from Project1)
             var project1Id = solution.Projects.First(p => p.FilePath == project1Path).Id;
@@ -219,6 +219,141 @@ namespace Incrementalist.Tests.Caching
             Assert.Contains(project1RelativePath, project1Dependents);
             Assert.Contains(project2RelativePath, project1Dependents);
             Assert.Contains(project3RelativePath, project1Dependents);
+        }
+
+        [Fact]
+        public async Task SaveAndLoad_PreservesAllData_WithSolution()
+        {
+            // Arrange
+            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var project3Path = Path.Combine(_repository.BasePath, "src", "Project3", "Project3.csproj");
+
+            // Create project directories
+            Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(project3Path)!);
+
+            // Create source files for Project1
+            var project1SrcDir = Path.Combine(Path.GetDirectoryName(project1Path)!, "src");
+            Directory.CreateDirectory(project1SrcDir);
+            await File.WriteAllTextAsync(Path.Combine(project1SrcDir, "Class1.cs"), "namespace Project1 { public class Class1 {} }");
+            await File.WriteAllTextAsync(Path.Combine(project1SrcDir, "Class2.cs"), "namespace Project1 { public class Class2 {} }");
+
+            // Create solution and project files
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", new[] { "Project1", "Project2", "Project3" }));
+            await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
+            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", new[] { "Project1" }));
+            await File.WriteAllTextAsync(project3Path, ProjectSampleGenerator.CreateProjectFile("Project3", new[] { "Project2" }));
+
+            // Load solution
+            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+
+            // Create cache
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
+
+            // Assert
+            Assert.NotNull(cache);
+            Assert.Equal(3, cache.Projects.Count);
+
+            // Can't use hard-coded paths due to environment-specific differences
+            var relativeProject1Path = Path.Join("src", "Project1", "Project1.csproj");
+            var relativeProject2Path = Path.Join("src", "Project2", "Project2.csproj");
+            var relativeProject3Path = Path.Join("src", "Project3", "Project3.csproj");
+
+            // Project1 has no dependencies
+            Assert.True(cache.Projects.ContainsKey(relativeProject1Path));
+            Assert.Empty(cache.Projects[relativeProject1Path].Dependencies);
+
+            // Project2 depends on Project1
+            Assert.True(cache.Projects.ContainsKey(relativeProject2Path));
+            Assert.Single(cache.Projects[relativeProject2Path].Dependencies);
+            Assert.Equal(relativeProject1Path, cache.Projects[relativeProject2Path].Dependencies[0]);
+
+            // Project3 depends on Project2 (but not directly on Project1)
+            Assert.True(cache.Projects.ContainsKey(relativeProject3Path));
+            Assert.Single(cache.Projects[relativeProject3Path].Dependencies);
+            Assert.Equal(relativeProject2Path, cache.Projects[relativeProject3Path].Dependencies[0]);
+
+            // Verify cache can be saved and loaded correctly
+            await VerifyCacheSerializationPreservesDataAsync(cache, _repository.BasePath);
+        }
+
+        [Fact]
+        public async Task SaveAndLoad_PreservesAllData_WithModifiedSolution()
+        {
+            // Arrange
+            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var project3Path = Path.Combine(_repository.BasePath, "src", "Project3", "Project3.csproj");
+
+            // Create project directories
+            Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(project3Path)!);
+
+            // Create source files for Project1
+            var project1SrcDir = Path.Combine(Path.GetDirectoryName(project1Path)!, "src");
+            Directory.CreateDirectory(project1SrcDir);
+            await File.WriteAllTextAsync(Path.Combine(project1SrcDir, "Class1.cs"), "namespace Project1 { public class Class1 {} }");
+            await File.WriteAllTextAsync(Path.Combine(project1SrcDir, "Class2.cs"), "namespace Project1 { public class Class2 {} }");
+
+            // Create solution and project files
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", new[] { "Project1", "Project2", "Project3" }));
+            await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
+            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", new[] { "Project1" }));
+            await File.WriteAllTextAsync(project3Path, ProjectSampleGenerator.CreateProjectFile("Project3", new[] { "Project2" }));
+
+            // Load solution
+            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+
+            // Create initial cache
+            var initialCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
+
+            // Modify Project1
+            await File.WriteAllTextAsync(project1Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>");
+
+            // Reload solution and create new cache
+            solution = await _workspace.OpenSolutionAsync(solutionPath);
+            var modifiedCache = await DependencyCacheHelper.CreateFromSolutionAsync(solution, _repository.BasePath);
+
+            // Assert
+            Assert.NotEqual(initialCache.Checksum, modifiedCache.Checksum);
+
+            // Verify both caches can be saved and loaded correctly
+            await VerifyCacheSerializationPreservesDataAsync(initialCache, _repository.BasePath);
+            await VerifyCacheSerializationPreservesDataAsync(modifiedCache, _repository.BasePath);
+        }
+
+        private async Task VerifyCacheSerializationPreservesDataAsync(DependencyCache cache, string basePath)
+        {
+            var cachePath = Path.Combine(basePath, ".incrementalist", "dependency-graph.cache.json");
+            
+            // Act
+            await DependencyCacheIO.SaveAsync(cachePath, cache);
+            var loaded = await DependencyCacheIO.LoadAsync(cachePath);
+            
+            // Assert
+            Assert.NotNull(loaded);
+            Assert.Equal(cache.Version, loaded.Version);
+            Assert.Equal(cache.SolutionPath, loaded.SolutionPath);
+            Assert.Equal(cache.Checksum, loaded.Checksum);
+            Assert.Equal(cache.Projects.Count, loaded.Projects.Count);
+            
+            foreach (var (path, node) in cache.Projects)
+            {
+                Assert.True(loaded.Projects.ContainsKey(path));
+                var loadedNode = loaded.Projects[path];
+                Assert.Equal(node.Path, loadedNode.Path);
+                Assert.Equal(node.Dependencies, loadedNode.Dependencies);
+            }
         }
     }
 } 
