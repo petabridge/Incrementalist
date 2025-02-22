@@ -110,36 +110,22 @@ namespace Incrementalist.Cmd.Commands
             if (!args.Contains("--project") && !args.Contains("-p"))
                 args = $"{args} \"{target}\"";
 
+            _logger.LogInformation("Executing 'dotnet {0}' for {1}", args, target);
+
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
                     Arguments = args,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
+                    UseShellExecute = true,
                     WorkingDirectory = _settings.WorkingDirectory
                 }
-            };
-
-            process.OutputDataReceived += (sender, eventArgs) =>
-            {
-                if (!string.IsNullOrEmpty(eventArgs.Data))
-                    _logger.LogInformation("[{0}] {1}", target, eventArgs.Data);
-            };
-
-            process.ErrorDataReceived += (sender, eventArgs) =>
-            {
-                if (!string.IsNullOrEmpty(eventArgs.Data))
-                    _logger.LogError("[{0}] {1}", target, eventArgs.Data);
             };
 
             try
             {
                 process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
                 await process.WaitForExitAsync();
                 
                 if (process.ExitCode != 0)
