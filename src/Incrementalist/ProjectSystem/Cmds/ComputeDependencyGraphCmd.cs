@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Incrementalist.ProjectSystem.Cache;
+using System;
 
 namespace Incrementalist.ProjectSystem.Cmds
 {
@@ -20,11 +22,19 @@ namespace Incrementalist.ProjectSystem.Cmds
     public sealed class ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<string, SlnFile>, Dictionary<string, ICollection<string>>>
     {
         private readonly Solution _solution;
+        private DependencyGraphCache _cache;
 
         public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, Solution solution) : base(
             "ResolveSlnDependencyGraph", logger, cancellationToken)
         {
             _solution = solution;
+            
+            // Try to load the cache
+            var projectFiles = solution.Projects.Select(p => p.FilePath);
+            _cache = DependencyGraphCache.Load(solution.FilePath, projectFiles);
+            
+            if (_cache != null)
+                Logger.LogInformation("Using cached dependency graph from {CacheFile}", DependencyGraphCache.GetCacheFilePath(solution.FilePath));
         }
 
         protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(Task<Dictionary<string, SlnFile>> previousTask)
@@ -34,6 +44,37 @@ namespace Incrementalist.ProjectSystem.Cmds
             // bail out early if we don't have any affected projects
             if (affectedSlnFiles.Count == 0)
                 return new Dictionary<string, ICollection<string>>();
+
+            // Special case: if the solution itself is modified, return all projects
+            if (affectedSlnFiles.ContainsKey(_solution.FilePath))
+            {
+                return new Dictionary<string, ICollection<string>>(){ {_solution.FilePath, _solution.Projects.Select(x => x.FilePath).ToList() } };
+            }
+
+            // If we have a valid cache, use it
+            if (_cache != null)
+            {
+                var result = new Dictionary<string, ICollection<string>>();
+                foreach (var file in affectedSlnFiles)
+                {
+                    if (file.Value.FileType != FileType.Project) continue;
+                    
+                    // Get all projects that depend on this one (including transitive dependencies)
+                    var dependentProjects = _cache.GetDependentProjects(file.Key);
+                    if (dependentProjects.Count > 0)
+                    {
+                        // Include the project itself in the result
+                        dependentProjects.Add(file.Key);
+                        result[file.Key] = dependentProjects;
+                    }
+                }
+                
+                if (result.Count > 0)
+                    return result;
+                
+                // If we couldn't find the project in cache, fall back to full analysis
+                Logger.LogWarning("Project not found in cache, falling back to full analysis");
+            }
 
             /*
              * Special case: in instances where the project files themselves are modified,
@@ -49,12 +90,6 @@ namespace Incrementalist.ProjectSystem.Cmds
             }
 
             var ds = _solution.GetProjectDependencyGraph();
-
-            // Special case: if the solution itself is modified, return all projects
-            if (affectedSlnFiles.ContainsKey(_solution.FilePath))
-            {
-                return new Dictionary<string, ICollection<string>>(){ {_solution.FilePath, _solution.Projects.Select(x => x.FilePath).ToList() } };
-            }
 
             string GetProjectFilePath(ProjectId project)
             {
@@ -92,10 +127,6 @@ namespace Incrementalist.ProjectSystem.Cmds
             foreach (var r in independentGraphs)
             {
                 var projectPath = GetProjectFilePath(r.Key);
-                /*
-                 * BUGFIX for https://github.com/petabridge/Incrementalist/issues/63
-                 *
-                 */
                 if (finalResultSet.ContainsKey(projectPath))
                 {
                     var exitingPaths = finalResultSet[projectPath];
@@ -106,8 +137,45 @@ namespace Incrementalist.ProjectSystem.Cmds
                 {
                     finalResultSet[projectPath] = PrepareProjectPaths(r.Key, r.Value);
                 }
+            }
+
+            // Update the cache with the new dependency information
+            if (_cache == null)
+            {
+                _cache = new DependencyGraphCache
+                {
+                    SolutionPath = _solution.FilePath
+                };
+            }
+
+            // Build the project tree
+            foreach (var project in _solution.Projects)
+            {
+                var projectNode = new ProjectNode
+                {
+                    Path = project.FilePath,
+                    Dependencies = ds.GetProjectsThatThisProjectDirectlyDependsOn(project.Id)
+                        .Select(GetProjectFilePath)
+                        .ToHashSet()
+                };
                 
-            }                
+                _cache.Projects[project.FilePath] = projectNode;
+            }
+
+            // Calculate and set checksum
+            _cache.Checksum = DependencyGraphCache.CalculateChecksum(_solution.FilePath, _cache.Projects.Keys);
+
+            // Save the updated cache
+            try
+            {
+                _cache.Save();
+                Logger.LogInformation("Updated dependency graph cache at {CacheFile}", 
+                    DependencyGraphCache.GetCacheFilePath(_solution.FilePath));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to save dependency graph cache");
+            }
 
             return finalResultSet;
         }
