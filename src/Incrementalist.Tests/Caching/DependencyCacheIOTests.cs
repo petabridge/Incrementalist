@@ -64,7 +64,7 @@ namespace Incrementalist.Tests.Caching
             var solutionId = SolutionId.CreateNewId();
             var projectId = ProjectId.CreateNewId();
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: solutionId,
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
@@ -104,7 +104,7 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: SolutionId.CreateNewId(),
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
@@ -120,7 +120,7 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: SolutionId.CreateNewId(),
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
@@ -138,7 +138,7 @@ namespace Incrementalist.Tests.Caching
             var dir = Path.Combine(_repository.BasePath, "subdir");
             var cachePath = Path.Combine(dir, "cache.json");
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: SolutionId.CreateNewId(),
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",

@@ -37,20 +37,18 @@ namespace Incrementalist.Caching
         string Path,
         ImmutableList<ProjectId> Dependencies);
 
-    [JsonSourceGenerationOptions(WriteIndented = true)]
-    [JsonSerializable(typeof(DependencyCache))]
-    internal partial class CacheGenerationContext : JsonSerializerContext
-    {
-        
-    }
+    // [JsonSourceGenerationOptions(WriteIndented = true)]
+    // [JsonSerializable(typeof(DependencyCache))]
+    // internal partial class CacheGenerationContext : JsonSerializerContext
+    // {
+    //     
+    // }
 
     /// <summary>
     /// Handles serialization and deserialization of the dependency cache
     /// </summary>
     public static class DependencyCacheIO
     {
-        public const string CurrentVersion = "1.0";
-        
         private static readonly JsonSerializerOptions SerializerOptions = new()
         {
             WriteIndented = true,
@@ -119,11 +117,11 @@ namespace Incrementalist.Caching
             }
 
             // Version mismatch
-            if (cache.Version != DependencyCacheIO.CurrentVersion)
+            if (cache.Version != IncrementalistFileConstants.CurrentVersion)
             {
                 logger?.LogInformation(
                     "Cache version mismatch. Expected {ExpectedVersion}, found {ActualVersion}",
-                    DependencyCacheIO.CurrentVersion,
+                    IncrementalistFileConstants.CurrentVersion,
                     cache.Version);
                 return false;
             }
@@ -172,8 +170,6 @@ namespace Incrementalist.Caching
             Solution solution,
             CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(solution);
-
             // Get the dependency graph from Roslyn
             var dependencyGraph = solution.GetProjectDependencyGraph();
 
@@ -207,7 +203,7 @@ namespace Incrementalist.Caching
                 cancellationToken);
 
             return new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: solution.Id,
                 SolutionPath: solution.FilePath!,
                 Checksum: checksum,

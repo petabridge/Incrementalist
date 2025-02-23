@@ -20,5 +20,7 @@ namespace Incrementalist.Caching
         /// The filename for the dependency graph cache
         /// </summary>
         public const string CacheFileName = "incrementalist.graphcache.json";
+
+        public const string CurrentVersion = "1.0";
     }
 } 

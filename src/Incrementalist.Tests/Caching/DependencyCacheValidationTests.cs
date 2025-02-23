@@ -74,7 +74,7 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
             var logger = new TestOutputLogger(_output);
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId.CreateNewId(),
                 SolutionPath: "different/path/solution.sln",
                 Checksum: "dummy-checksum",
@@ -110,7 +110,7 @@ namespace Incrementalist.Tests.Caching
 
             // Create cache with different checksum
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId.CreateNewId(),
                 SolutionPath: solution.FilePath!,
                 Checksum: "different-checksum",

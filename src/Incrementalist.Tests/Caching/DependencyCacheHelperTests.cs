@@ -74,7 +74,7 @@ namespace Incrementalist.Tests.Caching
             // Arrange
             var solution = CreateEmptySolution();
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: solution.Id,
                 SolutionPath: "different/path/solution.sln",
                 Checksum: "test-checksum",
@@ -105,7 +105,7 @@ namespace Incrementalist.Tests.Caching
 
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
             var cache = new DependencyCache(
-                Version: DependencyCacheIO.CurrentVersion,
+                Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: solution.Id,
                 SolutionPath: solution.FilePath!,
                 Checksum: "different-checksum",
@@ -141,7 +141,7 @@ namespace Incrementalist.Tests.Caching
 
             // Assert
             Assert.NotNull(cache);
-            Assert.Equal(DependencyCacheIO.CurrentVersion, cache.Version);
+            Assert.Equal(IncrementalistFileConstants.CurrentVersion, cache.Version);
             Assert.Equal(solution.Id, cache.SolutionId);
             Assert.Equal(solution.FilePath, cache.SolutionPath);
             Assert.NotNull(cache.Checksum);
