@@ -58,32 +58,33 @@ namespace Incrementalist.Caching
                 new SolutionIdJsonConverter()
             }
         };
-        
+
         public static string GetCachePath(string solutionDir) =>
-            Path.Combine(solutionDir, IncrementalistFileConstants.IncrementalistDirectory, IncrementalistFileConstants.CacheFileName);
-            
+            Path.Combine(solutionDir, IncrementalistFileConstants.IncrementalistDirectory,
+                IncrementalistFileConstants.CacheFileName);
+
         public static async Task<DependencyCache?> LoadAsync(string path)
         {
             if (!File.Exists(path))
                 return null;
-                
+
             var json = await File.ReadAllTextAsync(path);
             return JsonSerializer.Deserialize<DependencyCache>(json, SerializerOptions);
         }
-        
+
         public static async Task SaveAsync(string path, DependencyCache cache)
         {
             ArgumentNullException.ThrowIfNull(cache);
             ArgumentNullException.ThrowIfNull(path);
-            
+
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path cannot be empty or whitespace.", nameof(path));
-            
+
             var dir = Path.GetDirectoryName(path);
-            
+
             if (dir is not null && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-                
+
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(cache, SerializerOptions));
         }
     }
@@ -127,11 +128,13 @@ namespace Incrementalist.Caching
             }
 
             // Solution path mismatch
-            if (!string.Equals(cache.SolutionPath, solution.FilePath, StringComparison.OrdinalIgnoreCase))
+            if (cache.SolutionId != solution.Id)
             {
                 logger?.LogInformation(
-                    "Cache is for different solution. Expected {ExpectedPath}, found {ActualPath}",
+                    "Cache is for different solution. Expected {ExpectedSolutionId} [{ExpectedPath}], found {ActualSolutionId} [{ActualPath}]",
+                    solution.Id,
                     solution.FilePath,
+                    cache.SolutionId,
                     cache.SolutionPath);
                 return false;
             }
@@ -173,7 +176,7 @@ namespace Incrementalist.Caching
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(solution);
-            
+
             // Get the dependency graph from Roslyn
             var dependencyGraph = solution.GetProjectDependencyGraph();
 
@@ -191,7 +194,8 @@ namespace Incrementalist.Caching
                     .Select(c => c!.Id)
                     .ToImmutableList();
 
-                projectsBuilder.Add(project.Id, new ProjectNode(project.Id, GetPathRelativeToRepositoryRoot(project.FilePath), dependencies));
+                projectsBuilder.Add(project.Id,
+                    new ProjectNode(project.Id, GetPathRelativeToRepositoryRoot(project.FilePath), dependencies));
             }
 
             // Calculate checksum for all project files
@@ -219,12 +223,13 @@ namespace Incrementalist.Caching
                 return GetRelativePath(repositoryRoot, filePath);
             }
         }
-        
+
         /// <summary>
         /// Should return a file path relative to the repository root
         /// </summary>
         /// <param name="repositoryRoot">The root of the repo</param>
         /// <param name="fullPath">The absolute path of an object elsewhere in this repository</param>
-        public static string GetRelativePath(string repositoryRoot, string fullPath) => Path.GetRelativePath(repositoryRoot, fullPath);
+        public static string GetRelativePath(string repositoryRoot, string fullPath) =>
+            Path.GetRelativePath(repositoryRoot, fullPath);
     }
-} 
+}
