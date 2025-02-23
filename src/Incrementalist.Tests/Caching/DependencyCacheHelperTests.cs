@@ -137,7 +137,7 @@ namespace Incrementalist.Tests.Caching
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
 
             // Act
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
 
             // Assert
             Assert.NotNull(cache);
@@ -158,7 +158,7 @@ namespace Incrementalist.Tests.Caching
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                DependencyCacheHelper.CreateFromSolutionAsync(null!));
+                DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, null!));
         }
 
         private Solution CreateEmptySolution()

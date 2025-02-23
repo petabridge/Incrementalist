@@ -163,10 +163,12 @@ namespace Incrementalist.Caching
         /// <summary>
         /// Creates a new DependencyCache from a Solution object
         /// </summary>
+        /// <param name="repositoryRoot"></param>
         /// <param name="solution">The solution to analyze</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A new DependencyCache instance</returns>
         public static async Task<DependencyCache> CreateFromSolutionAsync(
+            string repositoryRoot,
             Solution solution,
             CancellationToken cancellationToken = default)
         {
@@ -189,14 +191,13 @@ namespace Incrementalist.Caching
                     .Select(c => c!.Id)
                     .ToImmutableList();
 
-                projectsBuilder.Add(project.Id, new ProjectNode(project.Id, project.FilePath, dependencies));
+                projectsBuilder.Add(project.Id, new ProjectNode(project.Id, GetPathRelativeToRepositoryRoot(project.FilePath), dependencies));
             }
 
             // Calculate checksum for all project files
             var projectPaths = solution.Projects
-                .Select(p => p.FilePath)
-                .Where(p => p != null)
-                .Cast<string>()
+                .Where(p => p.FilePath != null)
+                .Select(p => p.FilePath!)
                 .ToList();
 
             var checksum = await ChecksumCalculator.CalculateChecksumAsync(
@@ -207,9 +208,23 @@ namespace Incrementalist.Caching
             return new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionId: solution.Id,
-                SolutionPath: solution.FilePath!,
+                SolutionPath: GetPathRelativeToRepositoryRoot(solution.FilePath!),
                 Checksum: checksum,
                 Projects: projectsBuilder.ToImmutable());
+
+            // add a local function to compute a relative file path from the repository root
+            // use System.IO Path tools for this, not string manipulation
+            string GetPathRelativeToRepositoryRoot(string filePath)
+            {
+                return GetRelativePath(repositoryRoot, filePath);
+            }
         }
+        
+        /// <summary>
+        /// Should return a file path relative to the repository root
+        /// </summary>
+        /// <param name="repositoryRoot">The root of the repo</param>
+        /// <param name="fullPath">The absolute path of an object elsewhere in this repository</param>
+        public static string GetRelativePath(string repositoryRoot, string fullPath) => Path.GetRelativePath(repositoryRoot, fullPath);
     }
 } 

@@ -151,7 +151,7 @@ namespace Incrementalist.Cmd.Commands
                 {
                     var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
                     Logger.LogInformation("Writing new cache to {CachePath}", cachePath);
-                    var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+                    var cache = await DependencyCacheHelper.CreateFromSolutionAsync(Settings.WorkingDirectory, solution);
                     await DependencyCacheIO.SaveAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory), cache);
                 }
                 

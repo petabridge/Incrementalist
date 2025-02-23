@@ -145,7 +145,7 @@ namespace Incrementalist.Tests.Caching
             var logger = new TestOutputLogger(_output);
 
             // Create valid cache
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
 
             // Act
             var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
