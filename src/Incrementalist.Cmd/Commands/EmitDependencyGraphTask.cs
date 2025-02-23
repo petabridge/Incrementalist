@@ -47,20 +47,6 @@ namespace Incrementalist.Cmd.Commands
 
             var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
 
-            // Try to use cache if enabled
-            if (!Settings.NoCache)
-            {
-                var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
-                var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
-
-                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Logger, _cts.Token))
-                {
-                    Logger.LogInformation("Using cached dependency information");
-                    // TODO: Process using existingCache.Projects
-                    // This will be implemented in the next step
-                }
-            }
-
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
 
@@ -98,6 +84,21 @@ namespace Incrementalist.Cmd.Commands
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
                 return new FullSolutionBuildResult(solution.FilePath);
+            }
+            
+            /* INCREMENTAL BUILDS */
+            // Try to use cache if enabled
+            if (!Settings.NoCache)
+            {
+                var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
+                var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
+
+                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Logger, _cts.Token))
+                {
+                    Logger.LogInformation("Using cached dependency information");
+                    // TODO: Process using existingCache.Projects
+                    // This will be implemented in the next step
+                }
             }
 
             // For incremental builds, compute the dependency graph

@@ -170,6 +170,8 @@ namespace Incrementalist.Caching
             Solution solution,
             CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(solution);
+            
             // Get the dependency graph from Roslyn
             var dependencyGraph = solution.GetProjectDependencyGraph();
 

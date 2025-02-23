@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,10 +16,12 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
-    ///     Computes the longest dependency graph from all of the affected files
+    ///     Computes the longest dependency graph from all the affected files
     ///     and emits a topologically sorted set of project file names to be used during testing.
     /// </summary>
-    public sealed class ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<string, SlnFile>, Dictionary<string, ICollection<string>>>
+    public sealed class
+        ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<string, SlnFile>,
+        Dictionary<string, ICollection<string>>>
     {
         private readonly Solution _solution;
 
@@ -27,7 +31,8 @@ namespace Incrementalist.ProjectSystem.Cmds
             _solution = solution;
         }
 
-        protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(Task<Dictionary<string, SlnFile>> previousTask)
+        protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(
+            Task<Dictionary<string, SlnFile>> previousTask)
         {
             var affectedSlnFiles = await previousTask;
 
@@ -38,30 +43,33 @@ namespace Incrementalist.ProjectSystem.Cmds
             /*
              * Special case: in instances where the project files themselves are modified,
              * we there might be multiple ProjectIds in the case of a multi-targeted solution.
-             * 
+             *
              * We have to gather up each unique project file separately in this case.
              */
             var additionalProjectIds = new List<ProjectId>();
-            if(affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
+            if (affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
             {
-                foreach(var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
-                    additionalProjectIds.AddRange(_solution.Projects.Where(x => x.FilePath.Equals(proj.Key)).Select(x => x.Id));
+                foreach (var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
+                    additionalProjectIds.AddRange(_solution.Projects
+                        .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key)).Select(x => x.Id));
             }
 
             var ds = _solution.GetProjectDependencyGraph();
 
             // Special case: if the solution itself is modified, return all projects
-            if (affectedSlnFiles.ContainsKey(_solution.FilePath))
+            if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(_solution.FilePath))
             {
-                return new Dictionary<string, ICollection<string>>(){ {_solution.FilePath, _solution.Projects.Select(x => x.FilePath).ToList() } };
+                return new Dictionary<string, ICollection<string>>()
+                {
+                    {
+                        _solution.FilePath,
+                        _solution.Projects.Where(c => c.FilePath != null).Select(x => x.FilePath).ToList()!
+                    }
+                };
             }
 
-            string GetProjectFilePath(ProjectId project)
-            {
-                return _solution.GetProject(project).FilePath;
-            }
-
-            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Concat(additionalProjectIds).Distinct().ToList();
+            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Concat(additionalProjectIds)
+                .Distinct().ToList();
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
 
@@ -74,17 +82,6 @@ namespace Incrementalist.ProjectSystem.Cmds
                     .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
             }
 
-            ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
-            {
-                var results = new HashSet<string> { _solution.GetProject(root).FilePath };
-                foreach (var p in graph)
-                {
-                    results.Add(GetProjectFilePath(p));
-                }
-
-                return results;
-            }
-
             var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs));
 
             // idempotently filter out duplicates - same projectID can show up multiple times for a multi-target build
@@ -92,13 +89,16 @@ namespace Incrementalist.ProjectSystem.Cmds
             foreach (var r in independentGraphs)
             {
                 var projectPath = GetProjectFilePath(r.Key);
+                
+                if(projectPath == null)
+                    continue;
+                
                 /*
                  * BUGFIX for https://github.com/petabridge/Incrementalist/issues/63
                  *
                  */
-                if (finalResultSet.ContainsKey(projectPath))
+                if (finalResultSet.TryGetValue(projectPath, out var exitingPaths))
                 {
-                    var exitingPaths = finalResultSet[projectPath];
                     var newPaths = PrepareProjectPaths(r.Key, r.Value);
                     finalResultSet[projectPath] = exitingPaths.Concat(newPaths).Distinct().ToList();
                 }
@@ -106,10 +106,31 @@ namespace Incrementalist.ProjectSystem.Cmds
                 {
                     finalResultSet[projectPath] = PrepareProjectPaths(r.Key, r.Value);
                 }
-                
-            }                
+            }
 
             return finalResultSet;
+
+            ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
+            {
+                var rootProject = _solution.GetProject(root);
+                if (rootProject?.FilePath == null)
+                    return Array.Empty<string>();
+                
+                var results = new HashSet<string> { rootProject.FilePath };
+                foreach (var p in graph)
+                {
+                    var projectFilePath = GetProjectFilePath(p);
+                    if (projectFilePath != null)
+                        results.Add(projectFilePath);
+                }
+
+                return results;
+            }
+
+            string? GetProjectFilePath(ProjectId project)
+            {
+                return _solution.GetProject(project)?.FilePath;
+            }
         }
     }
 }
