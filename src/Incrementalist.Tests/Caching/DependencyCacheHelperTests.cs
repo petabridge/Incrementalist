@@ -143,7 +143,7 @@ namespace Incrementalist.Tests.Caching
             Assert.NotNull(cache);
             Assert.Equal(IncrementalistFileConstants.CurrentVersion, cache.Version);
             Assert.Equal(solution.Id, cache.SolutionId);
-            Assert.Equal(solution.FilePath, cache.SolutionPath);
+            Assert.Equal(Path.GetRelativePath(_repository.BasePath, solution.FilePath!), cache.SolutionPath);
             Assert.NotNull(cache.Checksum);
             Assert.Equal(2, cache.Projects.Count);
 
