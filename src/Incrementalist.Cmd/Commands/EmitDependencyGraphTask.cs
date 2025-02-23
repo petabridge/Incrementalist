@@ -3,7 +3,7 @@
 //      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
-
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,24 +92,42 @@ namespace Incrementalist.Cmd.Commands
             {
                 var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
                 var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
+                
+                if(existingCache == null)
+                {
+                    Logger.LogInformation("No cache found. Full solution analysis required.");
+                    goto FullAnalysis;
+                }
 
                 if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Logger, _cts.Token))
                 {
                     Logger.LogInformation("Using cached dependency information");
-                    // TODO: Process using existingCache.Projects
-                    // This will be implemented in the next step
+                    
+                    
+                    
+                    string? GetProjectFilePath(ProjectId project)
+                    {
+                        return solution.GetProject(project)?.FilePath;
+                    }
+                }
+                else
+                {
+                    // Invalid cache, perform full analysis
+                    Logger.LogInformation("Cache signature is old. Full solution analysis required.");
+                    goto FullAnalysis;
                 }
             }
 
             // For incremental builds, compute the dependency graph
-            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
-            var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
+            FullAnalysis:
+                var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+                var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
 
-            // Convert the dependency graph to a list of affected projects
-            var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
-            
-            Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
-            return new IncrementalBuildResult(projectsToRebuild);
+                // Convert the dependency graph to a list of affected projects
+                var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
+                
+                Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
+                return new IncrementalBuildResult(projectsToRebuild);
         }
     }
 }
