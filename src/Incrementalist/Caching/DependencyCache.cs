@@ -11,6 +11,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -23,16 +24,25 @@ namespace Incrementalist.Caching
     /// </summary>
     public sealed record DependencyCache(
         string Version,
+        SolutionId SolutionId,
         string SolutionPath,
         string Checksum,
-        ImmutableDictionary<string, ProjectNode> Projects);
+        ImmutableDictionary<ProjectId, ProjectNode> Projects);
 
     /// <summary>
     /// Represents a project and its direct dependencies in the solution
     /// </summary>
     public sealed record ProjectNode(
+        ProjectId Id,
         string Path,
-        ImmutableList<string> Dependencies);
+        ImmutableList<ProjectId> Dependencies);
+
+    [JsonSourceGenerationOptions(WriteIndented = true)]
+    [JsonSerializable(typeof(DependencyCache))]
+    internal partial class CacheGenerationContext : JsonSerializerContext
+    {
+        
+    }
 
     /// <summary>
     /// Handles serialization and deserialization of the dependency cache
@@ -159,7 +169,7 @@ namespace Incrementalist.Caching
             var dependencyGraph = solution.GetProjectDependencyGraph();
 
             // Build the Projects dictionary
-            var projectsBuilder = ImmutableDictionary.CreateBuilder<string, ProjectNode>();
+            var projectsBuilder = ImmutableDictionary.CreateBuilder<ProjectId, ProjectNode>();
             foreach (var projectId in solution.ProjectIds)
             {
                 var project = solution.GetProject(projectId);
@@ -167,12 +177,12 @@ namespace Incrementalist.Caching
 
                 var dependencies = dependencyGraph
                     .GetProjectsThatThisProjectDirectlyDependsOn(projectId)
-                    .Select(depId => solution.GetProject(depId)?.FilePath)
-                    .Where(path => path != null)
-                    .Cast<string>()
+                    .Select(solution.GetProject)
+                    .Where(p => p != null)
+                    .Select(c => c!.Id)
                     .ToImmutableList();
 
-                projectsBuilder.Add(project.FilePath, new ProjectNode(project.FilePath, dependencies));
+                projectsBuilder.Add(project.Id, new ProjectNode(project.Id, project.FilePath, dependencies));
             }
 
             // Calculate checksum for all project files
@@ -189,6 +199,7 @@ namespace Incrementalist.Caching
 
             return new DependencyCache(
                 Version: DependencyCacheIO.CurrentVersion,
+                SolutionId: solution.Id,
                 SolutionPath: solution.FilePath!,
                 Checksum: checksum,
                 Projects: projectsBuilder.ToImmutable());
