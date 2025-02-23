@@ -51,6 +51,16 @@ namespace Incrementalist.Caching
     {
         public const string CurrentVersion = "1.0";
         
+        private static readonly JsonSerializerOptions SerializerOptions = new()
+        {
+            WriteIndented = true,
+            Converters =
+            {
+                new ProjectIdJsonConverter(),
+                new SolutionIdJsonConverter()
+            }
+        };
+        
         public static string GetCachePath(string solutionDir) =>
             Path.Combine(solutionDir, IncrementalistFileConstants.IncrementalistDirectory, IncrementalistFileConstants.CacheFileName);
             
@@ -60,7 +70,7 @@ namespace Incrementalist.Caching
                 return null;
                 
             var json = await File.ReadAllTextAsync(path);
-            return JsonSerializer.Deserialize<DependencyCache>(json);
+            return JsonSerializer.Deserialize<DependencyCache>(json, SerializerOptions);
         }
         
         public static async Task SaveAsync(string path, DependencyCache cache)
@@ -76,8 +86,7 @@ namespace Incrementalist.Caching
             if (dir is not null && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
                 
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(cache, options));
+            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(cache, SerializerOptions));
         }
     }
 

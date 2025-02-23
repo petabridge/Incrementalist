@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Incrementalist.Caching;
 using Incrementalist.Tests.Helpers;
@@ -15,22 +16,24 @@ using Xunit.Abstractions;
 namespace Incrementalist.Tests.Caching
 {
     [Collection(MSBuildCollectionFixture.Name)]
-    public class DependencyCacheValidationTests : IDisposable
+    public sealed class DependencyCacheHelperTests : IDisposable
     {
         private readonly ITestOutputHelper _output;
         private readonly DisposableRepository _repository;
         private readonly MSBuildWorkspace _workspace;
+        private readonly TestOutputLogger _logger;
 
-        public DependencyCacheValidationTests(ITestOutputHelper output, MSBuildFixture fixture)
+        public DependencyCacheHelperTests(ITestOutputHelper output, MSBuildFixture fixture)
         {
             _output = output;
             _repository = new DisposableRepository();
             _workspace = fixture.Workspace;
+            _logger = new TestOutputLogger(output);
         }
 
         public void Dispose()
         {
-            _repository?.Dispose();
+            _repository.Dispose();
         }
 
         [Fact]
@@ -38,10 +41,9 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var solution = CreateEmptySolution();
-            var logger = new TestOutputLogger(_output);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -52,16 +54,15 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var solution = CreateEmptySolution();
-            var logger = new TestOutputLogger(_output);
             var cache = new DependencyCache(
                 Version: "0.9", // Different version
-                SolutionId.CreateNewId(),
+                SolutionId: solution.Id,
                 SolutionPath: solution.FilePath!,
-                Checksum: "dummy-checksum",
+                Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -72,16 +73,15 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var solution = CreateEmptySolution();
-            var logger = new TestOutputLogger(_output);
             var cache = new DependencyCache(
                 Version: DependencyCacheIO.CurrentVersion,
-                SolutionId.CreateNewId(),
+                SolutionId: solution.Id,
                 SolutionPath: "different/path/solution.sln",
-                Checksum: "dummy-checksum",
+                Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -99,32 +99,27 @@ namespace Incrementalist.Tests.Caching
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
 
-            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"
-            ]));
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
-            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"
-            ]));
+            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
 
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
-            var logger = new TestOutputLogger(_output);
-
-            // Create cache with different checksum
             var cache = new DependencyCache(
                 Version: DependencyCacheIO.CurrentVersion,
-                SolutionId.CreateNewId(),
+                SolutionId: solution.Id,
                 SolutionPath: solution.FilePath!,
                 Checksum: "different-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, _logger);
 
             // Assert
             Assert.False(isValid);
         }
 
         [Fact]
-        public async Task IsCacheValidAsync_WithValidCache_ReturnsTrue()
+        public async Task CreateFromSolutionAsync_WithValidSolution_CreatesValidCache()
         {
             // Arrange
             var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
@@ -135,23 +130,35 @@ namespace Incrementalist.Tests.Caching
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
 
-            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"
-            ]));
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
-            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"
-            ]));
+            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
 
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
-            var logger = new TestOutputLogger(_output);
-
-            // Create valid cache
-            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(solution);
 
             // Assert
-            Assert.True(isValid);
+            Assert.NotNull(cache);
+            Assert.Equal(DependencyCacheIO.CurrentVersion, cache.Version);
+            Assert.Equal(solution.Id, cache.SolutionId);
+            Assert.Equal(solution.FilePath, cache.SolutionPath);
+            Assert.NotNull(cache.Checksum);
+            Assert.Equal(2, cache.Projects.Count);
+
+            // Verify Project2 depends on Project1
+            var project2 = solution.Projects.First(p => p.Name == "Project2");
+            var project1Id = solution.Projects.First(p => p.Name == "Project1").Id;
+            Assert.Contains(project1Id, cache.Projects[project2.Id].Dependencies);
+        }
+
+        [Fact]
+        public async Task CreateFromSolutionAsync_WithNullSolution_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                DependencyCacheHelper.CreateFromSolutionAsync(null!));
         }
 
         private Solution CreateEmptySolution()
