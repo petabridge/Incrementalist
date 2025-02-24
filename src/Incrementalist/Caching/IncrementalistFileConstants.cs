@@ -21,6 +21,6 @@ namespace Incrementalist.Caching
         /// </summary>
         public const string CacheFileName = "incrementalist.graphcache.json";
 
-        public const string CurrentVersion = "1.0";
+        public const string CurrentVersion = "1.0-beta2";
     }
 } 
