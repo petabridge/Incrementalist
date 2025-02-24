@@ -19,6 +19,19 @@ function Initialize-TestEnvironment {
     return $testResultsDir
 }
 
+function Remove-IncrementalistCache {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$SolutionPath
+    )
+    
+    $cacheDir = Join-Path (Split-Path $SolutionPath -Parent) ".incrementalist"
+    if (Test-Path $cacheDir) {
+        Write-Host "Removing existing cache directory: $cacheDir"
+        Remove-Item -Path $cacheDir -Recurse -Force
+    }
+}
+
 function Invoke-IncrementalistTest {
     param(
         [Parameter(Mandatory=$true)]
@@ -77,8 +90,8 @@ function Test-FoldersOnly {
     param($ProjectPath, $Configuration, $TestResultsDir)
     
     $folderTestOutput = Join-Path $TestResultsDir "incrementalist-affected-folders.txt"
-    Invoke-IncrementalistTest -TestName "Folders-only check" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -l -f $folderTestOutput
+    Invoke-IncrementalistTest -TestName "Folders-only check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -l --no-cache -f $folderTestOutput
     }
 }
 
@@ -86,33 +99,56 @@ function Test-SolutionCheck {
     param($ProjectPath, $Configuration, $TestResultsDir)
     
     $solutionTestOutput = Join-Path $TestResultsDir "incrementalist-affected-files.txt"
-    Invoke-IncrementalistTest -TestName "Solution check" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $solutionTestOutput
+    Invoke-IncrementalistTest -TestName "Solution check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $solutionTestOutput
     }
 }
 
 function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
-    Invoke-IncrementalistTest -TestName "Command execution" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r -- "build -c Release --nologo"
+    Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- "build -c Release --nologo"
     }
 }
 
 function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
-    Invoke-IncrementalistTest -TestName "Parallel execution" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel -- "build -c Release --nologo"
+    Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- "build -c Release --nologo"
     }
 }
 
 function Test-ErrorHandling {
     param($ProjectPath, $Configuration)
     
-    Invoke-IncrementalistTest -TestName "Error handling" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --fail-on-no-projects -- "invalid-command"
+    Invoke-IncrementalistTest -TestName "Error handling (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --fail-on-no-projects --no-cache -- "invalid-command"
     } -ExpectFailure $true
+}
+
+function Test-CacheCreation {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $solutionPath = Join-Path $PSScriptRoot "..\Incrementalist.sln"
+    Remove-IncrementalistCache -SolutionPath $solutionPath
+    
+    $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-creation.txt"
+    Invoke-IncrementalistTest -TestName "Cache creation" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Run without --no-cache to create the cache
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $cacheTestOutput
+    }
+}
+
+function Test-CacheReuse {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-reuse.txt"
+    Invoke-IncrementalistTest -TestName "Cache reuse" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Run again without --no-cache to reuse the existing cache
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $cacheTestOutput
+    }
 }
 
 # Main execution
@@ -137,6 +173,10 @@ foreach ($project in $incrementalistProjects) {
     Test-CommandExecution -ProjectPath $project.FullName -Configuration $Configuration
     Test-ParallelExecution -ProjectPath $project.FullName -Configuration $Configuration
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
+    
+    # Run cache-specific tests
+    Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    Test-CacheReuse -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
 }
 
 # Final status report

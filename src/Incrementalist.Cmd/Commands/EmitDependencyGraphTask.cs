@@ -3,7 +3,7 @@
 //      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
-
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
+using Incrementalist.Caching;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
@@ -84,16 +85,96 @@ namespace Incrementalist.Cmd.Commands
                 Logger.LogInformation("All projects are affected. Full solution build required");
                 return new FullSolutionBuildResult(solution.FilePath);
             }
+            
+            /* INCREMENTAL BUILDS */
+            // Try to use cache if enabled
+            if (!Settings.NoCache)
+            {
+                var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
+                var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
+                
+                if(existingCache == null)
+                {
+                    Logger.LogInformation("No cache found. Full solution analysis required.");
+                    goto FullAnalysis;
+                }
+
+                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, Settings.WorkingDirectory, solution, Logger, _cts.Token))
+                {
+                    Logger.LogInformation("Using cached dependency information");
+                    
+                    var allProjectIdsFromAffectedFiles = affectedFiles.Values
+                        .Where(x => x.ProjectId != null)
+                        .Select(x => x.ProjectId!)
+                        .Distinct()
+                        .ToList();
+                    
+                    // given the list of affected projects, we now need to compute the dependency graphs
+                    // via the cache
+                    var hashSet = new HashSet<ProjectId>(allProjectIdsFromAffectedFiles);
+                    foreach(var cachedProject in existingCache.Projects.Values)
+                    {
+                        // if the cachedProject depends on any of the affected projects, add it to the list
+                        if(cachedProject.Dependencies.Any(hashSet.Contains))
+                        {
+                            hashSet.Add(cachedProject.Id);
+                        }
+                    }
+                    
+                    // transform projectIds into project file paths - which is what the dotnet command needs to execute
+                    var computedFilePaths = hashSet.Select(GetProjectFilePath).Where(x => x != null)
+                        .Select(c => c!).ToList();
+                    
+                    // TODO: topological sorting of the projects?
+                    return ComputeResult(computedFilePaths);
+                    
+                    string? GetProjectFilePath(ProjectId project)
+                    {
+                        return solution.GetProject(project)?.FilePath;
+                    }
+                }
+
+                // Invalid cache, perform full analysis
+                Logger.LogInformation("Cache signature is old. Full solution analysis required.");
+            }
 
             // For incremental builds, compute the dependency graph
-            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
-            var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
+            FullAnalysis:
+                var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+                var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
 
-            // Convert the dependency graph to a list of affected projects
-            var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
-            
-            Logger.LogInformation($"Incremental build possible. {projectsToRebuild.Count} projects need to be rebuilt");
-            return new IncrementalBuildResult(projectsToRebuild);
+                // Convert the dependency graph to a list of affected projects
+                var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
+                
+                // need to write a new cache
+                if (!Settings.NoCache)
+                {
+                    var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
+                    Logger.LogInformation("Writing new cache to {CachePath}", cachePath);
+                    var cache = await DependencyCacheHelper.CreateFromSolutionAsync(Settings.WorkingDirectory, solution);
+                    await DependencyCacheIO.SaveAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory), cache);
+                }
+                
+                return ComputeResult(projectsToRebuild);
+
+                BuildAnalysisResult ComputeResult(IReadOnlyList<string> projectFilePaths)
+                {
+                    if(projectFilePaths.Count == 0)
+                    {
+                        Logger.LogInformation("No projects need to be rebuilt");
+                        return new IncrementalBuildResult(Array.Empty<string>());
+                    }
+
+                    if (projectFilePaths.Count == solution.Projects.Count())
+                    {
+                        Logger.LogInformation("All projects are affected. Full solution build required");
+                        return new FullSolutionBuildResult(solution.FilePath);
+                    }
+
+                    Logger.LogInformation("Incremental build possible. {RebuildCount} projects [{Projects}] need to be rebuilt", 
+                        projectFilePaths.Count, string.Join(", ", projectFilePaths));
+                    return new IncrementalBuildResult(projectFilePaths);
+                }
         }
     }
 }

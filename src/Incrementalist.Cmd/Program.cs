@@ -145,7 +145,10 @@ namespace Incrementalist.Cmd
         private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
             var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName,
-                TimeSpan.FromMinutes(options.TimeoutMinutes));
+                TimeSpan.FromMinutes(options.TimeoutMinutes))
+            {
+                NoCache = options.NoCache
+            };
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
             var affectedFiles = (await emitTask.Run());
 
@@ -171,7 +174,10 @@ namespace Incrementalist.Cmd
             MSBuildWorkspace msBuild, ILogger logger)
         {
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
-                TimeSpan.FromMinutes(options.TimeoutMinutes));
+                TimeSpan.FromMinutes(options.TimeoutMinutes))
+            {
+                NoCache = options.NoCache
+            };
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
             var buildResult = await emitTask.Run();
 

@@ -1,28 +1,25 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.ProjectSystem;
-using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Tests.Helpers;
-using Microsoft.Build.Locator;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Dependencies
 {
+    [Collection(MSBuildCollectionFixture.Name)]
     public class FSharpProjectsTrackingSpecs : IDisposable
     {
         private readonly ITestOutputHelper _outputHelper;
+        private readonly MSBuildWorkspace _workspace;
         public DisposableRepository Repository { get; }
         
-        public FSharpProjectsTrackingSpecs(ITestOutputHelper outputHelper)
+        public FSharpProjectsTrackingSpecs(ITestOutputHelper outputHelper, MSBuildFixture fixture)
         {
             _outputHelper = outputHelper;
+            _workspace = fixture.Workspace;
             Repository = new DisposableRepository();
         }
 
@@ -52,22 +49,13 @@ namespace Incrementalist.Tests.Dependencies
             
             var logger = new TestOutputLogger(_outputHelper);
             var settings = new BuildSettings("master", solutionFullPath, Repository.BasePath);
-            var workspace = SetupMsBuildWorkspace();
-            var emitTask = new EmitDependencyGraphTask(settings, workspace, logger);
+            var emitTask = new EmitDependencyGraphTask(settings, _workspace, logger);
             var buildResult = await emitTask.Run();
 
             // When all projects are affected, we expect a full solution build
             Assert.True((buildResult) is FullSolutionBuildResult);
             var fullBuildResult = (FullSolutionBuildResult)buildResult;
             Assert.Equal(solutionFullPath, fullBuildResult.SolutionPath);
-        }
-
-        private static MSBuildWorkspace SetupMsBuildWorkspace()
-        {
-            // Locate and register the default instance of MSBuild installed on this machine.
-            MSBuildLocator.RegisterDefaults();
-            
-            return MSBuildWorkspace.Create();
         }
     }
 }

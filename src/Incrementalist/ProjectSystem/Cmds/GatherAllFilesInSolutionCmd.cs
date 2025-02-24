@@ -3,7 +3,7 @@
 //      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
-
+#nullable enable
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading;
@@ -29,11 +29,10 @@ namespace Incrementalist.ProjectSystem.Cmds
         protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Solution> previousTask)
         {
             var slnObject = await previousTask;
-            Contract.Assert(slnObject is Solution s && s != null,
+            Contract.Assert(slnObject is not null,
                 $"Expected previous task to return a Solution object, but found {slnObject} instead.");
-            var solution = (Solution) slnObject;
 
-            return SolutionAnalyzer.AllSolutionFiles(solution, _workingDirectory);
+            return SolutionAnalyzer.AllSolutionFiles(slnObject, _workingDirectory);
         }
     }
 }

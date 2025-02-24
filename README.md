@@ -100,6 +100,9 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
   --fail-on-no-projects Optional. (Default: false) Fail if no projects are affected.
 
+  --no-cache           Optional. (Default: false) Ignore any existing cache file
+                      and perform a full Roslyn analysis.
+
   --help                Display help screen.
 
   --version             Display version information.
@@ -127,6 +130,7 @@ incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
 
 - 🔍 [How It Works](docs/how-it-works.md) - Technical details and architecture
 - 🏗️ [Building from Source](docs/building.md) - Build instructions and development setup
+- ⚡ [Dependency Graph Caching](docs/caching.md) - Cache system explanation and best practices
 
 ## 📜 License
 
