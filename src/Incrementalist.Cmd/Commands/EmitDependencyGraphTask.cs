@@ -45,14 +45,20 @@ namespace Incrementalist.Cmd.Commands
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
 
+            Logger.LogInformation("Opening solution {Solution}...", Settings.SolutionFile);
             var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
+            Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
 
             // Get all files and filter affected ones
             var allFiles = await getFilesCmd.Process(Task.FromResult(solution));
+            Logger.LogInformation("Found {Count} files in solution", allFiles.Count);
+            
+            Logger.LogInformation("Analyzing Git changes...");
             var affectedFiles = await filterFilesCmd.Process(Task.FromResult(allFiles));
+            Logger.LogInformation("Found {Count} affected files", affectedFiles.Count);
 
             // Early check: if no files are affected, return an incremental build with empty list
             if (!affectedFiles.Any())
@@ -61,7 +67,17 @@ namespace Incrementalist.Cmd.Commands
                 return new IncrementalBuildResult(Array.Empty<string>());
             }
 
+            // Log the breakdown of modified files by type
+            var modifiedSourceFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Code);
+            var modifiedProjectFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Project);
+            var modifiedSolutionFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Solution);
+            var modifiedScriptFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Script);
+            var modifiedOtherFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Other);
+            Logger.LogInformation("Modified files breakdown: {SourceFiles} source files, {ProjectFiles} project files, {SolutionFiles} solution files, {ScriptFiles} script files, {OtherFiles} other files",
+                modifiedSourceFiles, modifiedProjectFiles, modifiedSolutionFiles, modifiedScriptFiles, modifiedOtherFiles);
+
             // Check if any of the affected files require a solution-wide build
+            Logger.LogInformation("Analyzing solution-wide impact...");
             var projectFiles = allFiles.Where(x => x.Value.FileType == FileType.Project)
                                      .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
                                      .ToList();
@@ -90,6 +106,7 @@ namespace Incrementalist.Cmd.Commands
             // Try to use cache if enabled
             if (!Settings.NoCache)
             {
+                Logger.LogInformation("Checking dependency cache...");
                 var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
                 var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
                 
