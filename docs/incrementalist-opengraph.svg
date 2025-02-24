@@ -1,1 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#f6f8fa" />
+  
+  <!-- Border as recommended (40pt) -->
+  <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#e1e4e8" stroke-width="2" />
+  
+  <!-- Logo (dark theme) -->
+  <g transform="translate(150, 165)">
+    <!-- Background circle -->
+    <circle cx="150" cy="150" r="135" fill="#2C3E50" />
+    
+    <!-- Outer ring -->
+    <circle cx="150" cy="150" r="120" stroke="#546E7A" stroke-width="4" fill="none" />
+    
+    <!-- Step function representing incremental builds -->
+    <polyline 
+      points="60,210 60,180 105,180 105,150 150,150 150,120 195,120 195,90 240,90" 
+      stroke="#4FC3F7" 
+      stroke-width="9" 
+      fill="none" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" />
+    
+    <!-- Dot markers at each step -->
+    <circle cx="60" cy="180" r="7.5" fill="#4FC3F7" />
+    <circle cx="105" cy="150" r="7.5" fill="#4FC3F7" />
+    <circle cx="150" cy="120" r="7.5" fill="#4FC3F7" />
+    <circle cx="195" cy="90" r="7.5" fill="#4FC3F7" />
+    <circle cx="240" cy="90" r="7.5" fill="#4FC3F7" />
+  </g>
+  
+  <!-- Content Section - adjusted with more right padding -->
+  <g transform="translate(480, 180)">
+    <!-- Project Title -->
+    <text font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#24292e">Incrementalist</text>
+    
+    <!-- Project Description - with text wrapping -->
+    <text font-family="Arial, sans-serif" font-size="32" fill="#586069" y="80">
+      <tspan x="0" dy="0">A dotnet tool for incremental builds</tspan>
+      <tspan x="0" dy="40">of large .NET solutions</tspan>
+    </text>
+    
+    <!-- License Section -->
+    <g transform="translate(0, 150)">
+      <!-- License Icon -->
+      <path fill="#586069" transform="scale(1.5)" d="M8.75.75a.75.75 0 00-1.5 0V2h-.984c-.305 0-.604.08-.869.23l-1.288.737A.25.25 0 013.984 3H1.75a.75.75 0 000 1.5h.428L.066 9.192a.75.75 0 00.154.838l.53-.53-.53.53v.001l.002.002.002.002.006.006.016.015.045.04a3.514 3.514 0 00.686.45A4.492 4.492 0 003 11c.88 0 1.556-.22 2.023-.454a3.515 3.515 0 00.686-.45l.045-.04.016-.015.006-.006.002-.002.001-.002L5.25 9.5l.53.53a.75.75 0 00.154-.838L3.822 4.5h.162c.305 0 .604-.08.869-.23l1.289-.737a.25.25 0 01.124-.033h.984V13h-2.5a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-2.5V3.5h.984a.25.25 0 01.124.033l1.29.736c.264.152.563.231.868.231h.162l-2.112 4.692a.75.75 0 00.154.838l.53-.53-.53.53v.001l.002.002.002.002.006.006.016.015.045.04a3.517 3.517 0 00.686.45A4.492 4.492 0 0013 11c.88 0 1.556-.22 2.023-.454a3.512 3.512 0 00.686-.45l.045-.04.01-.01.006-.005.006-.006.002-.002.001-.002-.529-.531.53.53a.75.75 0 00.154-.838L13.823 4.5h.427a.75.75 0 000-1.5h-2.234a.25.25 0 01-.124-.033l-1.29-.736A1.75 1.75 0 009.735 2H8.75V.75zM1.695 9.227c.285.135.718.273 1.305.273s1.02-.138 1.305-.273L3 6.327l-1.305 2.9zm10 0c.285.135.718.273 1.305.273s1.02-.138 1.305-.273L13 6.327l-1.305 2.9z" />
+      <!-- License Text -->
+      <text font-family="Arial, sans-serif" font-size="24" fill="#586069" x="40" y="18">Apache License 2.0</text>
+    </g>
+    
+    <!-- Additional Features -->
+    <g transform="translate(0, 210)">
+      <text font-family="Arial, sans-serif" font-size="24" fill="#586069">
+        <tspan x="0" dy="0">✓ Optimizes CI/CD pipelines</tspan>
+        <tspan x="0" dy="35">✓ Builds only affected projects</tspan>
+        <tspan x="0" dy="35">✓ Works with any `dotnet` commands</tspan>
+        <tspan x="0" dy="35">✓ Perfect for large solutions &amp; monorepos</tspan>
+      </text>
+    </g>
+  </g>
+  
+  <!-- Petabridge Attribution -->
+  <text font-family="Arial, sans-serif" font-size="18" fill="#586069" x="600" y="580" text-anchor="middle">
+    © 2015-2025 Petabridge
+  </text>
 </svg> 
