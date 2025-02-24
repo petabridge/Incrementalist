@@ -16,10 +16,6 @@ pr:
     include:
       - dev
       - master
-  paths:
-    exclude:
-      - '*.md'
-      - 'docs/*'
 
 name: $(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
 
