@@ -1,5 +1,7 @@
 # 🔄 Incrementalist
 
+<img src="https://raw.githubusercontent.com/petabridge/Incrementalist/refs/heads/dev/docs/incrementalist-logo-dark.svg" width="90" alt="Incrementalist Logo" />
+
 Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/) and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large .NET solutions. It helps optimize your CI/CD pipeline by building and testing only the projects affected by your changes.
 
 ## 🎯 When to Use Incrementalist
@@ -135,3 +137,5 @@ incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
 ## 📜 License
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+Copyright 2015-2025 [Petabridge](https://petabridge.com/)

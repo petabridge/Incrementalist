@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="#2C3E50" />
+  
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="80" stroke="#546E7A" stroke-width="3" fill="none" />
+  
+  <!-- Step function representing incremental builds -->
+  <polyline 
+    points="40,140 40,120 70,120 70,100 100,100 100,80 130,80 130,60 160,60" 
+    stroke="#4FC3F7" 
+    stroke-width="6" 
+    fill="none" 
+    stroke-linecap="round" 
+    stroke-linejoin="round" />
+  
+  <!-- Dot markers at each step -->
+  <circle cx="40" cy="120" r="5" fill="#4FC3F7" />
+  <circle cx="70" cy="100" r="5" fill="#4FC3F7" />
+  <circle cx="100" cy="80" r="5" fill="#4FC3F7" />
+  <circle cx="130" cy="60" r="5" fill="#4FC3F7" />
+  <circle cx="160" cy="60" r="5" fill="#4FC3F7" />
+</svg>
