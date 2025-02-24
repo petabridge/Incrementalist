@@ -137,3 +137,5 @@ incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
 ## 📜 License
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+Copyright 2015-2025 [Petabridge](https://petabridge.com/)
