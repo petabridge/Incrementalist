@@ -3,10 +3,10 @@
     <Copyright>Copyright Â© 2015-2022 Petabridge</Copyright>
     <Authors>Petabridge</Authors>
     <VersionPrefix>1.0.0-beta2</VersionPrefix>
-    <PackageReleaseNotes>* Added error handling for invalid git branches
-* Improved parallel execution performance
-* Fixed issue with Directory.Build.props detection in subdirectories
-* Added better logging for command execution failures</PackageReleaseNotes>
+    <PackageReleaseNotes>* Added graph caching to prevent full Roslyn analysis every time: https://github.com/petabridge/Incrementalist/blob/dev/docs/caching.md
+* Added support for detecting unstaged file changes [#331](https://github.com/petabridge/Incrementalist/pull/331)
+* Improved logging system [#336](https://github.com/petabridge/Incrementalist/pull/336) 
+* Fixed NuGet metadata [#337](https://github.com/petabridge/Incrementalist/pull/337)</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
     <PackageProjectUrl>

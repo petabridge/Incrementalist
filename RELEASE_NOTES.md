@@ -1,9 +1,9 @@
 #### 1.0.0-beta2 Feb 21 2025 ####
 
-* Added error handling for invalid git branches
-* Improved parallel execution performance
-* Fixed issue with Directory.Build.props detection in subdirectories
-* Added better logging for command execution failures
+* Added graph caching to prevent full Roslyn analysis every time: https://github.com/petabridge/Incrementalist/blob/dev/docs/caching.md
+* Added support for detecting unstaged file changes [#331](https://github.com/petabridge/Incrementalist/pull/331)
+* Improved logging system [#336](https://github.com/petabridge/Incrementalist/pull/336) 
+* Fixed NuGet metadata [#337](https://github.com/petabridge/Incrementalist/pull/337)
 
 #### 1.0.0-beta1 Feb 20 2025 ####
 
