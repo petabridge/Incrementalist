@@ -130,6 +130,7 @@ incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
 
 - 🔍 [How It Works](docs/how-it-works.md) - Technical details and architecture
 - 🏗️ [Building from Source](docs/building.md) - Build instructions and development setup
+- ⚡ [Dependency Graph Caching](docs/caching.md) - Cache system explanation and best practices
 
 ## 📜 License
 
