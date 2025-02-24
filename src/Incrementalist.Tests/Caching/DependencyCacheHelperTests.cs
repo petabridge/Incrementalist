@@ -116,6 +116,34 @@ namespace Incrementalist.Tests.Caching
         }
 
         [Fact]
+        public async Task IsCacheValidAsync_WithValidCache_ReturnsTrue()
+        {
+            // Arrange
+            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+
+            // Create project directories and files
+            Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
+
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
+            await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
+            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
+
+            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+
+            // Create valid cache
+            var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
+
+            // Act
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
+
+            // Assert
+            Assert.True(isValid);
+        }
+
+        [Fact]
         public async Task CreateFromSolutionAsync_WithValidSolution_CreatesValidCache()
         {
             // Arrange
