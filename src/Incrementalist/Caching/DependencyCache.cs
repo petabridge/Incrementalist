@@ -126,9 +126,12 @@ namespace Incrementalist.Caching
                     cache.Version);
                 return false;
             }
+            
+            // get absolute paths of both solutions relative to the current working directory
+            var liveSolutionPath = Path.GetRelativePath(Directory.GetCurrentDirectory(), solution.FilePath!);
 
             // Solution path mismatch
-            if (cache.SolutionId != solution.Id)
+            if (cache.SolutionPath != liveSolutionPath)
             {
                 logger?.LogInformation(
                     "Cache is for different solution. Expected {ExpectedSolutionId} [{ExpectedPath}], found {ActualSolutionId} [{ActualPath}]",
