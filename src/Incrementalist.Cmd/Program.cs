@@ -20,6 +20,7 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using System.Diagnostics;
 
 namespace Incrementalist.Cmd
 {
@@ -173,13 +174,23 @@ namespace Incrementalist.Cmd
         private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
             MSBuildWorkspace msBuild, ILogger logger)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            
+            logger.LogInformation("Starting analysis of solution: {Solution}", sln);
+
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache
             };
+            
+            logger.LogInformation("Beginning dependency analysis...");
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
             var buildResult = await emitTask.Run();
+            
+            var analysisTime = stopwatch.Elapsed;
+            logger.LogInformation("Solution analysis completed in {Duration:g}", analysisTime);
 
             if (options.RunCommand && options.DotNetArgs.Length > 0)
             {

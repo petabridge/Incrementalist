@@ -1,7 +1,8 @@
 ---
 description: Incrementalist-specific rules and guidance
-globs: 
+globs: *.cs, *.sln, *.csproj, *.ps1
 ---
+
 # Incrementalist Rules
 
 Role Definition:
