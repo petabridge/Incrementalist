@@ -1,6 +1,6 @@
-<img src="docs/incrementalist-logo-dark.svg" width="250" alt="Incrementalist Logo" />
-
 # 🔄 Incrementalist
+
+<img src="docs/incrementalist-logo-dark.svg" width="250" alt="Incrementalist Logo" />
 
 Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/) and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large .NET solutions. It helps optimize your CI/CD pipeline by building and testing only the projects affected by your changes.
 
