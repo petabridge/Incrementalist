@@ -99,7 +99,7 @@ namespace Incrementalist.Cmd.Commands
                     goto FullAnalysis;
                 }
 
-                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, solution, Logger, _cts.Token))
+                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, Settings.WorkingDirectory, solution, Logger, _cts.Token))
                 {
                     Logger.LogInformation("Using cached dependency information");
                     

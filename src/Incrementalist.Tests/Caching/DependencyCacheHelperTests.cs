@@ -43,7 +43,7 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, _repository.BasePath, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -55,14 +55,13 @@ namespace Incrementalist.Tests.Caching
             // Arrange
             var solution = CreateEmptySolution();
             var cache = new DependencyCache(
-                Version: "0.9", // Different version
-                SolutionId: solution.Id,
+                Version: "0.9",
                 SolutionPath: solution.FilePath!,
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -75,13 +74,12 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: solution.Id,
                 SolutionPath: "different/path/solution.sln",
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -106,13 +104,12 @@ namespace Incrementalist.Tests.Caching
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: solution.Id,
                 SolutionPath: solution.FilePath!,
                 Checksum: "different-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -142,7 +139,6 @@ namespace Incrementalist.Tests.Caching
             // Assert
             Assert.NotNull(cache);
             Assert.Equal(IncrementalistFileConstants.CurrentVersion, cache.Version);
-            Assert.Equal(solution.Id, cache.SolutionId);
             Assert.Equal(Path.GetRelativePath(_repository.BasePath, solution.FilePath!), cache.SolutionPath);
             Assert.NotNull(cache.Checksum);
             Assert.Equal(2, cache.Projects.Count);

@@ -41,7 +41,7 @@ namespace Incrementalist.Tests.Caching
             var logger = new TestOutputLogger(_output);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, _repository.BasePath, solution, logger);
 
             // Assert
             Assert.False(isValid);
@@ -54,14 +54,13 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
             var logger = new TestOutputLogger(_output);
             var cache = new DependencyCache(
-                Version: "0.9", // Different version
-                SolutionId.CreateNewId(),
+                Version: "0.9",
                 SolutionPath: solution.FilePath!,
                 Checksum: "dummy-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, logger);
 
             // Assert
             Assert.False(isValid);
@@ -75,13 +74,12 @@ namespace Incrementalist.Tests.Caching
             var logger = new TestOutputLogger(_output);
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId.CreateNewId(),
                 SolutionPath: "different/path/solution.sln",
                 Checksum: "dummy-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, logger);
 
             // Assert
             Assert.False(isValid);
@@ -111,13 +109,12 @@ namespace Incrementalist.Tests.Caching
             // Create cache with different checksum
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId.CreateNewId(),
                 SolutionPath: solution.FilePath!,
                 Checksum: "different-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, logger);
 
             // Assert
             Assert.False(isValid);
@@ -148,7 +145,7 @@ namespace Incrementalist.Tests.Caching
             var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, solution, logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, logger);
 
             // Assert
             Assert.True(isValid);

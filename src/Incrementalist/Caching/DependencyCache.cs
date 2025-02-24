@@ -24,7 +24,6 @@ namespace Incrementalist.Caching
     /// </summary>
     public sealed record DependencyCache(
         string Version,
-        SolutionId SolutionId,
         string SolutionPath,
         string Checksum,
         ImmutableDictionary<ProjectId, ProjectNode> Projects);
@@ -98,12 +97,14 @@ namespace Incrementalist.Caching
         /// Validates whether a cache is still valid for the current solution
         /// </summary>
         /// <param name="cache">The cache to validate, or null if no cache exists</param>
+        /// <param name="baseRepositoryPath">The base of the repository being analyzed</param>
         /// <param name="solution">The current solution to validate against</param>
         /// <param name="logger">Optional logger for diagnostic information</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>True if the cache is valid and can be used, false if it needs to be regenerated</returns>
         public static async Task<bool> IsCacheValidAsync(
             DependencyCache? cache,
+            string baseRepositoryPath,
             Solution solution,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
@@ -128,16 +129,14 @@ namespace Incrementalist.Caching
             }
             
             // get absolute paths of both solutions relative to the current working directory
-            var liveSolutionPath = Path.GetRelativePath(Directory.GetCurrentDirectory(), solution.FilePath!);
+            var liveSolutionPath = Path.GetRelativePath(baseRepositoryPath, solution.FilePath!);
 
             // Solution path mismatch
             if (cache.SolutionPath != liveSolutionPath)
             {
                 logger?.LogInformation(
-                    "Cache is for different solution. Expected {ExpectedSolutionId} [{ExpectedPath}], found {ActualSolutionId} [{ActualPath}]",
-                    solution.Id,
-                    solution.FilePath,
-                    cache.SolutionId,
+                    "Cache is for different solution. Expected [{ExpectedPath}], found [{ActualPath}]",
+                    liveSolutionPath,
                     cache.SolutionPath);
                 return false;
             }
@@ -214,7 +213,6 @@ namespace Incrementalist.Caching
 
             return new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: solution.Id,
                 SolutionPath: GetPathRelativeToRepositoryRoot(solution.FilePath!),
                 Checksum: checksum,
                 Projects: projectsBuilder.ToImmutable());

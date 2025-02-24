@@ -65,7 +65,6 @@ namespace Incrementalist.Tests.Caching
             var projectId = ProjectId.CreateNewId();
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: solutionId,
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty
@@ -81,7 +80,6 @@ namespace Incrementalist.Tests.Caching
             // Assert
             Assert.NotNull(loaded);
             Assert.Equal(cache.Version, loaded.Version);
-            Assert.Equal(cache.SolutionId, loaded.SolutionId);
             Assert.Equal(cache.SolutionPath, loaded.SolutionPath);
             Assert.Equal(cache.Checksum, loaded.Checksum);
             Assert.Single(loaded.Projects);
@@ -105,7 +103,6 @@ namespace Incrementalist.Tests.Caching
             // Arrange
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: SolutionId.CreateNewId(),
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
@@ -121,7 +118,6 @@ namespace Incrementalist.Tests.Caching
             // Arrange
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: SolutionId.CreateNewId(),
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
@@ -139,7 +135,6 @@ namespace Incrementalist.Tests.Caching
             var cachePath = Path.Combine(dir, "cache.json");
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionId: SolutionId.CreateNewId(),
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
