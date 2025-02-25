@@ -106,7 +106,7 @@ namespace Incrementalist.Cmd.Commands
         private async Task<int> RunCommand(string target)
         {
             // For dotnet CLI commands like 'build', 'test', etc., the project/solution path comes last
-            var args = string.Join(" ", _dotnetArgs);
+            var args = CommandLineArgumentParser.CombineArguments(_dotnetArgs);
             if (!args.Contains("--project") && !args.Contains("-p"))
                 args = $"{args} \"{target}\"";
 
