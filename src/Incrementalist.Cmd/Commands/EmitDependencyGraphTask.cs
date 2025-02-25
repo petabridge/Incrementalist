@@ -16,6 +16,7 @@ using Incrementalist.Caching;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Incrementalist.Cmd.Commands
 {
@@ -46,15 +47,19 @@ namespace Incrementalist.Cmd.Commands
             _cts.CancelAfter(Settings.TimeoutDuration);
 
             Logger.LogInformation("Opening solution {Solution}...", Settings.SolutionFile);
+            var solutionLoadStopwatch = Stopwatch.StartNew();
             var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
-            Logger.LogInformation("Solution opened successfully. Gathering solution files...");
+            solutionLoadStopwatch.Stop();
+            Logger.LogInformation("Solution opened in {ElapsedMs}ms. Gathering solution files...", solutionLoadStopwatch.ElapsedMilliseconds);
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
 
             // Get all files and filter affected ones
+            var fileGatheringStopwatch = Stopwatch.StartNew();
             var allFiles = await getFilesCmd.Process(Task.FromResult(solution));
-            Logger.LogInformation("Found {Count} files in solution", allFiles.Count);
+            fileGatheringStopwatch.Stop();
+            Logger.LogInformation("Found {Count} files in solution in {ElapsedMs}ms", allFiles.Count, fileGatheringStopwatch.ElapsedMilliseconds);
             
             Logger.LogInformation("Analyzing Git changes...");
             var affectedFiles = await filterFilesCmd.Process(Task.FromResult(allFiles));
