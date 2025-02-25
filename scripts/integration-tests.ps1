@@ -12,7 +12,7 @@ $script:failedTests = 0
 $script:expectedFailures = 0
 
 function Initialize-TestEnvironment {
-    $testResultsDir = Join-Path $PSScriptRoot "..\TestResults"
+    $testResultsDir = Join-Path (Get-Location) "TestResults"
     if (-not (Test-Path $testResultsDir)) {
         New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
@@ -28,7 +28,7 @@ function Remove-IncrementalistCache {
     $cacheDir = Join-Path (Split-Path $SolutionPath -Parent) ".incrementalist"
     if (Test-Path $cacheDir) {
         Write-Host "Removing existing cache directory: $cacheDir"
-        Remove-Item -Path $cacheDir -Recurse -Force
+        Remove-Item -Path $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -155,7 +155,7 @@ function Test-ComplexCommandArguments {
     param($ProjectPath, $Configuration)
     
     # Create a test results directory with spaces to test path handling
-    $testResultsDir = Join-Path $env:TEMP "Incrementalist Test Results"
+    $testResultsDir = Join-Path ([System.IO.Path]::GetTempPath()) "Incrementalist Test Results"
     if (-not (Test-Path $testResultsDir)) {
         New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
@@ -173,7 +173,7 @@ function Test-ComplexCommandArguments {
     
     # Cleanup
     if (Test-Path $testResultsDir) {
-        Remove-Item -Path $testResultsDir -Recurse -Force
+        Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
