@@ -3,21 +3,18 @@ description: Incrementalist-specific rules and guidance
 globs: *.cs, *.sln, *.csproj, *.ps1
 ---
 
-# Incrementalist Rules
+# Incrementalist Development Guidelines
 
-Role Definition:
- - Build System Expert
- - Git Integration Specialist
- - Command Line Tool Developer
- - Test Engineer
+## Role Definition
+- Build System Expert
+- Git Integration Specialist
+- Command Line Tool Developer
+- Test Engineer
 
-General:
-  Description: >
-    Incrementalist is a command-line tool for computing incremental build steps in large .NET solutions.
-    All build, test, and verification procedures are documented in /docs/building.md.
-    Always refer to this document for the most up-to-date instructions.
-
-# Build and Test Process
+## Overview
+Incrementalist is a command-line tool for computing incremental build steps in large .NET solutions.
+All build, test, and verification procedures are documented in `/docs/building.md`.
+Always refer to this document for the most up-to-date instructions.
 
 ## Primary Documentation
 All build and test procedures are documented in `/docs/building.md`. This is the source of truth for:
@@ -27,7 +24,47 @@ All build and test procedures are documented in `/docs/building.md`. This is the
 - Creating and verifying packages
 - Publishing releases
 
-## MSBuild Testing Best Practices
+## Command-Line Argument Handling
+
+### Process Execution
+```csharp
+// Good: Use ArgumentList for proper escaping
+var process = new Process
+{
+    StartInfo = new ProcessStartInfo
+    {
+        FileName = "dotnet",
+        UseShellExecute = false,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true
+    }
+};
+
+// Add arguments individually
+foreach (var arg in args)
+{
+    process.StartInfo.ArgumentList.Add(arg);
+}
+
+// Avoid: Manual string concatenation
+process.StartInfo.Arguments = $"build {string.Join(" ", args)}";
+```
+
+### Argument Parsing
+1. Keep command arguments separate from tool arguments
+2. Use clear separation with `--` delimiter
+3. Handle MSBuild properties with proper syntax (`/p:` format)
+
+```csharp
+// Example command structure
+dotnet run -- -b dev -r --no-cache -- build /p:Configuration=Release --nologo
+//          ^                      ^
+//     Tool arguments         Command arguments
+```
+
+## Testing Best Practices
+
+### MSBuild Testing
 1. Always use the `MSBuildCollectionFixture` for tests that require `MSBuildWorkspace`:
    ```csharp
    [Collection(MSBuildCollectionFixture.Name)]
@@ -57,32 +94,192 @@ All build and test procedures are documented in `/docs/building.md`. This is the
    var project = await _workspace.OpenProjectAsync(projectPath);
    ```
 
-4. Example test structure:
-   ```csharp
-   [Collection(MSBuildCollectionFixture.Name)]
-   public class DependencyTests : IDisposable
-   {
-       private readonly MSBuildWorkspace _workspace;
-       private readonly DisposableRepository _repository;
+### Integration Tests
+1. Test scenarios should include:
+   - Basic command execution
+   - Parallel execution
+   - Error handling
+   - Complex arguments with spaces
+   - Cache management
 
-       public DependencyTests(MSBuildFixture fixture)
-       {
-           _workspace = fixture.Workspace;
-           _repository = new DisposableRepository();
-       }
+2. Integration tests must be run using the scripts and procedures specified in `/docs/building.md`
+3. Follow the documented test cases and expected outputs
+4. Pay attention to the exit codes and test summaries
 
-       public void Dispose()
-       {
-           _repository?.Dispose();
-       }
+```powershell
+# Good: Clear test organization
+function Test-CommandExecution {
+    param($ProjectPath, $Configuration)
+    
+    Invoke-IncrementalistTest "Command execution" {
+        dotnet run --project $ProjectPath -- [options] -- [command]
+    }
+}
+```
 
-       [Fact]
-       public async Task AnalyzeDependencies_ShouldWork()
-       {
-           // Test implementation
-       }
-   }
-   ```
+### Test Environment
+1. Clean up test artifacts before and after tests
+2. Use unique test directories for each run
+3. Handle paths with spaces correctly
+4. Ensure cross-platform compatibility
+
+```powershell
+# Good: Proper test environment setup
+$testResultsDir = Join-Path ([System.IO.Path]::GetTempPath()) "Test Results"
+New-Item -ItemType Directory -Path $testResultsDir -Force
+try {
+    # Run tests
+}
+finally {
+    Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+```
+
+## Error Handling
+
+### Process Execution
+1. Always capture and log exit codes
+2. Handle process exceptions gracefully
+3. Provide meaningful error messages
+
+```csharp
+try {
+    process.Start();
+    await process.WaitForExitAsync();
+    
+    if (process.ExitCode != 0)
+    {
+        _logger.LogError("Command failed with exit code {Code}", 
+            process.ExitCode);
+    }
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Failed to execute command");
+}
+```
+
+### Parallel Execution
+1. Track failed projects separately
+2. Allow continuing on error when specified
+3. Maintain proper task synchronization
+
+```csharp
+var failedProjects = new List<string>();
+if (_runInParallel)
+{
+    var tasks = projects.Select(async project => {
+        if (await RunCommand(project) != 0)
+        {
+            failedProjects.Add(project);
+            if (!_continueOnError)
+                return;
+        }
+    });
+    await Task.WhenAll(tasks);
+}
+```
+
+## Logging and Diagnostics
+
+### Structured Logging
+1. Use semantic logging with proper categories
+2. Include relevant context in log messages
+3. Distinguish between information and error logs
+
+```csharp
+_logger.LogInformation("Running '{Command}' against {Count} projects",
+    string.Join(" ", _dotnetArgs),
+    projects.Count);
+
+_logger.LogError("Command failed for projects: {Projects}",
+    string.Join(", ", failedProjects));
+```
+
+### Process Output
+1. Redirect and handle both standard output and error
+2. Preserve output formatting and structure
+3. Enable real-time output monitoring
+
+```csharp
+process.OutputDataReceived += (_, e) =>
+{
+    if (!string.IsNullOrEmpty(e.Data))
+        Console.Out.WriteLine(e.Data);
+};
+
+process.ErrorDataReceived += (_, e) =>
+{
+    if (!string.IsNullOrEmpty(e.Data))
+        Console.Error.WriteLine(e.Data);
+};
+```
+
+## Code Organization
+
+### Command Task Structure
+1. Separate concerns between command execution and result handling
+2. Use clear parameter validation
+3. Maintain single responsibility principle
+
+```csharp
+public class RunDotNetCommandTask
+{
+    private readonly BuildSettings _settings;
+    private readonly ILogger _logger;
+    private readonly string[] _dotnetArgs;
+    
+    public async Task<int> Run(BuildAnalysisResult buildResult)
+    {
+        return buildResult switch
+        {
+            FullSolutionBuildResult full => await RunSolutionBuild(full.SolutionPath),
+            IncrementalBuildResult incremental => await RunIncrementalBuild(incremental.AffectedProjects),
+            _ => throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}")
+        };
+    }
+}
+```
+
+## Performance Considerations
+
+### Cache Management
+1. Implement proper cache invalidation
+2. Use async operations for I/O operations
+3. Handle cache creation and reuse efficiently
+
+### Parallel Execution
+1. Balance parallelism with system resources
+2. Handle task cancellation properly
+3. Implement proper error aggregation
+
+## Cross-Platform Compatibility
+
+### Path Handling
+1. Use `Path.Combine` or `Join-Path` for path construction
+2. Use `Path.GetTempPath()` instead of environment variables
+3. Handle path separators correctly across platforms
+4. Use forward slashes when possible for cross-platform compatibility
+
+### File Operations
+1. Use try-catch blocks for file operations
+2. Add `-ErrorAction SilentlyContinue` for PowerShell cleanup operations
+3. Test on both Windows and Linux environments
+4. Verify file permissions and access rights
+
+## CI/CD Integration
+
+### Build Pipeline
+1. Run integration tests on all supported platforms
+2. Verify command execution in CI environment
+3. Ensure proper cleanup of test artifacts
+4. Handle platform-specific environment variables
+
+### Test Reporting
+1. Capture and publish test results
+2. Include relevant logs and artifacts
+3. Properly categorize test failures
+4. Maintain clear test output formatting
 
 ## Verification Requirements
 1. Always follow the verification process in `/docs/building.md`
@@ -90,11 +287,6 @@ All build and test procedures are documented in `/docs/building.md`. This is the
    - Follow the "Basic Verification" steps
    - For changes affecting core functionality, follow the "Full Verification" steps
    - For release preparation, follow the "Package Verification" steps
-
-## Integration Testing
-1. Integration tests must be run using the scripts and procedures specified in `/docs/building.md`
-2. Follow the documented test cases and expected outputs
-3. Pay attention to the exit codes and test summaries
 
 ## Version Management
 Follow the version management procedures in `/docs/building.md` for:
@@ -106,4 +298,4 @@ Follow the version management procedures in `/docs/building.md` for:
 Follow the publishing procedures in `/docs/building.md` for:
 - Creating release packages
 - Publishing to NuGet
-- Package verification
+- Package verification 
