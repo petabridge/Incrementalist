@@ -32,6 +32,51 @@ Install the command-line tool globally:
 dotnet tool install --global Incrementalist.Cmd
 ```
 
+Or install locally in your project:
+
+```shell
+# From your repository root
+dotnet new tool-manifest # if you haven't already created a .config/dotnet-tools.json
+dotnet tool install Incrementalist.Cmd
+```
+
+### Running as a Global Tool
+
+When installed globally, run commands directly using the `incrementalist` command:
+
+```shell
+# Get list of affected projects
+incrementalist -b dev -f ./affected-projects.txt
+
+# Run tests for affected projects
+incrementalist -b dev -r -- test -c Release --no-build --nologo
+```
+
+### Running as a Local Tool
+
+When using Incrementalist as a local tool, you need to use `dotnet tool run` with an additional `--` before the Incrementalist commands:
+
+```shell
+# Get list of affected projects
+dotnet tool run incrementalist -- -b dev -f ./affected-projects.txt
+
+# Build affected projects
+dotnet tool run incrementalist -- -b dev -r -- build -c Release --nologo
+
+# Run tests with coverage
+dotnet tool run incrementalist -- -b dev -r -- test -c Release --no-build --logger:trx --collect:"XPlat Code Coverage" --results-directory ./testresults
+
+# Run in parallel mode
+dotnet tool run incrementalist -- -b dev -r --parallel -- build -c Release --nologo
+
+# Save affected projects AND run commands
+dotnet tool run incrementalist -- -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
+```
+
+Note the command structure when using as a local tool:
+- First `--` after `dotnet tool run incrementalist` is for Incrementalist options
+- Second `--` (if using `-r`) is for the dotnet command to run on affected projects
+
 ## 🚀 Quick Start Examples
 
 ```shell
