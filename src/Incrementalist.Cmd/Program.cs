@@ -49,11 +49,10 @@ namespace Incrementalist.Cmd
             SetTitle();
 
             // Split args at -- to separate incrementalist args from dotnet args
-            var allArgs = string.Join(" ", args);
-            var parts = allArgs.Split(new[] { " -- " }, StringSplitOptions.None);
-            
-            var incrementalistArgs = parts.Length > 0 ? CommandLineArgumentParser.SplitArguments(parts[0]) : Array.Empty<string>();
-            var dotnetArgs = parts.Length > 1 ? CommandLineArgumentParser.SplitArguments(parts[1]) : Array.Empty<string>();
+            var splitIndex = Array.IndexOf(args, "--");
+            var incrementalistArgs = splitIndex >= 0 ? args.Take(splitIndex).ToArray() : args;
+            var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : [];
+
 
             SlnOptions options = null;
             var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>

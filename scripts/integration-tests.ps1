@@ -12,7 +12,7 @@ $script:failedTests = 0
 $script:expectedFailures = 0
 
 function Initialize-TestEnvironment {
-    $testResultsDir = Join-Path $PSScriptRoot "..\TestResults"
+    $testResultsDir = Join-Path (Get-Location) "TestResults"
     if (-not (Test-Path $testResultsDir)) {
         New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
@@ -28,7 +28,7 @@ function Remove-IncrementalistCache {
     $cacheDir = Join-Path (Split-Path $SolutionPath -Parent) ".incrementalist"
     if (Test-Path $cacheDir) {
         Write-Host "Removing existing cache directory: $cacheDir"
-        Remove-Item -Path $cacheDir -Recurse -Force
+        Remove-Item -Path $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -108,7 +108,7 @@ function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- "build -c Release --nologo"
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- build -c Release --nologo
     }
 }
 
@@ -116,7 +116,7 @@ function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- "build -c Release --nologo"
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- build -c Release --nologo
     }
 }
 
@@ -151,6 +151,32 @@ function Test-CacheReuse {
     }
 }
 
+function Test-ComplexCommandArguments {
+    param($ProjectPath, $Configuration)
+    
+    # Create a test results directory with spaces to test path handling
+    $testResultsDir = Join-Path ([System.IO.Path]::GetTempPath()) "Incrementalist Test Results"
+    if (-not (Test-Path $testResultsDir)) {
+        New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
+    }
+    
+    Invoke-IncrementalistTest -TestName "Complex command arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- test `
+            --logger "console;verbosity=detailed" `
+            --collect:"XPlat Code Coverage" `
+            --results-directory:"$testResultsDir" `
+            /p:CollectCoverage=true `
+            /p:CoverletOutputFormat=cobertura `
+            /p:CoverletOutput="$testResultsDir/coverage.xml" `
+            --blame-hang-timeout 5m
+    }
+    
+    # Cleanup
+    if (Test-Path $testResultsDir) {
+        Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # Main execution
 Write-Host "Running Incrementalist integration tests..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
@@ -173,6 +199,7 @@ foreach ($project in $incrementalistProjects) {
     Test-CommandExecution -ProjectPath $project.FullName -Configuration $Configuration
     Test-ParallelExecution -ProjectPath $project.FullName -Configuration $Configuration
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
+    Test-ComplexCommandArguments -ProjectPath $project.FullName -Configuration $Configuration
     
     # Run cache-specific tests
     Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
