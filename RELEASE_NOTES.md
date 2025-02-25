@@ -1,3 +1,7 @@
+#### 1.0.0-beta3 Feb 21 2025 ####
+
+* [Add more robust quoting for `dotnet` commands](https://github.com/petabridge/Incrementalist/pull/347)
+
 #### 1.0.0-beta2 Feb 21 2025 ####
 
 * Added graph caching to prevent full Roslyn analysis every time: https://github.com/petabridge/Incrementalist/blob/dev/docs/caching.md
