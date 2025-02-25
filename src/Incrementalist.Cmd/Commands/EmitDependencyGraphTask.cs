@@ -48,7 +48,7 @@ namespace Incrementalist.Cmd.Commands
             Logger.LogInformation("Opening solution {Solution}...", Settings.SolutionFile);
             var progress = new Progress<ProjectLoadProgress>(x =>
             {
-                Logger.LogInformation("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
+                Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
             });
             var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, progress, _cts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
