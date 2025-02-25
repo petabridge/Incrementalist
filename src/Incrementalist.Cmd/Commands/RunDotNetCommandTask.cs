@@ -106,7 +106,16 @@ namespace Incrementalist.Cmd.Commands
         private async Task<int> RunCommand(string target)
         {
             // For dotnet CLI commands like 'build', 'test', etc., the project/solution path comes last
-            var args = string.Join(" ", _dotnetArgs);
+            var args = string.Join(" ", _dotnetArgs.Select(arg => 
+            {
+                // Quote if the argument contains spaces or quotes
+                if (arg.Contains(' ') || arg.Contains('"'))
+                {
+                    return $"\"{arg.Replace("\"", "\\\"")}\"";
+                }
+                return arg;
+            }));
+
             if (!args.Contains("--project") && !args.Contains("-p"))
                 args = $"{args} \"{target}\"";
 

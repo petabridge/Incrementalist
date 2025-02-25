@@ -51,7 +51,7 @@ namespace Incrementalist.Cmd
             // Split args at -- to separate incrementalist args from dotnet args
             var splitIndex = Array.IndexOf(args, "--");
             var incrementalistArgs = splitIndex >= 0 ? args.Take(splitIndex).ToArray() : args;
-            var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : Array.Empty<string>();
+            var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : [];
 
             SlnOptions options = null;
             var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>

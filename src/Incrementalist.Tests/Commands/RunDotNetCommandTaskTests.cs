@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Tests.Helpers;
@@ -138,6 +139,73 @@ EndGlobal";
 
             // Assert
             Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public async Task Should_Handle_Arguments_With_Spaces()
+        {
+            // Arrange
+            var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
+            var args = new[]
+            {
+                "test",
+                "--logger:trx",
+                "--collect:\"XPlat Code Coverage\"",
+                "--results-directory:\"Test Results\"",
+            };
+            var task = new RunDotNetCommandTask(settings, _logger, args, true, false);
+            var projectPath = "MyProject.csproj";
+
+            // Act
+            var result = new IncrementalBuildResult(new[] { projectPath });
+            var exitCode = await task.Run(result);
+
+            // Assert
+            Assert.Equal(0, exitCode);
+        }
+
+        [Fact]
+        public async Task Should_Handle_Arguments_With_Embedded_Quotes()
+        {
+            // Arrange
+            var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
+            var args = new[]
+            {
+                "test",
+                "--logger:\"console;verbosity=detailed\"",
+                "--collect:\"XPlat Code Coverage;Format=cobertura\"",
+            };
+            var task = new RunDotNetCommandTask(settings, _logger, args, true, false);
+            var projectPath = "MyProject.csproj";
+
+            // Act
+            var result = new IncrementalBuildResult(new[] { projectPath });
+            var exitCode = await task.Run(result);
+
+            // Assert
+            Assert.Equal(0, exitCode);
+        }
+
+        [Fact]
+        public async Task Should_Handle_Windows_Paths()
+        {
+            // Arrange
+            var settings = new BuildSettings("master", "test.sln", _repository.BasePath);
+            var args = new[]
+            {
+                "test",
+                "--results-directory:\"C:\\Test Results\"",
+                "--logger:\"trx;LogFileName=C:\\Test Results\\test.trx\"",
+            };
+            var task = new RunDotNetCommandTask(settings, _logger, args, true, false);
+            var projectPath = "MyProject.csproj";
+
+            // Act
+            var result = new IncrementalBuildResult(new[] { projectPath });
+            var exitCode = await task.Run(result);
+
+            // Assert
+            Assert.Equal(0, exitCode);
         }
     }
 } 

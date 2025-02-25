@@ -11,10 +11,10 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
     <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
-
   <!-- Test Packages -->
-   <ItemGroup>
+  <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageVersion Include="xunit" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
