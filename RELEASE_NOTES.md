@@ -1,4 +1,10 @@
-#### 1.0.0-beta3 Feb 21 2025 ####
+#### 1.0.0-beta4 Feb 25 2025 ####
+
+* [Added support for `IProgress<ProjectLoadProgress>` to MSBuild](https://github.com/petabridge/Incrementalist/pull/353)
+* [Fix cli parsing](https://github.com/petabridge/Incrementalist/pull/349)
+* [Bumped Roslyn to 4.13.0](https://github.com/petabridge/Incrementalist/pull/351)
+
+#### 1.0.0-beta3 Feb 24 2025 ####
 
 * [Add more robust quoting for `dotnet` commands](https://github.com/petabridge/Incrementalist/pull/347)
 
