@@ -46,7 +46,11 @@ namespace Incrementalist.Cmd.Commands
             _cts.CancelAfter(Settings.TimeoutDuration);
 
             Logger.LogInformation("Opening solution {Solution}...", Settings.SolutionFile);
-            var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, null, _cts.Token);
+            var progress = new Progress<ProjectLoadProgress>(x =>
+            {
+                Logger.LogInformation("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
+            });
+            var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, progress, _cts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
