@@ -108,7 +108,7 @@ function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- "build -c Release --nologo"
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- build -c Release --nologo
     }
 }
 
@@ -116,7 +116,7 @@ function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- "build -c Release --nologo"
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- build -c Release --nologo
     }
 }
 
@@ -163,9 +163,8 @@ function Test-ComplexCommandArguments {
     Invoke-IncrementalistTest -TestName "Complex command arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- test `
             --logger "console;verbosity=detailed" `
-            --collect:"XPlat Code Coverage;Format=cobertura" `
+            --collect:"XPlat Code Coverage" `
             --results-directory:"$testResultsDir" `
-            --settings "$testResultsDir/test.runsettings" `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=cobertura `
             /p:CoverletOutput="$testResultsDir/coverage.xml" `
