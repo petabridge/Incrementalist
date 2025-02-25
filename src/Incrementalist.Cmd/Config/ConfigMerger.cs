@@ -42,16 +42,25 @@ namespace Incrementalist.Cmd.Config
             merged.GitBranch = options.GitBranch ?? config.GitBranch;
             merged.WorkingDirectory = options.WorkingDirectory ?? config.WorkingDirectory;
 
-            // Merge nullable bool properties (CLI takes precedence)
-            merged.ListFolders = options.ListFolders ?? config.ListFolders;
-            merged.Verbose = options.Verbose ?? config.Verbose;
-            merged.ContinueOnError = options.ContinueOnError ?? config.ContinueOnError;
-            merged.RunInParallel = options.RunInParallel ?? config.RunInParallel;
-            merged.FailOnNoProjects = options.FailOnNoProjects ?? config.FailOnNoProjects;
-            merged.NoCache = options.NoCache ?? config.NoCache;
+            // Merge bool properties (CLI takes precedence)
+            merged.ListFolders = config.ListFolders.GetValueOrDefault(false);
+            merged.Verbose = config.Verbose.GetValueOrDefault(false);
+            merged.ContinueOnError = config.ContinueOnError.GetValueOrDefault(true);
+            merged.RunInParallel = config.RunInParallel.GetValueOrDefault(false);
+            merged.FailOnNoProjects = config.FailOnNoProjects.GetValueOrDefault(false);
+            merged.NoCache = config.NoCache.GetValueOrDefault(false);
 
-            // Merge nullable int properties (CLI takes precedence)
-            merged.TimeoutMinutes = options.TimeoutMinutes ?? config.TimeoutMinutes;
+            // Merge int properties (CLI takes precedence)
+            merged.TimeoutMinutes = config.TimeoutMinutes.GetValueOrDefault(2);
+
+            // Override with any non-default CLI values
+            if (options.ListFolders) merged.ListFolders = true;
+            if (options.Verbose) merged.Verbose = true;
+            if (!options.ContinueOnError) merged.ContinueOnError = false;
+            if (options.RunInParallel) merged.RunInParallel = true;
+            if (options.FailOnNoProjects) merged.FailOnNoProjects = true;
+            if (options.NoCache) merged.NoCache = true;
+            if (options.TimeoutMinutes != 2) merged.TimeoutMinutes = options.TimeoutMinutes;
 
             return merged;
         }
@@ -66,15 +75,18 @@ namespace Incrementalist.Cmd.Config
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
-            // Default values
+            // Default values for string properties
             options.GitBranch ??= "dev";
-            options.TimeoutMinutes ??= 2;
-            options.ListFolders ??= false;
-            options.Verbose ??= false;
-            options.ContinueOnError ??= true;
-            options.RunInParallel ??= false;
-            options.FailOnNoProjects ??= false;
-            options.NoCache ??= false;
+            
+            // Default values for int properties
+            if (options.TimeoutMinutes == 0)
+                options.TimeoutMinutes = 2;
+                
+            // Default values for bool properties
+            // These are already initialized to their default values by C#
+            // but we'll set them explicitly for clarity
+            if (!options.ContinueOnError) // Default is true
+                options.ContinueOnError = true;
 
             return options;
         }
