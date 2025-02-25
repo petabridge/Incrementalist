@@ -77,6 +77,31 @@ Note the command structure when using as a local tool:
 - First `--` after `dotnet tool run incrementalist` is for Incrementalist options
 - Second `--` (if using `-r`) is for the dotnet command to run on affected projects
 
+## 📄 Configuration Files
+
+Incrementalist supports JSON configuration files to store commonly used settings. This eliminates the need to specify the same command-line arguments repeatedly.
+
+```shell
+# Use default configuration file (incrementalist.json)
+incrementalist -r -- build
+
+# Specify a custom configuration file
+incrementalist -c my-config.json -r -- build
+```
+
+Create a configuration file in your repository:
+
+```json
+{
+  "gitBranch": "master",
+  "solutionFilePath": "src/MySolution.sln",
+  "verbose": true,
+  "runInParallel": true
+}
+```
+
+Command-line arguments take precedence over configuration file settings. See [Configuration Documentation](docs/config.md) for complete details.
+
 ## 🚀 Quick Start Examples
 
 ```shell
@@ -128,7 +153,7 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
   -l, --folders-only    Optional. List affected folders instead of projects.
 
-  -b, --branch          Required. (Default: dev) Git branch to compare against
+  -b, --branch          Optional. (Default: dev) Git branch to compare against
                         (e.g., 'dev' or 'master').
 
   -d, --dir             Optional. Working directory. Defaults to current directory.
@@ -137,18 +162,21 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
   -t, --timeout         Optional. (Default: 2) Solution load timeout in minutes.
 
-  -r, --run            Optional. Run dotnet CLI command against affected projects.
-                       All arguments after -- are passed to dotnet.
+  -r, --run             Optional. Run dotnet CLI command against affected projects.
+                        All arguments after -- are passed to dotnet.
 
   --continue-on-error   Optional. (Default: true) Continue executing commands even
-                       if some fail.
+                        if some fail.
 
-  --parallel           Optional. (Default: false) Execute commands in parallel.
+  --parallel            Optional. (Default: false) Execute commands in parallel.
 
   --fail-on-no-projects Optional. (Default: false) Fail if no projects are affected.
 
-  --no-cache           Optional. (Default: false) Ignore any existing cache file
-                      and perform a full Roslyn analysis.
+  --no-cache            Optional. (Default: false) Ignore any existing cache file
+                        and perform a full Roslyn analysis.
+                        
+  -c, --config          Optional. Path to the configuration file. Defaults to 
+                        incrementalist.json in the current directory.
 
   --help                Display help screen.
 
@@ -178,6 +206,7 @@ incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
 - 🔍 [How It Works](docs/how-it-works.md) - Technical details and architecture
 - 🏗️ [Building from Source](docs/building.md) - Build instructions and development setup
 - ⚡ [Dependency Graph Caching](docs/caching.md) - Cache system explanation and best practices
+- ⚙️ [Configuration Files](docs/config.md) - Using JSON configuration files
 
 ## 📜 License
 

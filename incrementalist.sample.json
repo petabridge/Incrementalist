@@ -1,0 +1,13 @@
+{
+  "gitBranch": "master",
+  "solutionFilePath": "MySolution.sln",
+  "outputFile": "affected-projects.txt",
+  "listFolders": false,
+  "workingDirectory": null,
+  "verbose": false,
+  "timeoutMinutes": 2,
+  "continueOnError": true,
+  "runInParallel": false,
+  "failOnNoProjects": false,
+  "noCache": false
+} 

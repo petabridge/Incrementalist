@@ -21,37 +21,40 @@ namespace Incrementalist.Cmd
         public string OutputFile { get; set; }
 
         [Option('l', "folders-only", HelpText = "List affected folders instead of .NET projects", Required = false)]
-        public bool ListFolders { get; set; }
+        public bool? ListFolders { get; set; }
 
-        [Option('b', "branch", HelpText = "The git branch to compare against. i.e. the `dev` or the `master` branch.",
-            Required = true, Default = "dev")]
+        [Option('b', "branch", HelpText = "The git branch to compare against, i.e. 'dev' or 'master'. Defaults to 'dev'.",
+            Required = false)]
         public string GitBranch { get; set; }
 
         [Option('d', "dir", HelpText = "Specify the working directory explicitly. Defaults to using the current working directory.")]
         public string WorkingDirectory { get; set; }
 
         [Option(
-            Default = false,
+            Default = null,
             HelpText = "Prints out extensive debug logs during operation.")]
-        public bool Verbose { get; set; }
+        public bool? Verbose { get; set; }
 
-        [Option('t', "timeout", Default = 2, HelpText = "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.")]
-        public int TimeoutMinutes { get; set; }
+        [Option('t', "timeout", Default = null, HelpText = "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.")]
+        public int? TimeoutMinutes { get; set; }
 
         [Option('r', "run", HelpText = "Run a dotnet CLI command against affected projects. All arguments after -- will be passed to dotnet.", Required = false)]
         public bool RunCommand { get; set; }
 
-        [Option("continue-on-error", HelpText = "When running commands, continue executing even if some commands fail.", Default = true)]
-        public bool ContinueOnError { get; set; }
+        [Option("continue-on-error", HelpText = "When running commands, continue executing even if some commands fail.", Default = null)]
+        public bool? ContinueOnError { get; set; }
 
-        [Option("parallel", HelpText = "When running commands, execute them in parallel.", Default = false)]
-        public bool RunInParallel { get; set; }
+        [Option("parallel", HelpText = "When running commands, execute them in parallel.", Default = null)]
+        public bool? RunInParallel { get; set; }
 
-        [Option("fail-on-no-projects", HelpText = "When running commands, fail if no projects are affected.", Default = false)]
-        public bool FailOnNoProjects { get; set; }
+        [Option("fail-on-no-projects", HelpText = "When running commands, fail if no projects are affected.", Default = null)]
+        public bool? FailOnNoProjects { get; set; }
 
-        [Option("no-cache", HelpText = "Ignore any existing cache file and perform a full Roslyn analysis.", Default = false)]
-        public bool NoCache { get; set; }
+        [Option("no-cache", HelpText = "Ignore any existing cache file and perform a full Roslyn analysis.", Default = null)]
+        public bool? NoCache { get; set; }
+
+        [Option('c', "config", HelpText = "Path to the configuration file. Defaults to incrementalist.json in the current directory.", Required = false)]
+        public string ConfigFile { get; set; }
 
         // Property to store dotnet CLI arguments that come after --
         public string[] DotNetArgs { get; set; }

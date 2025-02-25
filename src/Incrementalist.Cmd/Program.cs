@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommandLine;
 using Incrementalist.Cmd.Commands;
+using Incrementalist.Cmd.Config;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
@@ -68,6 +69,22 @@ namespace Incrementalist.Cmd
                 return result;
             }
 
+            // Load configuration file if applicable
+            IncrementalistConfig config = null;
+            if (IncrementalistConfig.TryLoad(options.ConfigFile, out var loadedConfig))
+            {
+                config = loadedConfig;
+            }
+
+            // Merge CLI options with configuration file (CLI takes precedence)
+            if (config != null)
+            {
+                options = ConfigMerger.Merge(options, config);
+            }
+
+            // Apply default values to any remaining null properties
+            options = ConfigMerger.ApplyDefaults(options);
+
             var exitCode = await RunIncrementalist(options);
 
             ResetTitle();
@@ -79,7 +96,7 @@ namespace Incrementalist.Cmd
             // Create a logger factory instance
             var loggerFactory = LoggerFactory.Create(builder =>
             {
-                builder.SetMinimumLevel(options.Verbose ? LogLevel.Debug : LogLevel.Information)
+                builder.SetMinimumLevel(options.Verbose == true ? LogLevel.Debug : LogLevel.Information)
                     .AddConsole(loggerOptions => { });
             });
 
@@ -129,7 +146,7 @@ namespace Incrementalist.Cmd
 
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
-                    if (options.ListFolders)
+                    if (options.ListFolders == true)
                         await AnalyzeFolderDiff(options, workingFolder, logger);
                     else
                         await AnalyzeSolutionDIff(options, workingFolder, logger);
@@ -147,9 +164,9 @@ namespace Incrementalist.Cmd
         private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
             var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName,
-                TimeSpan.FromMinutes(options.TimeoutMinutes))
+                TimeSpan.FromMinutes(options.TimeoutMinutes.Value))
             {
-                NoCache = options.NoCache
+                NoCache = options.NoCache.Value
             };
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
             var affectedFiles = (await emitTask.Run());
@@ -181,9 +198,9 @@ namespace Incrementalist.Cmd
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
             var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
-                TimeSpan.FromMinutes(options.TimeoutMinutes))
+                TimeSpan.FromMinutes(options.TimeoutMinutes.Value))
             {
-                NoCache = options.NoCache
+                NoCache = options.NoCache.Value
             };
             
             logger.LogInformation("Beginning dependency analysis...");
@@ -196,7 +213,7 @@ namespace Incrementalist.Cmd
             if (options.RunCommand && options.DotNetArgs.Length > 0)
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
-                    options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
+                    options.ContinueOnError.Value, options.RunInParallel.Value, options.FailOnNoProjects.Value);
 
                 var exitCode = await runTask.Run(buildResult);
                 if (exitCode != 0)
@@ -251,7 +268,7 @@ namespace Incrementalist.Cmd
             if (affectedFilesCount == 0)
             {
                 logger.LogInformation("No changes detected by Incrementalist when analyzing {0}.",
-                    options.ListFolders ? "repository folders" : "solution");
+                    options.ListFolders == true ? "repository folders" : "solution");
                 return;
             }
 
@@ -259,7 +276,7 @@ namespace Incrementalist.Cmd
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
                 logger.LogInformation("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
-                    options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
+                    options.ListFolders == true ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
             else
