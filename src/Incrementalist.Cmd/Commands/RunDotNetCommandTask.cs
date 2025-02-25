@@ -148,14 +148,14 @@ namespace Incrementalist.Cmd.Commands
                 
                 if (process.ExitCode != 0)
                 {
-                    _logger.LogError("Command failed for {0} with exit code {1}", target, process.ExitCode);
+                    _logger.LogError("Command 'dotnet {0}' failed for {1} with exit code {2}", args, target, process.ExitCode);
                 }
                 
                 return process.ExitCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute command for {0}", target);
+                _logger.LogError(ex, "Failed to execute command 'dotnet {0}' for {1}", args, target);
                 return 1;
             }
             finally
