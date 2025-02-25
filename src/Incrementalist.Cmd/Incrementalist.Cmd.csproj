@@ -11,10 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser"/>
-    <PackageReference Include="Microsoft.Build.Locator"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"/>
-    <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
+    <PackageReference Include="CommandLineParser" />
+    <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="NuGet.ProjectModel" />
   </ItemGroup>
 

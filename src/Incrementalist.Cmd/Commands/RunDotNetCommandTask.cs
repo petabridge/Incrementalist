@@ -105,19 +105,11 @@ namespace Incrementalist.Cmd.Commands
 
         private async Task<int> RunCommand(string target)
         {
-            // For dotnet CLI commands like 'build', 'test', etc., the project/solution path comes last
-            var args = CommandLineArgumentParser.CombineArguments(_dotnetArgs);
-            if (!args.Contains("--project") && !args.Contains("-p"))
-                args = $"{args} \"{target}\"";
-
-            _logger.LogInformation("Executing 'dotnet {0}' for {1}", args, target);
-
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = args,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -125,6 +117,21 @@ namespace Incrementalist.Cmd.Commands
                     WorkingDirectory = _settings.WorkingDirectory
                 }
             };
+
+            // Add all dotnet arguments
+            foreach (var arg in _dotnetArgs)
+            {
+                process.StartInfo.ArgumentList.Add(arg);
+            }
+
+            // Add target project/solution if not already specified
+            if (!_dotnetArgs.Any(x => x == "--project" || x == "-p"))
+            {
+                process.StartInfo.ArgumentList.Add(target);
+            }
+
+            _logger.LogInformation("Executing 'dotnet {0}' for {1}", 
+                string.Join(" ", process.StartInfo.ArgumentList), target);
 
             // Redirect to console streams directly
             process.OutputDataReceived += (_, e) =>
@@ -148,14 +155,16 @@ namespace Incrementalist.Cmd.Commands
                 
                 if (process.ExitCode != 0)
                 {
-                    _logger.LogError("Command 'dotnet {0}' failed for {1} with exit code {2}", args, target, process.ExitCode);
+                    _logger.LogError("Command 'dotnet {0}' failed for {1} with exit code {2}", 
+                        string.Join(" ", process.StartInfo.ArgumentList), target, process.ExitCode);
                 }
                 
                 return process.ExitCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute command 'dotnet {0}' for {1}", args, target);
+                _logger.LogError(ex, "Failed to execute command 'dotnet {0}' for {1}", 
+                    string.Join(" ", process.StartInfo.ArgumentList), target);
                 return 1;
             }
             finally
