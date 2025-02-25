@@ -11,7 +11,6 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
     <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
   <!-- Test Packages -->
   <ItemGroup>
