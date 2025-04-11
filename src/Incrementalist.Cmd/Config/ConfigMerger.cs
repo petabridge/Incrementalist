@@ -48,7 +48,9 @@ namespace Incrementalist.Cmd.Config
             merged.ContinueOnError = config.ContinueOnError.GetValueOrDefault(true);
             merged.RunInParallel = config.RunInParallel.GetValueOrDefault(false);
             merged.FailOnNoProjects = config.FailOnNoProjects.GetValueOrDefault(false);
-            merged.NoCache = config.NoCache.GetValueOrDefault(false);
+            
+            // Caching is disabled until we redesign it: https://github.com/petabridge/Incrementalist/issues/350
+            merged.NoCache = true; //config.NoCache.GetValueOrDefault(false);
 
             // Merge int properties (CLI takes precedence)
             merged.TimeoutMinutes = config.TimeoutMinutes.GetValueOrDefault(2);
