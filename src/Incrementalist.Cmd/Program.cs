@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommandLine;
 using Incrementalist.Cmd.Commands;
+using Incrementalist.Cmd.Config;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
@@ -68,21 +69,45 @@ namespace Incrementalist.Cmd
                 return result;
             }
 
-            var exitCode = await RunIncrementalist(options);
+            // Load configuration file if applicable
+            IncrementalistConfig config = null;
+            if (IncrementalistConfig.TryLoad(options.ConfigFile, out var loadedConfig))
+            {
+                config = loadedConfig;
+            }
+
+            // Merge CLI options with configuration file (CLI takes precedence)
+            if (config != null)
+            {
+                options = ConfigMerger.Merge(options, config);
+            }
+
+            // Create a logger factory with the appropriate verbosity
+            var minLevel = options.Verbose ? LogLevel.Debug : LogLevel.Information;
+            var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder
+                    .AddConsole()
+                    .SetMinimumLevel(minLevel);
+            });
+
+            // Check if we are creating a configuration file
+            if (options.CreateConfig)
+            {
+                var createConfigTask = new Commands.CreateConfigFileTask(options, loggerFactory.CreateLogger<Commands.CreateConfigFileTask>());
+                var configResult = await createConfigTask.Run();
+                ResetTitle();
+                return configResult;
+            }
+
+            var exitCode = await RunIncrementalist(options, loggerFactory);
 
             ResetTitle();
             return exitCode;
         }
 
-        private static async Task<int> RunIncrementalist(SlnOptions options)
+        private static async Task<int> RunIncrementalist(SlnOptions options, ILoggerFactory loggerFactory)
         {
-            // Create a logger factory instance
-            var loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder.SetMinimumLevel(options.Verbose ? LogLevel.Debug : LogLevel.Information)
-                    .AddConsole(loggerOptions => { });
-            });
-
             // Create a logger from the factory
             ILogger logger = loggerFactory.CreateLogger<Program>();
 

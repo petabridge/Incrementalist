@@ -20,11 +20,12 @@ namespace Incrementalist.Cmd
         [Option('f', "file", HelpText = "If specified, writes the output to the named file.", Required = false)]
         public string OutputFile { get; set; }
 
-        [Option('l', "folders-only", HelpText = "List affected folders instead of .NET projects", Required = false)]
+        [Option('l', "folders-only", HelpText = "List affected folders instead of .NET projects", Required = false,
+            Default = false)]
         public bool ListFolders { get; set; }
 
-        [Option('b', "branch", HelpText = "The git branch to compare against. i.e. the `dev` or the `master` branch.",
-            Required = true, Default = "dev")]
+        [Option('b', "branch", HelpText = "The git branch to compare against, i.e. 'dev' or 'master'. Defaults to 'dev'.",
+            Required = false)]
         public string GitBranch { get; set; }
 
         [Option('d', "dir", HelpText = "Specify the working directory explicitly. Defaults to using the current working directory.")]
@@ -52,6 +53,12 @@ namespace Incrementalist.Cmd
 
         [Option("no-cache", HelpText = "Ignore any existing cache file and perform a full Roslyn analysis.", Default = false)]
         public bool NoCache { get; set; }
+
+        [Option('c', "config", HelpText = "Path to the configuration file. Defaults to .incrementalist/incrementalist.json in the current directory.", Required = false)]
+        public string ConfigFile { get; set; }
+
+        [Option("create-config", HelpText = "Create a new configuration file with current options. If config file path is specified with -c, that path will be used; otherwise default path (.incrementalist/incrementalist.json) is used.", Required = false)]
+        public bool CreateConfig { get; set; }
 
         // Property to store dotnet CLI arguments that come after --
         public string[] DotNetArgs { get; set; }

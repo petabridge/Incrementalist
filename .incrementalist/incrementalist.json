@@ -1,0 +1,11 @@
+{
+  "solutionFilePath": "Incrementalist.sln",
+  "listFolders": false,
+  "gitBranch": "dev",
+  "verbose": true,
+  "timeoutMinutes": 2,
+  "continueOnError": true,
+  "runInParallel": false,
+  "failOnNoProjects": false,
+  "noCache": false
+}

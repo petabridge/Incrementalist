@@ -1,0 +1,27 @@
+{
+  "Version": "1.0-beta2",
+  "SolutionPath": "Incrementalist.sln",
+  "Checksum": "ZKoqWB5rj\u002BRW\u002BmDmmtZBt1p9A1bAn9\u002Bp1wA5CYnWfrQ=",
+  "Projects": {
+    "2166f99a-0023-4497-b057-52d5976c0652": {
+      "Id": "2166f99a-0023-4497-b057-52d5976c0652",
+      "Path": "src\\Incrementalist.Cmd\\Incrementalist.Cmd.csproj",
+      "Dependencies": [
+        "492066ae-b7c0-40c0-aa69-493f61402163"
+      ]
+    },
+    "4b907291-c068-4e76-bea3-10c3ea2e31ca": {
+      "Id": "4b907291-c068-4e76-bea3-10c3ea2e31ca",
+      "Path": "src\\Incrementalist.Tests\\Incrementalist.Tests.csproj",
+      "Dependencies": [
+        "2166f99a-0023-4497-b057-52d5976c0652",
+        "492066ae-b7c0-40c0-aa69-493f61402163"
+      ]
+    },
+    "492066ae-b7c0-40c0-aa69-493f61402163": {
+      "Id": "492066ae-b7c0-40c0-aa69-493f61402163",
+      "Path": "src\\Incrementalist\\Incrementalist.csproj",
+      "Dependencies": []
+    }
+  }
+}
