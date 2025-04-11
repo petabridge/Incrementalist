@@ -39,16 +39,16 @@ namespace Incrementalist.ProjectSystem.Cmds
             var fileDictObj = await previousTask;
 
             var (repo, foundRepo) = GitRunner.FindRepository(_workingDirectory);
-            if (!foundRepo)
+            if (!foundRepo || repo == null)
             {
-                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", _workingDirectory);
+                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", _workingDirectory);
                 return new Dictionary<string, SlnFile>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repo, _targetGitBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", _targetGitBranch);
+                Logger.LogError("Current git repository doesn't have any branch named [{TargetBranch}]. Shutting down.", _targetGitBranch);
                 return new Dictionary<string, SlnFile>();
             }
 
@@ -62,12 +62,12 @@ namespace Incrementalist.ProjectSystem.Cmds
             var newDict = new Dictionary<string, SlnFile>();
             foreach (var file in affectedFiles)
             {
-                Logger.LogDebug("Affected file: {0}", file);
+                Logger.LogDebug("Affected file: {File}", file);
                 // this file is in the solution
                 if (fileDictObj.TryGetValue(file, out var value)) newDict[file] = value;
                 else
                 {
-                    // special case - not all of the affected files were in the solution.
+                    // special case - not all the affected files were in the solution.
                     // Check to see if these affected files are in the same folder as any of the projects
                     var directoryName = Path.GetDirectoryName(file);
 

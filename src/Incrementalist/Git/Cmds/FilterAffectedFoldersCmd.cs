@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist.Git.Cmds
 {
     /// <summary>
-    ///     Filters all of the unique folders that contain affected files
+    ///     Filters all the unique folders that contain affected files
     /// </summary>
     public sealed class FilterAffectedFoldersCmd : BuildCommandBase<IEnumerable<string>, Dictionary<string, ICollection<string>>>
     {
@@ -28,7 +28,8 @@ namespace Incrementalist.Git.Cmds
         {
             var affectedFiles = await previousTask;
 
-            return affectedFiles.GroupBy(x => Path.GetDirectoryName(x))
+            return affectedFiles.Where(c => Path.GetDirectoryName(c) != null)
+                .GroupBy(x => Path.GetDirectoryName(x)!)
                 .ToDictionary(x => x.Key, grouping => (ICollection<string>)grouping.Distinct().ToList());
         }
     }
