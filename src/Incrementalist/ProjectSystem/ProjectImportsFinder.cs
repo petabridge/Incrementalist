@@ -60,9 +60,14 @@ namespace Incrementalist.ProjectSystem
                 var xmlDoc = ParseXmlDocument(projectFile.Path);
                 
                 var projectDir = Path.GetDirectoryName(projectFile.Path);
+                if (string.IsNullOrEmpty(projectDir))
+                    return;
 
                 // Collecting all projects that contain imports, like <Import Project="../../common.props">
-                var importTags = xmlDoc.DocumentElement.SelectNodes("//Import");
+                var importTags = xmlDoc.DocumentElement?.SelectNodes("//Import");
+                if (importTags == null)
+                    return;
+                
                 foreach (XmlNode importTag in importTags)
                 {
                     var importedFilePath = importTag.Attributes?.GetNamedItem("Project")?.Value;

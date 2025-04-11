@@ -128,7 +128,7 @@ namespace Incrementalist.Tests
 
         public Task DisposeAsync()
         {
-            _repository?.Dispose();
+            _repository.Dispose();
             return Task.CompletedTask;
         }
     }

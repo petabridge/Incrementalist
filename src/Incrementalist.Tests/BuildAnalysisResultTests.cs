@@ -8,7 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
+using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.CodeAnalysis;
+using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Xunit;
 
 namespace Incrementalist.Tests
@@ -26,7 +29,7 @@ namespace Incrementalist.Tests
         [Fact]
         public void IncrementalBuildResult_Constructor_ThrowsOnNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new IncrementalBuildResult(null));
+            Assert.Throws<ArgumentNullException>(() => new IncrementalBuildResult(null!));
         }
 
         [Fact]
@@ -40,7 +43,7 @@ namespace Incrementalist.Tests
         [Fact]
         public void FullSolutionBuildResult_Constructor_ThrowsOnNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null));
+            Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null!));
         }
 
         [Fact]
@@ -48,31 +51,19 @@ namespace Incrementalist.Tests
         {
             // Arrange
             var solutionPath = "test.sln";
-            var workspace = new AdhocWorkspace();
-            var solutionInfo = SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                solutionPath);
-            
-            var solution = workspace.AddSolution(solutionInfo);
+            var solutionModel = new SolutionModel();
+            var solutionDetails = new SolutionDetails(solutionPath, solutionModel);
 
-            var projectIds = new[] { ProjectId.CreateNewId(), ProjectId.CreateNewId() };
+            var projectIds = new[] { 1, 2 };
             foreach (var id in projectIds)
             {
-                var projectInfo = ProjectInfo.Create(
-                    id,
-                    VersionStamp.Create(),
-                    $"Project{id.Id}",
-                    $"Project{id.Id}",
-                    LanguageNames.CSharp,
-                    filePath: $"Project{id.Id}.csproj");
-                solution = solution.AddProject(projectInfo);
+                solutionModel.AddProject($"Project{id}.csproj");
             }
 
             var affectedProjects = new[] { "Project1.csproj", "Project2.csproj" };
 
             // Act
-            var result = SolutionWideChangeDetector.CreateBuildResult(solution, affectedProjects);
+            var result = SolutionWideChangeDetector.CreateBuildResult(solutionDetails, affectedProjects);
 
             // Assert
             Assert.IsType<FullSolutionBuildResult>(result);
@@ -85,31 +76,19 @@ namespace Incrementalist.Tests
         {
             // Arrange
             var solutionPath = "test.sln";
-            var workspace = new AdhocWorkspace();
-            var solutionInfo = SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                solutionPath);
+            var solutionModel = new SolutionModel();
+            var solutionDetails = new SolutionDetails(solutionPath, solutionModel);
             
-            var solution = workspace.AddSolution(solutionInfo);
-
-            var projectIds = new[] { ProjectId.CreateNewId(), ProjectId.CreateNewId(), ProjectId.CreateNewId() };
+            var projectIds = new[] { 1, 2, 3 };
             foreach (var id in projectIds)
             {
-                var projectInfo = ProjectInfo.Create(
-                    id,
-                    VersionStamp.Create(),
-                    $"Project{id.Id}",
-                    $"Project{id.Id}",
-                    LanguageNames.CSharp,
-                    filePath: $"Project{id.Id}.csproj");
-                solution = solution.AddProject(projectInfo);
+                solutionModel.AddProject($"Project{id}.csproj");
             }
 
             var affectedProjects = new[] { "Project1.csproj", "Project2.csproj" }; // Only 2 of 3 projects affected
 
             // Act
-            var result = SolutionWideChangeDetector.CreateBuildResult(solution, affectedProjects);
+            var result = SolutionWideChangeDetector.CreateBuildResult(solutionDetails, affectedProjects);
 
             // Assert
             Assert.IsType<IncrementalBuildResult>(result);
@@ -120,18 +99,17 @@ namespace Incrementalist.Tests
         [Fact]
         public void CreateBuildResult_NullSolution_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(null, new[] { "Project1.csproj" }));
+            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(null!,
+                ["Project1.csproj"]));
         }
 
         [Fact]
         public void CreateBuildResult_NullAffectedProjects_ThrowsArgumentNullException()
         {
-            var workspace = new AdhocWorkspace();
-            var solution = workspace.AddSolution(SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                "test.sln"));
-            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(solution, null));
+            var solutionPath = "test.sln";
+            var solutionModel = new SolutionModel();
+            var solutionDetails = new SolutionDetails(solutionPath, solutionModel);
+            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(solutionDetails, null!));
         }
     }
 } 
