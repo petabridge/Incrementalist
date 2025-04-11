@@ -82,7 +82,7 @@ Note the command structure when using as a local tool:
 Incrementalist supports JSON configuration files to store commonly used settings. This eliminates the need to specify the same command-line arguments repeatedly.
 
 ```shell
-# Use default configuration file (incrementalist.json)
+# Use default configuration file (.incrementalist/incrementalist.json)
 incrementalist -r -- build
 
 # Specify a custom configuration file
@@ -176,7 +176,7 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
                         and perform a full Roslyn analysis.
                         
   -c, --config          Optional. Path to the configuration file. Defaults to 
-                        incrementalist.json in the current directory.
+                        .incrementalist/incrementalist.json in the current directory.
 
   --help                Display help screen.
 
