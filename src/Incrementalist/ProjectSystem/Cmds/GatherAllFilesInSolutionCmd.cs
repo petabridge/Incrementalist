@@ -10,13 +10,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.SolutionPersistence.Model;
 
 namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
     ///     Gathers all of the files in a solution and categorizes them.
     /// </summary>
-    public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase<Solution, Dictionary<string, SlnFile>>
+    public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase<SolutionDetails, Dictionary<string, SlnFile>>
     {
         private readonly string _workingDirectory;
 
@@ -26,7 +27,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             _workingDirectory = workingDirectory;
         }
 
-        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Solution> previousTask)
+        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<SolutionDetails> previousTask)
         {
             var slnObject = await previousTask;
             Contract.Assert(slnObject is not null,

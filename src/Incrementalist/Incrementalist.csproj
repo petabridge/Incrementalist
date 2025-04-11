@@ -8,5 +8,6 @@
     <PackageReference Include="Libgit2Sharp"/>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     <PackageReference Include="Microsoft.Extensions.Logging"/>
+    <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" />
   </ItemGroup>
 </Project>

@@ -16,6 +16,7 @@ using Incrementalist.Caching;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
 namespace Incrementalist.Cmd.Commands
 {
@@ -26,17 +27,14 @@ namespace Incrementalist.Cmd.Commands
     {
         private readonly CancellationTokenSource _cts;
 
-        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger)
+        public EmitDependencyGraphTask(BuildSettings settings, ILogger logger)
         {
             Settings = settings;
-            Workspace = workspace;
             Logger = logger;
             _cts = new CancellationTokenSource();
         }
 
         public BuildSettings Settings { get; }
-
-        public MSBuildWorkspace Workspace { get; }
 
         public ILogger Logger { get; }
 
@@ -46,18 +44,17 @@ namespace Incrementalist.Cmd.Commands
             _cts.CancelAfter(Settings.TimeoutDuration);
 
             Logger.LogInformation("Opening solution {Solution}...", Settings.SolutionFile);
-            var progress = new Progress<ProjectLoadProgress>(x =>
-            {
-                Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
-            });
-            var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, progress, _cts.Token);
-            Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
+            var loadSolutionTask = new LoadSolutionCmd(Logger, _cts.Token);
+            var solutionDetails = await loadSolutionTask.Process(Task.FromResult(Settings.SolutionFile));
+            
+            Logger.LogInformation("Solution opened successfully. Gathering solution files...");
+            
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
             var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
 
             // Get all files and filter affected ones
-            var allFiles = await getFilesCmd.Process(Task.FromResult(solution));
+            var allFiles = await getFilesCmd.Process(Task.FromResult(solutionDetails));
             Logger.LogInformation("Found {Count} files in solution", allFiles.Count);
             
             Logger.LogInformation("Analyzing Git changes...");

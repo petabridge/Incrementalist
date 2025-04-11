@@ -129,7 +129,7 @@ namespace Incrementalist.Cmd
 
                 if (!repoResult.foundRepo)
                 {
-                    logger.LogError("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
+                    logger.LogError("Unable to find Git repository located in {RepositoryLocation}. Shutting down.", workingFolder.FullName);
                     return -3;
                 }
 
@@ -187,18 +187,18 @@ namespace Incrementalist.Cmd
         private static async Task AnalyzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
             // Locate and register the default instance of MSBuild installed on this machine.
-            MSBuildLocator.RegisterDefaults();
-
-            var msBuild = MSBuildWorkspace.Create();
+            // MSBuildLocator.RegisterDefaults();
+            //
+            // var msBuild = MSBuildWorkspace.Create();
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
-                await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
+                await ProcessSln(options, options.SolutionFilePath, workingFolder, logger);
             else
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
-                    await ProcessSln(options, sln, workingFolder, msBuild, logger);
+                    await ProcessSln(options, sln, workingFolder, logger);
         }
 
         private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
-            MSBuildWorkspace msBuild, ILogger logger)
+            ILogger logger)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();

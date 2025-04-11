@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.SolutionPersistence.Model;
 
 namespace Incrementalist.ProjectSystem.Cmds
 {
@@ -23,9 +24,9 @@ namespace Incrementalist.ProjectSystem.Cmds
         ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<string, SlnFile>,
         Dictionary<string, ICollection<string>>>
     {
-        private readonly Solution _solution;
+        private readonly SolutionDetails _solution;
 
-        public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, Solution solution) : base(
+        public ComputeDependencyGraphCmd(ILogger logger, CancellationToken cancellationToken, SolutionDetails solution) : base(
             "ResolveSlnDependencyGraph", logger, cancellationToken)
         {
             _solution = solution;
@@ -44,44 +45,40 @@ namespace Incrementalist.ProjectSystem.Cmds
              * Special case: in instances where the project files themselves are modified,
              * we there might be multiple ProjectIds in the case of a multi-targeted solution.
              *
-             * We have to gather up each unique project file separately in this case.
+             * We have to gather each unique project file separately in this case.
              */
-            var additionalProjectIds = new List<ProjectId>();
+            var additionalProjectIds = new List<Guid>();
             if (affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
             {
                 foreach (var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
-                    additionalProjectIds.AddRange(_solution.Projects
-                        .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key)).Select(x => x.Id));
+                    additionalProjectIds.AddRange(_solution.SolutionModel.SolutionProjects
+                        .Where(x => x.FilePath.Equals(proj.Key)).Select(x => x.Id));
             }
 
-            var ds = _solution.GetProjectDependencyGraph();
-
             // Special case: if the solution itself is modified, return all projects
-            if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(_solution.FilePath))
+            if (_solution.SolutionFilePath != null && affectedSlnFiles.ContainsKey(_solution.SolutionFilePath))
             {
                 return new Dictionary<string, ICollection<string>>()
                 {
                     {
-                        _solution.FilePath,
-                        _solution.Projects.Where(c => c.FilePath != null).Select(x => x.FilePath).ToList()!
+                        _solution.SolutionFilePath,
+                        _solution.SolutionModel.SolutionProjects.Select(x => x.FilePath).ToList()
                     }
                 };
             }
 
-            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Concat(additionalProjectIds)
+            var uniqueProjectIds = affectedSlnFiles.Select(x => (Guid)x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
+            
+            
+            
+            
             var graphs = uniqueProjectIds.ToDictionary(x => x,
-                v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
+                GetProjectsThatTransitivelyDependOnThisProject);
 
             /*
-             * Next: check to see if there any overlapping graphs and remove those from the final set
+             * Next: check to see if there are overlapping graphs and remove those from the final set
              */
-            bool IsGraphContained(ProjectId root, Dictionary<ProjectId, List<ProjectId>> otherGraphs)
-            {
-                return otherGraphs.Where(x => !x.Key.Equals(root))
-                    .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
-            }
-
             var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs));
 
             // idempotently filter out duplicates - same projectID can show up multiple times for a multi-target build
@@ -109,10 +106,58 @@ namespace Incrementalist.ProjectSystem.Cmds
             }
 
             return finalResultSet;
-
-            ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
+            
+            HashSet<Guid> GetProjectsThatTransitivelyDependOnThisProject(Guid projectId)
             {
-                var rootProject = _solution.GetProject(root);
+                var projects = new HashSet<Guid>();
+
+                var proj = _solution.SolutionModel.SolutionProjects.SingleOrDefault(c => c.Id == projectId);
+                
+                if(proj == null)
+                    throw new ArgumentOutOfRangeException(nameof(projectId), $"Project {projectId} not found");
+                
+                // add ourselves
+                projects.Add(proj.Id);
+                
+                // if we have no dependencies, we are done
+                if (proj.Dependencies == null || proj.Dependencies.Count == 0)
+                    return projects;
+                
+                var otherDeps = proj.Dependencies;
+                
+                foreach (var project in otherDeps)
+                {
+                    RecursivelyAddDeps(project);
+                }
+
+                return projects;
+
+                // This is a directed acyclic graph, so we aren't going to have any cycles
+                // therefore recursion is safe
+                void RecursivelyAddDeps(SolutionProjectModel current)
+                {
+                    if (current.Dependencies == null || current.Dependencies.Count == 0)
+                        return;
+
+                    foreach (var dep in current.Dependencies)
+                    {
+                        if (!projects.Add(dep.Id))
+                            continue;
+
+                        RecursivelyAddDeps(dep);
+                    }
+                }
+            }
+            
+            bool IsGraphContained(Guid root, Dictionary<Guid, HashSet<Guid>> otherGraphs)
+            {
+                return otherGraphs.Where(x => !x.Key.Equals(root))
+                    .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
+            }
+
+            ICollection<string> PrepareProjectPaths(Guid root, IEnumerable<Guid> graph)
+            {
+                var rootProject = _solution.SolutionModel.SolutionProjects.SingleOrDefault(c => c.Id == root);
                 if (rootProject?.FilePath == null)
                     return Array.Empty<string>();
                 
@@ -127,9 +172,9 @@ namespace Incrementalist.ProjectSystem.Cmds
                 return results;
             }
 
-            string? GetProjectFilePath(ProjectId project)
+            string? GetProjectFilePath(Guid project)
             {
-                return _solution.GetProject(project)?.FilePath;
+                return _solution.SolutionModel.SolutionProjects.SingleOrDefault(c => c.Id == project)?.FilePath;
             }
         }
     }
