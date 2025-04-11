@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Incrementalist.Caching;
+using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -41,9 +42,10 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var solution = CreateEmptySolution();
+            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solution.FilePath);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, _repository.BasePath, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, _repository.BasePath, solutionDetails, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -54,14 +56,15 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var solution = CreateEmptySolution();
+            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solution.FilePath);
             var cache = new DependencyCache(
                 Version: "0.9",
                 SolutionPath: solution.FilePath!,
                 Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solutionDetails, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -72,14 +75,15 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var solution = CreateEmptySolution();
+            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solution.FilePath);
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionPath: "different/path/solution.sln",
                 Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solutionDetails, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -100,16 +104,16 @@ namespace Incrementalist.Tests.Caching
             await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
             await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
-
-            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+            
+            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solutionPath);
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: solution.FilePath!,
+                SolutionPath: solutionDetails.SolutionFilePath,
                 Checksum: "different-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
             // Act
-            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solution, _logger);
+            var isValid = await DependencyCacheHelper.IsCacheValidAsync(cache, _repository.BasePath, solutionDetails, _logger);
 
             // Assert
             Assert.False(isValid);
@@ -131,7 +135,7 @@ namespace Incrementalist.Tests.Caching
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
             await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
 
-            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+            var solution = await LoadSolutionCmd.GetSolutionDetailsAsync(solutionPath);
 
             // Create valid cache
             var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
@@ -159,7 +163,7 @@ namespace Incrementalist.Tests.Caching
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
             await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
 
-            var solution = await _workspace.OpenSolutionAsync(solutionPath);
+            var solution = await LoadSolutionCmd.GetSolutionDetailsAsync(solutionPath);
 
             // Act
             var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
@@ -167,13 +171,13 @@ namespace Incrementalist.Tests.Caching
             // Assert
             Assert.NotNull(cache);
             Assert.Equal(IncrementalistFileConstants.CurrentVersion, cache.Version);
-            Assert.Equal(Path.GetRelativePath(_repository.BasePath, solution.FilePath!), cache.SolutionPath);
+            Assert.Equal(Path.GetRelativePath(_repository.BasePath, solution.SolutionFilePath!), cache.SolutionPath);
             Assert.NotNull(cache.Checksum);
             Assert.Equal(2, cache.Projects.Count);
 
             // Verify Project2 depends on Project1
-            var project2 = solution.Projects.First(p => p.Name == "Project2");
-            var project1Id = solution.Projects.First(p => p.Name == "Project1").Id;
+            var project2 = solution.SolutionModel.SolutionProjects.First(p => p.DisplayName == "Project2");
+            var project1Id = solution.SolutionModel.SolutionProjects.First(p => p.DisplayName == "Project1").Id;
             Assert.Contains(project1Id, cache.Projects[project2.Id].Dependencies);
         }
 

@@ -76,19 +76,25 @@ namespace Incrementalist.ProjectSystem
 
             var slnModel = sln.SolutionModel;
 
-            var allPossibleFiles = slnModel.SolutionProjects
+            var allProjectFiles = slnModel.SolutionProjects
                 .Select(x => (x, Path.GetDirectoryName(x.FilePath)))
-                .SelectMany(c => Directory.GetFiles(c.Item2!).Select(f =>
+                .SelectMany(c => Directory.GetFiles(c.Item2!, "*", SearchOption.AllDirectories).Select(f =>
                     new KeyValuePair<string, SlnFile>(Path.GetFullPath(f),
-                        new SlnFile(ClassifyFileTypeByExtension(f), c.x.Id))))
-                .Concat([
-                    new KeyValuePair<string, SlnFile>
-                        (Path.GetFullPath(sln.SolutionFilePath), new SlnFile(FileType.Solution, null))
-                ]);
+                        new SlnFile(ClassifyFileTypeByExtension(f), c.x.Id))));
+            
+            // need to scan for files in the same directory as the solution
+            var slnDir = Path.GetDirectoryName(sln.SolutionFilePath);
+            if (slnDir == null)
+                throw new DirectoryNotFoundException($"Could not find directory for solution file {sln.SolutionFilePath}");
+
+            var slnFiles = Directory.GetFiles(slnDir, "*", SearchOption.AllDirectories)
+                .Select(f => new KeyValuePair<string, SlnFile>(Path.GetFullPath(f),
+                    new SlnFile(ClassifyFileTypeByExtension(f), null)));
+            allProjectFiles = allProjectFiles.Concat(slnFiles);
 
             // need to de-duplicate
             var finalFiles = new Dictionary<string, SlnFile>();
-            foreach (var file in allPossibleFiles)
+            foreach (var file in allProjectFiles)
             {
                 finalFiles[file.Key] = file.Value;
             }

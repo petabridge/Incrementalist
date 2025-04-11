@@ -42,8 +42,8 @@ namespace Incrementalist.Tests.Dependencies
                 .WriteFile(sample.ProjectFile)
                 .WriteFile(sample.ImportedPropsFile);
 
-            var projectFile = new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, ProjectId.CreateNewId())) ;
-            var imports = ProjectImportsFinder.FindProjectImports(new[] { projectFile });
+            var projectFile = new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, Guid.NewGuid())) ;
+            var imports = ProjectImportsFinder.FindProjectImports([projectFile]);
             
             var expectedImport = new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToImmutableList());
             Assert.Collection(imports.Values, 
@@ -65,10 +65,10 @@ namespace Incrementalist.Tests.Dependencies
                 .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content + " ")
                 .Commit("Updated imported file with a space");
 
-            var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), new CancellationToken(), Repository.BasePath, "master");
+            var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), CancellationToken.None, Repository.BasePath, "master");
             var solutionFiles = new Dictionary<string, SlnFile>()
             {
-                [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
+                [projectFilePath] = new SlnFile(FileType.Project, Guid.NewGuid())
             };
             var filteredAffectedFiles = await cmd.Process(Task.FromResult(solutionFiles));
             Assert.Single(filteredAffectedFiles);

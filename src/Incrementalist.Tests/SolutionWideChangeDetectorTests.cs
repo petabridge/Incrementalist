@@ -9,17 +9,19 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Incrementalist.ProjectSystem;
+using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
 
 namespace Incrementalist.Tests
 {
-    public class SolutionWideChangeDetectorTests : IDisposable
+    public class SolutionWideChangeDetectorTests : IAsyncLifetime
     {
         private readonly DisposableRepository _repository;
-        private readonly SolutionWideChangeDetector _detector;
+        private SolutionWideChangeDetector _detector = null!;
         private readonly Solution _solution;
 
         public SolutionWideChangeDetectorTests()
@@ -49,7 +51,6 @@ namespace Incrementalist.Tests
                 solutionPath);
             
             _solution = workspace.AddSolution(solutionInfo);
-            _detector = new SolutionWideChangeDetector(_solution);
         }
 
         [Theory]
@@ -119,9 +120,16 @@ namespace Incrementalist.Tests
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
-        public void Dispose()
+        public async Task InitializeAsync()
+        {
+            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(_solution.FilePath);
+            _detector = new SolutionWideChangeDetector(solutionDetails);
+        }
+
+        public Task DisposeAsync()
         {
             _repository?.Dispose();
+            return Task.CompletedTask;
         }
     }
 } 

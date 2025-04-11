@@ -74,7 +74,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             
             
             var graphs = uniqueProjectIds.ToDictionary(x => x,
-                GetProjectsThatTransitivelyDependOnThisProject);
+                v => _solution.GetProjectsThatTransitivelyDependOnThisProject(v));
 
             /*
              * Next: check to see if there are overlapping graphs and remove those from the final set
@@ -85,7 +85,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             var finalResultSet = new Dictionary<string, ICollection<string>>();
             foreach (var r in independentGraphs)
             {
-                var projectPath = GetProjectFilePath(r.Key);
+                var projectPath = _solution.GetProjectFilePath(r.Key);
                 
                 if(projectPath == null)
                     continue;
@@ -96,85 +96,21 @@ namespace Incrementalist.ProjectSystem.Cmds
                  */
                 if (finalResultSet.TryGetValue(projectPath, out var exitingPaths))
                 {
-                    var newPaths = PrepareProjectPaths(r.Key, r.Value);
+                    var newPaths = _solution.PrepareProjectPaths(r.Key, r.Value);
                     finalResultSet[projectPath] = exitingPaths.Concat(newPaths).Distinct().ToList();
                 }
                 else
                 {
-                    finalResultSet[projectPath] = PrepareProjectPaths(r.Key, r.Value);
+                    finalResultSet[projectPath] = _solution.PrepareProjectPaths(r.Key, r.Value);
                 }
             }
 
             return finalResultSet;
             
-            HashSet<Guid> GetProjectsThatTransitivelyDependOnThisProject(Guid projectId)
-            {
-                var projects = new HashSet<Guid>();
-
-                var proj = _solution.SolutionModel.SolutionProjects.SingleOrDefault(c => c.Id == projectId);
-                
-                if(proj == null)
-                    throw new ArgumentOutOfRangeException(nameof(projectId), $"Project {projectId} not found");
-                
-                // add ourselves
-                projects.Add(proj.Id);
-                
-                // if we have no dependencies, we are done
-                if (proj.Dependencies == null || proj.Dependencies.Count == 0)
-                    return projects;
-                
-                var otherDeps = proj.Dependencies;
-                
-                foreach (var project in otherDeps)
-                {
-                    RecursivelyAddDeps(project);
-                }
-
-                return projects;
-
-                // This is a directed acyclic graph, so we aren't going to have any cycles
-                // therefore recursion is safe
-                void RecursivelyAddDeps(SolutionProjectModel current)
-                {
-                    if (current.Dependencies == null || current.Dependencies.Count == 0)
-                        return;
-
-                    foreach (var dep in current.Dependencies)
-                    {
-                        if (!projects.Add(dep.Id))
-                            continue;
-
-                        RecursivelyAddDeps(dep);
-                    }
-                }
-            }
-            
             bool IsGraphContained(Guid root, Dictionary<Guid, HashSet<Guid>> otherGraphs)
             {
                 return otherGraphs.Where(x => !x.Key.Equals(root))
                     .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
-            }
-
-            ICollection<string> PrepareProjectPaths(Guid root, IEnumerable<Guid> graph)
-            {
-                var rootProject = _solution.SolutionModel.SolutionProjects.SingleOrDefault(c => c.Id == root);
-                if (rootProject?.FilePath == null)
-                    return Array.Empty<string>();
-                
-                var results = new HashSet<string> { rootProject.FilePath };
-                foreach (var p in graph)
-                {
-                    var projectFilePath = GetProjectFilePath(p);
-                    if (projectFilePath != null)
-                        results.Add(projectFilePath);
-                }
-
-                return results;
-            }
-
-            string? GetProjectFilePath(Guid project)
-            {
-                return _solution.SolutionModel.SolutionProjects.SingleOrDefault(c => c.Id == project)?.FilePath;
             }
         }
     }

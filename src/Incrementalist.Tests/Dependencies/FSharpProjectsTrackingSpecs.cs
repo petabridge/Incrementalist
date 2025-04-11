@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.ProjectSystem;
+using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Tests.Helpers;
 using Microsoft.CodeAnalysis.MSBuild;
 using Xunit;
@@ -49,7 +50,7 @@ namespace Incrementalist.Tests.Dependencies
             
             var logger = new TestOutputLogger(_outputHelper);
             var settings = new BuildSettings("master", solutionFullPath, Repository.BasePath);
-            var emitTask = new EmitDependencyGraphTask(settings, _workspace, logger);
+            var emitTask = new EmitDependencyGraphTask(settings, logger);
             var buildResult = await emitTask.Run();
 
             // When all projects are affected, we expect a full solution build

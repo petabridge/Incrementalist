@@ -212,7 +212,7 @@ namespace Incrementalist.Cmd
             };
             
             logger.LogInformation("Beginning dependency analysis...");
-            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
+            var emitTask = new EmitDependencyGraphTask(settings, logger);
             var buildResult = await emitTask.Run();
             
             var analysisTime = stopwatch.Elapsed;
@@ -234,9 +234,9 @@ namespace Incrementalist.Cmd
 
                 switch (buildResult)
                 {
-                    case FullSolutionBuildResult _:
+                    case FullSolutionBuildResult f:
                         buildType = "Full solution build";
-                        projectsToRebuild = msBuild.CurrentSolution.Projects.Select(p => p.FilePath);
+                        projectsToRebuild = [f.SolutionPath];
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";

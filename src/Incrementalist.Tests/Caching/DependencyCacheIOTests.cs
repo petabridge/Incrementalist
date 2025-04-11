@@ -6,7 +6,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Incrementalist.Caching;
 using Incrementalist.Tests.Helpers;
-using Microsoft.CodeAnalysis;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -61,17 +60,16 @@ namespace Incrementalist.Tests.Caching
         {
             // Arrange
             var cachePath = Path.Combine(_repository.BasePath, "cache.json");
-            var solutionId = SolutionId.CreateNewId();
-            var projectId = ProjectId.CreateNewId();
+            var projectId = Guid.NewGuid();
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty
                     .Add(projectId, new ProjectNode(
                         projectId,
                         "test.csproj",
-                        ImmutableList<ProjectId>.Empty)));
+                        ImmutableList<Guid>.Empty)));
 
             // Act
             await DependencyCacheIO.SaveAsync(cachePath, cache);
@@ -105,7 +103,7 @@ namespace Incrementalist.Tests.Caching
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -120,7 +118,7 @@ namespace Incrementalist.Tests.Caching
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -137,7 +135,7 @@ namespace Incrementalist.Tests.Caching
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionPath: "test.sln",
                 Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
+                Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
             // Act
             await DependencyCacheIO.SaveAsync(cachePath, cache);

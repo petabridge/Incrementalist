@@ -14,6 +14,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Incrementalist.ProjectSystem;
+using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
@@ -26,15 +28,15 @@ namespace Incrementalist.Caching
         string Version,
         string SolutionPath,
         string Checksum,
-        ImmutableDictionary<ProjectId, ProjectNode> Projects);
+        ImmutableDictionary<Guid, ProjectNode> Projects);
 
     /// <summary>
     /// Represents a project and its direct dependencies in the solution
     /// </summary>
     public sealed record ProjectNode(
-        ProjectId Id,
+        Guid Id,
         string Path,
-        ImmutableList<ProjectId> Dependencies);
+        ImmutableList<Guid> Dependencies);
 
     // [JsonSourceGenerationOptions(WriteIndented = true)]
     // [JsonSerializable(typeof(DependencyCache))]
@@ -105,7 +107,7 @@ namespace Incrementalist.Caching
         public static async Task<bool> IsCacheValidAsync(
             DependencyCache? cache,
             string baseRepositoryPath,
-            Solution solution,
+            SolutionDetails solution,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
         {
@@ -129,7 +131,7 @@ namespace Incrementalist.Caching
             }
             
             // get absolute paths of both solutions relative to the current working directory
-            var liveSolutionPath = Path.GetRelativePath(baseRepositoryPath, solution.FilePath!);
+            var liveSolutionPath = Path.GetRelativePath(baseRepositoryPath, solution.SolutionFilePath);
 
             // Solution path mismatch
             if (cache.SolutionPath != liveSolutionPath)
@@ -142,14 +144,12 @@ namespace Incrementalist.Caching
             }
 
             // Calculate current checksum
-            var projectPaths = solution.Projects
+            var projectPaths = solution.SolutionModel.SolutionProjects
                 .Select(p => p.FilePath)
-                .Where(p => p != null)
-                .Cast<string>()
                 .ToList();
 
             var currentChecksum = await ChecksumCalculator.CalculateChecksumAsync(
-                solution.FilePath,
+                solution.SolutionFilePath,
                 projectPaths,
                 cancellationToken);
 
@@ -174,22 +174,19 @@ namespace Incrementalist.Caching
         /// <returns>A new DependencyCache instance</returns>
         public static async Task<DependencyCache> CreateFromSolutionAsync(
             string repositoryRoot,
-            Solution solution,
+            SolutionDetails solution,
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(solution);
 
-            // Get the dependency graph from Roslyn
-            var dependencyGraph = solution.GetProjectDependencyGraph();
-
             // Build the Projects dictionary
-            var projectsBuilder = ImmutableDictionary.CreateBuilder<ProjectId, ProjectNode>();
-            foreach (var projectId in solution.ProjectIds)
+            var projectsBuilder = ImmutableDictionary.CreateBuilder<Guid, ProjectNode>();
+            foreach (var projectId in solution.SolutionModel.SolutionProjects.Select(c => c.Id))
             {
                 var project = solution.GetProject(projectId);
                 if (project?.FilePath == null) continue;
 
-                var dependencies = dependencyGraph
+                var dependencies = solution
                     .GetProjectsThatThisProjectDirectlyDependsOn(projectId)
                     .Select(solution.GetProject)
                     .Where(p => p != null)
@@ -201,19 +198,18 @@ namespace Incrementalist.Caching
             }
 
             // Calculate checksum for all project files
-            var projectPaths = solution.Projects
-                .Where(p => p.FilePath != null)
-                .Select(p => p.FilePath!)
+            var projectPaths = solution.SolutionModel.SolutionProjects
+                .Select(p => p.FilePath)
                 .ToList();
 
             var checksum = await ChecksumCalculator.CalculateChecksumAsync(
-                solution.FilePath,
+                solution.SolutionFilePath,
                 projectPaths,
                 cancellationToken);
 
             return new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: GetPathRelativeToRepositoryRoot(solution.FilePath!),
+                SolutionPath: GetPathRelativeToRepositoryRoot(solution.SolutionFilePath),
                 Checksum: checksum,
                 Projects: projectsBuilder.ToImmutable());
 

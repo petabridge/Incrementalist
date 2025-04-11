@@ -88,7 +88,7 @@ namespace Incrementalist.Cmd.Commands
             if (detector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath);
+                return new FullSolutionBuildResult(solutionDetails.SolutionFilePath);
             }
 
             // Get the list of affected projects
@@ -97,10 +97,10 @@ namespace Incrementalist.Cmd.Commands
                                               .ToList();
 
             // If all projects are affected, return a full solution build
-            if (affectedProjects.Count == solution.Projects.Count())
+            if (affectedProjects.Count == solutionDetails.SolutionModel.SolutionProjects.Count)
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath);
+                return new FullSolutionBuildResult(solutionDetails.SolutionFilePath);
             }
             
             /* INCREMENTAL BUILDS */
@@ -117,19 +117,19 @@ namespace Incrementalist.Cmd.Commands
                     goto FullAnalysis;
                 }
 
-                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, Settings.WorkingDirectory, solution, Logger, _cts.Token))
+                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, Settings.WorkingDirectory, solutionDetails, Logger, _cts.Token))
                 {
                     Logger.LogInformation("Using cached dependency information");
                     
                     var allProjectIdsFromAffectedFiles = affectedFiles.Values
                         .Where(x => x.ProjectId != null)
-                        .Select(x => x.ProjectId!)
+                        .Select(x => (Guid)x.ProjectId!)
                         .Distinct()
                         .ToList();
                     
                     // given the list of affected projects, we now need to compute the dependency graphs
                     // via the cache
-                    var hashSet = new HashSet<ProjectId>(allProjectIdsFromAffectedFiles);
+                    var hashSet = new HashSet<Guid>(allProjectIdsFromAffectedFiles);
                     foreach(var cachedProject in existingCache.Projects.Values)
                     {
                         // if the cachedProject depends on any of the affected projects, add it to the list
@@ -140,16 +140,11 @@ namespace Incrementalist.Cmd.Commands
                     }
                     
                     // transform projectIds into project file paths - which is what the dotnet command needs to execute
-                    var computedFilePaths = hashSet.Select(GetProjectFilePath).Where(x => x != null)
+                    var computedFilePaths = hashSet.Select(solutionDetails.GetProjectFilePath).Where(x => x != null)
                         .Select(c => c!).ToList();
                     
                     // TODO: topological sorting of the projects?
                     return ComputeResult(computedFilePaths);
-                    
-                    string? GetProjectFilePath(ProjectId project)
-                    {
-                        return solution.GetProject(project)?.FilePath;
-                    }
                 }
 
                 // Invalid cache, perform full analysis
@@ -158,7 +153,7 @@ namespace Incrementalist.Cmd.Commands
 
             // For incremental builds, compute the dependency graph
             FullAnalysis:
-                var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+                var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solutionDetails);
                 var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
 
                 // Convert the dependency graph to a list of affected projects
@@ -169,7 +164,7 @@ namespace Incrementalist.Cmd.Commands
                 {
                     var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
                     Logger.LogInformation("Writing new cache to {CachePath}", cachePath);
-                    var cache = await DependencyCacheHelper.CreateFromSolutionAsync(Settings.WorkingDirectory, solution);
+                    var cache = await DependencyCacheHelper.CreateFromSolutionAsync(Settings.WorkingDirectory, solutionDetails);
                     await DependencyCacheIO.SaveAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory), cache);
                 }
                 
@@ -183,10 +178,10 @@ namespace Incrementalist.Cmd.Commands
                         return new IncrementalBuildResult(Array.Empty<string>());
                     }
 
-                    if (projectFilePaths.Count == solution.Projects.Count())
+                    if (projectFilePaths.Count == solutionDetails.SolutionModel.SolutionProjects.Count)
                     {
                         Logger.LogInformation("All projects are affected. Full solution build required");
-                        return new FullSolutionBuildResult(solution.FilePath);
+                        return new FullSolutionBuildResult(solutionDetails.SolutionFilePath);
                     }
 
                     Logger.LogInformation("Incremental build possible. {RebuildCount} projects [{Projects}] need to be rebuilt", 

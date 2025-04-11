@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Incrementalist.ProjectSystem;
+using Incrementalist.ProjectSystem.Cmds;
 using Microsoft.CodeAnalysis;
 
 namespace Incrementalist
@@ -36,11 +37,11 @@ namespace Incrementalist
         /// <summary>
         /// Creates a new instance of the SolutionWideChangeDetector using a Solution object.
         /// </summary>
-        public SolutionWideChangeDetector(Solution solution)
+        public SolutionWideChangeDetector(SolutionDetails solution)
         {
             if (solution == null) throw new ArgumentNullException(nameof(solution));
             
-            var projectFiles = solution.Projects
+            var projectFiles = solution.SolutionModel.SolutionProjects
                 .Select(p => new SlnFileWithPath(p.FilePath, new SlnFile(FileType.Project, p.Id)))
                 .ToList();
             

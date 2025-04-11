@@ -33,6 +33,17 @@ namespace Incrementalist.ProjectSystem.Cmds
             //         p.TargetFramework);
             // });
         }
+        
+        public static async Task<SolutionDetails> GetSolutionDetailsAsync(string slnObject, CancellationToken ct = default)
+        {
+            var solutionSerializer = SolutionSerializers.GetSerializerByMoniker(slnObject);
+            if (solutionSerializer == null)
+            {
+                throw new InvalidOperationException("Invalid solution file: " + slnObject);
+            }
+            
+            return new SolutionDetails(slnObject, await solutionSerializer.OpenAsync(slnObject, ct));
+        }
 
         protected override async Task<SolutionDetails> ProcessImpl(Task<string> previousTask)
         {
@@ -42,14 +53,16 @@ namespace Incrementalist.ProjectSystem.Cmds
                 $"solution filename. Instead returned {slnObject}");
             Contract.Assert(File.Exists(slnObject), $"Expected to find {slnObject} on the file system, but couldn't.");
 
-            var solutionSerializer = SolutionSerializers.GetSerializerByMoniker(slnObject);
-            if (solutionSerializer == null)
+            try
             {
-                Logger.LogError("{SlnFile} is not a valid solution file", slnObject);
-                throw new InvalidOperationException("Invalid solution file: " + slnObject);
+                var solutionDetails = await GetSolutionDetailsAsync(slnObject, CancellationToken);
+                return solutionDetails;
             }
-            
-            return new SolutionDetails(slnObject, await solutionSerializer.OpenAsync(slnObject, CancellationToken));
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load solution file {SlnFile}", slnObject);
+                throw;
+            }
             
             // // Log any solution loading issues
             // _workspace.WorkspaceFailed += (sender, args) =>
