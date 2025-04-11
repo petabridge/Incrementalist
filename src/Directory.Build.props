@@ -21,7 +21,7 @@
     <XunitVersion>2.9.3</XunitVersion>
     <TestSdkVersion>17.13.0</TestSdkVersion>
     <RoslynVersion>4.13.0</RoslynVersion>
-    <NugetVersion>6.13.1</NugetVersion>
+    <NugetVersion>6.13.2</NugetVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
