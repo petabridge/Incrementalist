@@ -54,10 +54,10 @@ namespace Incrementalist.Cmd
         [Option("no-cache", HelpText = "Ignore any existing cache file and perform a full Roslyn analysis.", Default = false)]
         public bool NoCache { get; set; }
 
-        [Option('c', "config", HelpText = "Path to the configuration file. Defaults to incrementalist.json in the current directory.", Required = false)]
+        [Option('c', "config", HelpText = "Path to the configuration file. Defaults to .incrementalist/incrementalist.json in the current directory.", Required = false)]
         public string ConfigFile { get; set; }
 
-        [Option("create-config", HelpText = "Create a new configuration file with current options. If config file path is specified with -c, that path will be used; otherwise default path (incrementalist.json) is used.", Required = false)]
+        [Option("create-config", HelpText = "Create a new configuration file with current options. If config file path is specified with -c, that path will be used; otherwise default path (.incrementalist/incrementalist.json) is used.", Required = false)]
         public bool CreateConfig { get; set; }
 
         // Property to store dotnet CLI arguments that come after --

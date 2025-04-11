@@ -21,6 +21,11 @@ namespace Incrementalist.Cmd.Config
         /// The default configuration file name
         /// </summary>
         public const string DefaultConfigFileName = "incrementalist.json";
+        
+        /// <summary>
+        /// The default directory for Incrementalist files (cache, config)
+        /// </summary>
+        public const string IncrementalistDirectory = ".incrementalist";
 
         /// <summary>
         /// The name of the Solution file to be analyzed by Incrementalist.
@@ -97,7 +102,15 @@ namespace Incrementalist.Cmd.Config
         public static bool TryLoad(string filePath, out IncrementalistConfig config)
         {
             config = null;
-            filePath ??= DefaultConfigFileName;
+            //filePath ??= DefaultConfigFileName;
+
+            // If filePath is not provided, construct the default path inside the .incrementalist directory
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // Use the current working directory if not specified in options (this function doesn't have SlnOptions)
+                var workingDir = Directory.GetCurrentDirectory(); 
+                filePath = Path.Combine(workingDir, IncrementalistDirectory, DefaultConfigFileName);
+            }
 
             try
             {
