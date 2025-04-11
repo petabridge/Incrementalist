@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Microsoft.Extensions.Logging;
 
@@ -20,8 +21,9 @@ namespace Incrementalist
         public BuildSettings(string targetBranch, string solutionFile, string workingDirectory,
             TimeSpan? timeoutDuration = null)
         {
-            Contract.Requires(targetBranch != null);
-            Contract.Requires(solutionFile != null);
+            Debug.Assert(targetBranch != null, nameof(targetBranch) + " != null");
+            Debug.Assert(solutionFile != null, nameof(solutionFile) + " != null");
+            
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
             WorkingDirectory = workingDirectory;

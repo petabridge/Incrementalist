@@ -23,7 +23,8 @@ namespace Incrementalist.Git.Cmds
         {
         }
 
-        protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(Task<IEnumerable<string>> previousTask)
+        protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(
+            Task<IEnumerable<string>> previousTask)
         {
             var affectedFiles = await previousTask;
 

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -31,11 +32,11 @@ namespace Incrementalist
 
         public async Task<TOut> Process(Task<TIn> previousTask)
         {
-            Logger.LogDebug("[{0}] - Entered Task", Name);
+            Logger.LogDebug("[{TaskName}] - Entered Task", Name);
 
             if (CancellationToken.IsCancellationRequested)
             {
-                Logger.LogInformation("Cancellation requested. Terminating Incrementalist at stage [{0}]", Name);
+                Logger.LogInformation("Cancellation requested. Terminating Incrementalist at stage [{TaskName}]", Name);
                 CancellationToken.ThrowIfCancellationRequested();
             }
 
@@ -45,12 +46,12 @@ namespace Incrementalist
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "[{0}] - Catastrophic task failure.", Name);
+                Logger.LogError(ex, "[{TaskName}] - Catastrophic task failure.", Name);
                 throw;
             }
             finally
             {
-                Logger.LogDebug("[{0}] - Exited Task", Name);
+                Logger.LogDebug("[{TaskName}] - Exited Task", Name);
             }
         }
 
