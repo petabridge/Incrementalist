@@ -57,7 +57,7 @@ namespace Incrementalist.Cmd.Commands
         private async Task<int> RunIncrementalBuild(IEnumerable<string> affectedProjects)
         {
             var projects = affectedProjects.ToList();
-            if (!projects.Any())
+            if (projects.Count == 0)
             {
                 _logger.LogInformation("No affected projects to run commands against.");
                 return _failOnNoProjects ? 1 : 0;

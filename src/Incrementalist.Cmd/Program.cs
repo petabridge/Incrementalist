@@ -55,7 +55,7 @@ namespace Incrementalist.Cmd
             var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : [];
 
 
-            SlnOptions options = null;
+            SlnOptions? options = null;
             var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
             {
                 options = r;
@@ -70,11 +70,13 @@ namespace Incrementalist.Cmd
             }
 
             // Load configuration file if applicable
-            IncrementalistConfig config = null;
-            if (IncrementalistConfig.TryLoad(options.ConfigFile, out var loadedConfig))
+            IncrementalistConfig? config = null;
+            if (IncrementalistConfig.TryLoad(options?.ConfigFile, out var loadedConfig))
             {
                 config = loadedConfig;
             }
+            
+            Debug.Assert(options != null);
 
             // Merge CLI options with configuration file (CLI takes precedence)
             if (config != null)
@@ -117,13 +119,14 @@ namespace Incrementalist.Cmd
                 var insideRepo = Repository.IsValid(pwd);
                 if (!insideRepo)
                 {
-                    logger.LogError("Current path {0} is not located inside any known Git repository.", pwd);
+                    logger.LogError("Current path {WorkingDirectory} is not located inside any known Git repository.", pwd);
                     return -2;
                 }
 
 
                 var repoFolder = Repository.Discover(pwd);
                 var workingFolder = Directory.GetParent(repoFolder)?.Parent;
+                Debug.Assert(workingFolder != null);
 
                 var (rep, foundRepo) = GitRunner.FindRepository(workingFolder?.FullName);
 
@@ -134,7 +137,7 @@ namespace Incrementalist.Cmd
                 }
 
                 // validate the target branch
-                if (!DiffHelper.HasBranch(rep, options.GitBranch))
+                if (!DiffHelper.HasBranch(rep, options.GitBranch!))
                 {
                     // workaround common CI server issues and check to see if this same branch is located
                     // under "origin/{branchname}"
@@ -155,9 +158,9 @@ namespace Incrementalist.Cmd
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
                     if (options.ListFolders)
-                        await AnalyzeFolderDiff(options, workingFolder, logger);
+                        await AnalyzeFolderDiff(options, workingFolder!, logger);
                     else
-                        await AnalyzeSolutionDIff(options, workingFolder, logger);
+                        await AnalyzeSolutionDIff(options, workingFolder!, logger);
                 }
 
                 return 0;

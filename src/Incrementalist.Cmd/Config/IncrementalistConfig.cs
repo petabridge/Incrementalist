@@ -99,7 +99,7 @@ namespace Incrementalist.Cmd.Config
         /// <param name="filePath">The path to the configuration file. If null, will use the default name in the current directory.</param>
         /// <param name="config">The loaded configuration, or null if the file doesn't exist or couldn't be parsed.</param>
         /// <returns>True if the configuration was loaded successfully, false otherwise.</returns>
-        public static bool TryLoad(string filePath, out IncrementalistConfig? config)
+        public static bool TryLoad(string? filePath, out IncrementalistConfig? config)
         {
             config = null;
             //filePath ??= DefaultConfigFileName;

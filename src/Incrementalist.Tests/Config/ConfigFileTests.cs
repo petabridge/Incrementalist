@@ -104,7 +104,7 @@ namespace Incrementalist.Tests.Config
                 
                 // Run command options that don't come from config
                 RunCommand = true,
-                DotNetArgs = new[] { "build", "--configuration", "Release" }
+                DotNetArgs = ["build", "--configuration", "Release"]
             };
 
             // Act

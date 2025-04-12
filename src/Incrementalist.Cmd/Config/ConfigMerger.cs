@@ -20,7 +20,7 @@ namespace Incrementalist.Cmd.Config
         /// <param name="options">The command-line options.</param>
         /// <param name="config">The configuration file settings.</param>
         /// <returns>A new SlnOptions instance with the merged values.</returns>
-        public static SlnOptions Merge(SlnOptions options, IncrementalistConfig config)
+        public static SlnOptions Merge(SlnOptions options, IncrementalistConfig? config)
         {
             if (options == null)
                 throw new ArgumentNullException(nameof(options));

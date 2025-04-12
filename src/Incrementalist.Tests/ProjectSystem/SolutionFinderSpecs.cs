@@ -27,7 +27,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
         public void Dispose()
         {
-            _repository?.Dispose();
+            _repository.Dispose();
         }
 
         [Fact(DisplayName = "Should find single solution in root directory")]
