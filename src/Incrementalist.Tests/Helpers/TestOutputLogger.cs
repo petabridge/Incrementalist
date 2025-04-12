@@ -13,13 +13,16 @@ namespace Incrementalist.Tests.Helpers
             _outputHelper = outputHelper;
         }
         
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
            _outputHelper.WriteLine(formatter(state, exception));
         }
 
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public IDisposable BeginScope<TState>(TState state) => null;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return null;
+        }
     }
 }

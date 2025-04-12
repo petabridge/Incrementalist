@@ -41,7 +41,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Single(solutions ?? []);
+            Assert.Single(solutions);
             Assert.EndsWith("MySolution.sln", solutions.First());
         }
         
@@ -70,7 +70,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Single(solutions ?? []);
+            Assert.Single(solutions);
             Assert.EndsWith("MySolution.slnx", solutions.First());
         }
 
@@ -86,7 +86,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Equal(2, solutions?.Count());
+            Assert.Equal(2, solutions.Count);
             Assert.Contains(solutions, s => s.EndsWith("Solution1.sln"));
             Assert.Contains(solutions, s => s.EndsWith("Solution2.sln"));
         }
@@ -95,7 +95,7 @@ namespace Incrementalist.Tests.ProjectSystem
         public void Should_Find_Solutions_In_Subdirectories()
         {
             // Arrange
-            var solutionContent = "dummy solution content";
+            const string solutionContent = "dummy solution content";
             var expectedPath = Path.Join("src", "MySolution.sln");
             Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src"));
             _repository.WriteFile("src/MySolution.sln", solutionContent);
@@ -104,7 +104,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Single(solutions ?? []);
+            Assert.Single(solutions);
             Assert.EndsWith(expectedPath, solutions.First());
         }
 
@@ -115,14 +115,14 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Empty(solutions ?? []);
+            Assert.Empty(solutions);
         }
 
         [Fact(DisplayName = "Should respect search filter when provided")]
         public void Should_Respect_Search_Filter()
         {
             // Arrange
-            var solutionContent = "dummy solution content";
+            const string solutionContent = "dummy solution content";
             _repository.WriteFile("Solution1.sln", solutionContent)
                       .WriteFile("Test.sln", solutionContent);
 
@@ -130,7 +130,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath, "Test*.sln").ToList();
 
             // Assert
-            Assert.Single(solutions ?? []);
+            Assert.Single(solutions);
             Assert.EndsWith("Test.sln", solutions.First());
         }
 
@@ -138,7 +138,7 @@ namespace Incrementalist.Tests.ProjectSystem
         public void Should_Respect_Search_Option()
         {
             // Arrange
-            var solutionContent = "dummy solution content";
+            const string solutionContent = "dummy solution content";
             Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src"));
             _repository.WriteFile("Solution1.sln", solutionContent)
                       .WriteFile("src/Solution2.sln", solutionContent);
@@ -147,7 +147,7 @@ namespace Incrementalist.Tests.ProjectSystem
             var topDirSolutions = SolutionFinder.GetSolutions(_repository.BasePath, searchOption: SearchOption.TopDirectoryOnly).ToList();
 
             // Assert
-            Assert.Single(topDirSolutions ?? []);
+            Assert.Single(topDirSolutions);
             Assert.EndsWith("Solution1.sln", topDirSolutions.First());
         }
 
@@ -155,7 +155,7 @@ namespace Incrementalist.Tests.ProjectSystem
         public void Should_Process_Multiple_Solutions_In_Order()
         {
             // Arrange
-            var solutionContent = "dummy solution content";
+            const string solutionContent = "dummy solution content";
             _repository.WriteFile("A.Solution.sln", solutionContent)
                       .WriteFile("B.Solution.sln", solutionContent)
                       .WriteFile("C.Solution.sln", solutionContent);
@@ -164,11 +164,11 @@ namespace Incrementalist.Tests.ProjectSystem
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
 
             // Assert
-            Assert.Equal(3, solutions?.Count());
+            Assert.Equal(3, solutions.Count);
             var orderedSolutions = solutions.Select(s => Path.GetFileName(s)).OrderBy(x => x).ToList();
-            for (int i = 1; i < orderedSolutions.Count; i++)
+            for (var i = 1; i < orderedSolutions.Count; i++)
             {
-                Assert.True(string.Compare(orderedSolutions[i - 1], orderedSolutions[i]) <= 0, 
+                Assert.True(string.CompareOrdinal(orderedSolutions[i - 1], orderedSolutions[i]) <= 0, 
                     $"Solutions are not in ascending order: {orderedSolutions[i - 1]} comes after {orderedSolutions[i]}");
             }
         }
