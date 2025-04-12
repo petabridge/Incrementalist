@@ -188,14 +188,14 @@ function Test-GlobTargeting {
         if ($LASTEXITCODE -ne 0) { throw "Incrementalist command failed with exit code $LASTEXITCODE" }
 
         # Verification logic
-        $actualProjects = Get-Content $targetGlobOutput -ErrorAction SilentlyContinue
+        $actualProjects = @(Get-Content $targetGlobOutput -ErrorAction SilentlyContinue) # Ensure it's always an array
         # Normalize paths to handle potential differences (e.g., \ vs /)
         $expectedProjectRelative = "src/Incrementalist/Incrementalist.csproj"
         $expectedProjectFullPath = (Resolve-Path (Join-Path $PSScriptRoot ".." $expectedProjectRelative)).Path
         
         # Check if the file contains exactly one line matching the expected project string, ignoring whitespace
         if (($actualProjects | Measure-Object).Count -ne 1 -or `
-            -not ($actualProjects[0].Trim() -eq $expectedProjectFullPath.Trim()) ) { # Trim both sides before string comparison
+            -not ($actualProjects[0].Trim() -eq $expectedProjectFullPath.Trim()) ) { # Trim() works on string now
             Write-Host "Expected output:`n$expectedProjectFullPath`nActual output:`n$($actualProjects -join "`n")" -ForegroundColor Yellow
             throw "Glob targeting verification failed. Output file content did not match expected project."
         }
