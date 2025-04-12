@@ -194,12 +194,12 @@ namespace Incrementalist.Caching
                     .ToImmutableList();
 
                 projectsBuilder.Add(project.Id,
-                    new ProjectNode(project.Id, GetPathRelativeToRepositoryRoot(project.FilePath), dependencies));
+                    new ProjectNode(project.Id, project.FilePath, dependencies));
             }
 
             // Calculate checksum for all project files
             var projectPaths = solution.SolutionModel.SolutionProjects
-                .Select(p => p.FilePath)
+                .Select(p => GetAbsolutePathFromRepositoryRoot(p.FilePath))
                 .ToList();
 
             var checksum = await ChecksumCalculator.CalculateChecksumAsync(
@@ -218,6 +218,13 @@ namespace Incrementalist.Caching
             string GetPathRelativeToRepositoryRoot(string filePath)
             {
                 return GetRelativePath(repositoryRoot, filePath);
+            }
+
+            // Using the SolutionModel from https://github.com/microsoft/vs-solutionpersistence,
+            // all paths are relative - but the file system needs absolute paths for cache calculation
+            string GetAbsolutePathFromRepositoryRoot(string relativePath)
+            {
+                return Path.Combine(repositoryRoot, relativePath);
             }
         }
 

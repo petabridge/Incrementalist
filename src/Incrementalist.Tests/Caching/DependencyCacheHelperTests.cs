@@ -11,24 +11,22 @@ using Incrementalist.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Caching
 {
-    [Collection(MSBuildCollectionFixture.Name)]
     public sealed class DependencyCacheHelperTests : IDisposable
     {
         private readonly ITestOutputHelper _output;
         private readonly DisposableRepository _repository;
-        private readonly MSBuildWorkspace _workspace;
         private readonly TestOutputLogger _logger;
 
-        public DependencyCacheHelperTests(ITestOutputHelper output, MSBuildFixture fixture)
+        public DependencyCacheHelperTests(ITestOutputHelper output)
         {
             _output = output;
             _repository = new DisposableRepository();
-            _workspace = fixture.Workspace;
             _logger = new TestOutputLogger(output);
         }
 
@@ -41,8 +39,7 @@ namespace Incrementalist.Tests.Caching
         public async Task IsCacheValidAsync_WithNullCache_ReturnsFalse()
         {
             // Arrange
-            var solution = CreateEmptySolution();
-            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solution.FilePath);
+            var solutionDetails = await CreateEmptySolution();
 
             // Act
             var isValid = await DependencyCacheHelper.IsCacheValidAsync(null, _repository.BasePath, solutionDetails, _logger);
@@ -55,11 +52,10 @@ namespace Incrementalist.Tests.Caching
         public async Task IsCacheValidAsync_WithVersionMismatch_ReturnsFalse()
         {
             // Arrange
-            var solution = CreateEmptySolution();
-            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solution.FilePath);
+            var solutionDetails = await CreateEmptySolution();
             var cache = new DependencyCache(
                 Version: "0.9",
-                SolutionPath: solution.FilePath!,
+                SolutionPath: solutionDetails.SolutionFilePath,
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<Guid, ProjectNode>.Empty);
 
@@ -74,8 +70,8 @@ namespace Incrementalist.Tests.Caching
         public async Task IsCacheValidAsync_WithSolutionPathMismatch_ReturnsFalse()
         {
             // Arrange
-            var solution = CreateEmptySolution();
-            var solutionDetails = await LoadSolutionCmd.GetSolutionDetailsAsync(solution.FilePath);
+            var solutionDetails = await CreateEmptySolution();
+
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
                 SolutionPath: "different/path/solution.sln",
@@ -189,14 +185,12 @@ namespace Incrementalist.Tests.Caching
                 DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, null!));
         }
 
-        private Solution CreateEmptySolution()
+        private async Task<SolutionDetails> CreateEmptySolution()
         {
-            var workspace = new AdhocWorkspace();
-            var solutionInfo = SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                Path.Combine(_repository.BasePath, "test.sln"));
-            return workspace.AddSolution(solutionInfo);
+            var emptySolutionPath = Path.Combine(_repository.BasePath, "Base.sln");
+            var slnContent = ProjectSampleGenerator.CreateSolutionFile("Base", []);
+            _repository.WriteFile("Base.sln", slnContent);
+            return await LoadSolutionCmd.GetSolutionDetailsAsync(emptySolutionPath);
         }
     }
 } 
