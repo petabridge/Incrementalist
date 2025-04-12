@@ -119,20 +119,56 @@ namespace Incrementalist.Tests.Commands
             var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
             
             // Create a minimal valid solution file
-            var solutionContent = @"
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
-MinimumVisualStudioVersion = 10.0.40219.1
-Global
-    GlobalSection(SolutionConfigurationPlatforms) = preSolution
-        Debug|Any CPU = Debug|Any CPU
-        Release|Any CPU = Release|Any CPU
-    EndGlobalSection
-EndGlobal";
-            File.WriteAllText(solutionPath, solutionContent);
+            const string solutionContent = """
+
+                                           Microsoft Visual Studio Solution File, Format Version 12.00
+                                           # Visual Studio Version 17
+                                           VisualStudioVersion = 17.0.31903.59
+                                           MinimumVisualStudioVersion = 10.0.40219.1
+                                           Global
+                                               GlobalSection(SolutionConfigurationPlatforms) = preSolution
+                                                   Debug|Any CPU = Debug|Any CPU
+                                                   Release|Any CPU = Release|Any CPU
+                                               EndGlobalSection
+                                           EndGlobal
+                                           """;
+            await File.WriteAllTextAsync(solutionPath, solutionContent);
             
             var task = new RunDotNetCommandTask(settings, _logger, new[] { "build", "-c", "Release", "--nologo" }, true, false);
+
+            // Act
+            var result = await task.Run(new FullSolutionBuildResult(solutionPath));
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact] public async Task Should_Execute_Full_Slnx_Build()
+        {
+            // Arrange
+            var settings = new BuildSettings("master", "test.slnx", _repository.BasePath);
+            var solutionPath = Path.Combine(_repository.BasePath, "test.slnx");
+            
+            // Create a minimal valid solution file
+            const string solutionContent = """
+                                            <Solution>
+                                             <Project Path="src/Akka.Console/Akka.Console.csproj" />
+                                           </Solution>
+                                           """;
+            await File.WriteAllTextAsync(solutionPath, solutionContent);
+            Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src"));
+            Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src", "Akka.Console"));
+            var projectPath = Path.Combine(_repository.BasePath, "src", "Akka.Console", "Akka.Console.csproj");
+            await File.WriteAllTextAsync(projectPath, """
+                                                      <Project Sdk="Microsoft.NET.Sdk">
+                                                        <PropertyGroup>
+                                                          <TargetFramework>net8.0</TargetFramework>
+                                                          <OutputType>Library</OutputType>
+                                                        </PropertyGroup>
+                                                      </Project>
+                                                      """);
+            
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false);
 
             // Act
             var result = await task.Run(new FullSolutionBuildResult(solutionPath));
