@@ -6,6 +6,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -51,8 +52,8 @@ namespace Incrementalist.Cmd.Commands
                     RunInParallel = _options.RunInParallel,
                     FailOnNoProjects = _options.FailOnNoProjects,
                     NoCache = _options.NoCache,
-                    SkipGlob = _options.SkipGlob,
-                    TargetGlob = _options.TargetGlob,
+                    SkipGlob = _options.SkipGlob?.ToArray(),
+                    TargetGlob = _options.TargetGlob?.ToArray(),
                 };
 
                 // Determine the output file path

@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using CommandLine;
 
 namespace Incrementalist.Cmd
@@ -56,12 +57,17 @@ namespace Incrementalist.Cmd
 
         [Option("create-config", HelpText = "Create a new configuration file with current options. If config file path is specified with -c, that path will be used; otherwise default path (.incrementalist/incrementalist.json) is used.", Required = false)]
         public bool CreateConfig { get; set; }
+        
+        /*
+         * NOTE: while working on https://github.com/petabridge/Incrementalist/issues/366 we discovered that CommandLineParser
+         * has to work with `IEnumerable<string>` for repeatable options, not `string[]`.
+         */
 
         [Option("skip-glob", HelpText = "Glob pattern to exclude projects from the final list. Applied after analyzing dependencies.", Required = false)]
-        public string[]? SkipGlob { get; set; }
+        public IEnumerable<string>? SkipGlob { get; set; }
 
         [Option("target-glob", HelpText = "Glob pattern to include only matching projects in the final list. Applied after analyzing dependencies.", Required = false)]
-        public string[]? TargetGlob { get; set; }
+        public IEnumerable<string>? TargetGlob { get; set; }
 
         // Property to store dotnet CLI arguments that come after --
         public string[] DotNetArgs { get; set; } = [];
