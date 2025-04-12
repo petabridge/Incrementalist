@@ -44,6 +44,35 @@ namespace Incrementalist.Tests.ProjectSystem
             Assert.Single(solutions ?? []);
             Assert.EndsWith("MySolution.sln", solutions.First());
         }
+        
+        /// <summary>
+        /// https://github.com/petabridge/Incrementalist/issues/365
+        /// </summary>
+        [Fact(DisplayName = "Should .slnx solution in root directory")]
+        public void Should_Find_Slnx_Solution()
+        {
+            // Arrange
+            const string solutionContent = """
+                                             <Solution>
+                                             <Folder Name="/build/">
+                                               <File Path="Directory.Build.props" />
+                                               <File Path="Directory.Packages.props" />
+                                               <File Path="global.json" />
+                                               <File Path="NuGet.Config" />
+                                               <File Path="README.md" />
+                                             </Folder>
+                                             <Project Path="src/Akka.Console/Akka.Console.csproj" />
+                                           </Solution>
+                                           """;
+            _repository.WriteFile("MySolution.slnx", solutionContent);
+
+            // Act
+            var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
+
+            // Assert
+            Assert.Single(solutions ?? []);
+            Assert.EndsWith("MySolution.slnx", solutions.First());
+        }
 
         [Fact(DisplayName = "Should find multiple solutions in root directory")]
         public void Should_Find_Multiple_Solutions()
