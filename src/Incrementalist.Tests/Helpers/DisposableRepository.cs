@@ -30,7 +30,8 @@ namespace Incrementalist.Tests.Helpers
 
         public string BasePath { get; }
 
-        public Repository Repository { get; private set; }
+        // Gets created via CTOR method call, so can't be null unless catastrophic failure
+        public Repository Repository { get; private set; } = null!;
 
         public void Dispose()
         {
@@ -131,14 +132,14 @@ namespace Incrementalist.Tests.Helpers
         /// <param name="commitMessage">The commit message.</param>
         /// <param name="author">Optional. The signature of the author performing the commit.</param>
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
-        public DisposableRepository Commit(string commitMessage, Signature author = null)
+        public DisposableRepository Commit(string commitMessage, Signature? author = null)
         {
             var committer = author ?? CreateSignature();
             Repository.Commit(commitMessage, committer, committer);
             return this;
         }
 
-        public static Signature CreateSignature(string name = null, string email = null)
+        public static Signature CreateSignature(string? name = null, string? email = null)
         {
             return new Signature(name ?? "Fuber", email ?? "fuber@petabridge.com", DateTimeOffset.UtcNow);
         }

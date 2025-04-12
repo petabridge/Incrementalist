@@ -48,7 +48,7 @@ namespace Incrementalist
         /// </summary>
         public string Project { get; }
 
-        public bool Equals(AffectedFile other)
+        public bool Equals(AffectedFile? other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -56,7 +56,7 @@ namespace Incrementalist
                    string.Equals(Project, other.Project);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;

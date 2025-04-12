@@ -19,11 +19,11 @@ namespace Incrementalist.ProjectSystem.Cmds
     public sealed class FindSolutionCmd : BuildCommandBase<object, IEnumerable<string>>
     {
         private readonly string _folderPath;
-        private readonly string _searchFilter;
+        private readonly string? _searchFilter;
         private readonly SearchOption? _searchOption;
 
         public FindSolutionCmd(ILogger logger, string folderPath, CancellationToken token,
-            string searchFilter = null, SearchOption? searchOption = null) : base("FindVsSolution", logger, token)
+            string? searchFilter = null, SearchOption? searchOption = null) : base("FindVsSolution", logger, token)
         {
             _folderPath = folderPath;
             _searchFilter = searchFilter;

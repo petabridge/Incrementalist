@@ -27,14 +27,16 @@ namespace Incrementalist.Cmd
 {
     internal class Program
     {
-        private static string _originalTitle;
+        private static string _originalTitle = string.Empty;
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         private static void SetTitle()
         {
             if (IsWindows) // changing console title is not supported on OS X or Linux
             {
+#pragma warning disable CA1416
                 _originalTitle = Console.Title;
+#pragma warning restore CA1416
                 Console.Title = StartupData.ConsoleWindowTitle;
             }
         }
@@ -55,7 +57,7 @@ namespace Incrementalist.Cmd
             var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : [];
 
 
-            SlnOptions options = null;
+            SlnOptions? options = null;
             var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
             {
                 options = r;
@@ -70,11 +72,14 @@ namespace Incrementalist.Cmd
             }
 
             // Load configuration file if applicable
-            IncrementalistConfig config = null;
-            if (IncrementalistConfig.TryLoad(options.ConfigFile, out var loadedConfig))
+            IncrementalistConfig? config = null;
+            if (IncrementalistConfig.TryLoad(options?.ConfigFile, out var loadedConfig))
             {
                 config = loadedConfig;
             }
+
+            // Options has to be populated by the CLI parser
+            Debug.Assert(options != null);
 
             // Merge CLI options with configuration file (CLI takes precedence)
             if (config != null)
@@ -94,7 +99,8 @@ namespace Incrementalist.Cmd
             // Check if we are creating a configuration file
             if (options.CreateConfig)
             {
-                var createConfigTask = new Commands.CreateConfigFileTask(options, loggerFactory.CreateLogger<Commands.CreateConfigFileTask>());
+                var createConfigTask =
+                    new CreateConfigFileTask(options, loggerFactory.CreateLogger<CreateConfigFileTask>());
                 var configResult = await createConfigTask.Run();
                 ResetTitle();
                 return configResult;
@@ -117,33 +123,38 @@ namespace Incrementalist.Cmd
                 var insideRepo = Repository.IsValid(pwd);
                 if (!insideRepo)
                 {
-                    logger.LogError("Current path {0} is not located inside any known Git repository.", pwd);
+                    logger.LogError("Current path {WorkingDirectory} is not located inside any known Git repository.",
+                        pwd);
                     return -2;
                 }
 
 
-                var repoFolder = Repository.Discover(pwd);
-                var workingFolder = Directory.GetParent(repoFolder).Parent;
+                // can't be null or Repository.IsValid(pwd) would have failed
+                var repoFolder = Repository.Discover(pwd)!;
+                var workingFolder = Directory.GetParent(repoFolder)!.Parent!;
 
-                var repoResult = GitRunner.FindRepository(workingFolder.FullName);
+                var (repo, foundRepo) = GitRunner.FindRepository(workingFolder.FullName);
 
-                if (!repoResult.foundRepo)
+                if (!foundRepo || repo == null)
                 {
-                    logger.LogError("Unable to find Git repository located in {0}. Shutting down.", workingFolder.FullName);
+                    logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.",
+                        workingFolder.FullName);
                     return -3;
                 }
 
                 // validate the target branch
-                if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
+                if (!DiffHelper.HasBranch(repo, options.GitBranch!))
                 {
                     // workaround common CI server issues and check to see if this same branch is located
                     // under "origin/{branchname}"
                     options.GitBranch = $"origin/{options.GitBranch}";
-                    if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
+                    if (!DiffHelper.HasBranch(repo, options.GitBranch))
                     {
-                        logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                        logger.LogError(
+                            "Current git repository doesn't have any branch named [{Branch}]. Shutting down.",
+                            options.GitBranch);
                         logger.LogInformation("Here are all of the currently known branches in this repository:");
-                        foreach (var b in repoResult.repo.Branches)
+                        foreach (var b in repo.Branches)
                         {
                             logger.LogInformation(b.FriendlyName);
                         }
@@ -171,7 +182,12 @@ namespace Incrementalist.Cmd
 
         private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
         {
-            var settings = new BuildSettings(options.GitBranch, options.SolutionFilePath, workingFolder.FullName,
+            /*
+             * options.SolutionFilePath can be null here, but it won't affect this task
+             */
+
+            var settings = new BuildSettings(options.GitBranch!, options.SolutionFilePath ?? string.Empty,
+                workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache
@@ -202,25 +218,25 @@ namespace Incrementalist.Cmd
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            
+
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
-            var settings = new BuildSettings(options.GitBranch, sln, workingFolder.FullName,
+            var settings = new BuildSettings(options.GitBranch!, sln, workingFolder.FullName,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache
             };
-            
+
             logger.LogInformation("Beginning dependency analysis...");
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
             var buildResult = await emitTask.Run();
-            
+
             var analysisTime = stopwatch.Elapsed;
             logger.LogInformation("Solution analysis completed in {Duration:g}", analysisTime);
 
-            if (options.RunCommand && options.DotNetArgs.Length > 0)
+            if (options is { RunCommand: true, DotNetArgs.Length: > 0 })
             {
-                var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs, 
+                var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs,
                     options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
 
                 var exitCode = await runTask.Run(buildResult);
@@ -230,13 +246,14 @@ namespace Incrementalist.Cmd
             else
             {
                 string buildType;
-                IEnumerable<string> projectsToRebuild;
+                IReadOnlyList<string> projectsToRebuild;
 
                 switch (buildResult)
                 {
                     case FullSolutionBuildResult _:
                         buildType = "Full solution build";
-                        projectsToRebuild = msBuild.CurrentSolution.Projects.Select(p => p.FilePath);
+                        projectsToRebuild = msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
+                            .Select(p => p.FilePath!).ToList();
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";
@@ -257,21 +274,22 @@ namespace Incrementalist.Cmd
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
                 {
-                    logger.LogInformation("{0} required - {1} affected projects - writing out to {2}", 
+                    logger.LogInformation("{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
                         buildType,
-                        projectsToRebuild.Count(),
+                        projectsToRebuild.Count,
                         options.OutputFile);
-                    File.WriteAllText(options.OutputFile, affectedFilesStr);
+                    await File.WriteAllTextAsync(options.OutputFile, affectedFilesStr);
                 }
                 else
                 {
-                    logger.LogInformation("{0} required:", buildType);
+                    logger.LogInformation("{BuildType} required:", buildType);
                     logger.LogInformation(affectedFilesStr);
                 }
             }
         }
 
-        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount, ILogger logger)
+        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount,
+            ILogger logger)
         {
             if (affectedFilesCount == 0)
             {
