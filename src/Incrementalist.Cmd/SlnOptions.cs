@@ -4,9 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices.ComTypes;
 using CommandLine;
 
 namespace Incrementalist.Cmd

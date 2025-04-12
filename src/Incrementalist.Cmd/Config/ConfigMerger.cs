@@ -48,6 +48,8 @@ namespace Incrementalist.Cmd.Config
             merged.ContinueOnError = config.ContinueOnError.GetValueOrDefault(true);
             merged.RunInParallel = config.RunInParallel.GetValueOrDefault(false);
             merged.FailOnNoProjects = config.FailOnNoProjects.GetValueOrDefault(false);
+            merged.SkipGlob = options.SkipGlob ?? config.SkipGlob;
+            merged.TargetGlob = options.TargetGlob ?? config.TargetGlob;
             
             // Caching is disabled until we redesign it: https://github.com/petabridge/Incrementalist/issues/350
             merged.NoCache = true; //config.NoCache.GetValueOrDefault(false);
