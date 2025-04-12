@@ -46,7 +46,7 @@ namespace Incrementalist.ProjectSystem.Cmds
              *
              * We have to gather up each unique project file separately in this case.
              */
-            var additionalProjectIds = new List<ProjectId>();
+            List<ProjectId> additionalProjectIds = [];
             if (affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
             {
                 foreach (var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
@@ -59,7 +59,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             // Special case: if the solution itself is modified, return all projects
             if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(_solution.FilePath))
             {
-                return new Dictionary<string, ICollection<string>>()
+                return new Dictionary<string, ICollection<string>>
                 {
                     {
                         _solution.FilePath,
@@ -68,19 +68,12 @@ namespace Incrementalist.ProjectSystem.Cmds
                 };
             }
 
-            var uniqueProjectIds = affectedSlnFiles.Select(x => x.Value.ProjectId).Concat(additionalProjectIds)
+            var uniqueProjectIds = affectedSlnFiles
+                .Where(c => c.Value.ProjectId != null)
+                .Select(x => x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
-
-            /*
-             * Next: check to see if there any overlapping graphs and remove those from the final set
-             */
-            bool IsGraphContained(ProjectId root, Dictionary<ProjectId, List<ProjectId>> otherGraphs)
-            {
-                return otherGraphs.Where(x => !x.Key.Equals(root))
-                    .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
-            }
 
             var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs));
 
@@ -109,6 +102,15 @@ namespace Incrementalist.ProjectSystem.Cmds
             }
 
             return finalResultSet;
+
+            /*
+             * Next: check to see if there any overlapping graphs and remove those from the final set
+             */
+            bool IsGraphContained(ProjectId root, Dictionary<ProjectId, List<ProjectId>> otherGraphs)
+            {
+                return otherGraphs.Where(x => !x.Key.Equals(root))
+                    .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
+            }
 
             ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
             {

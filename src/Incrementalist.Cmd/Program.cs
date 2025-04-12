@@ -133,9 +133,9 @@ namespace Incrementalist.Cmd
                 var repoFolder = Repository.Discover(pwd)!;
                 var workingFolder = Directory.GetParent(repoFolder)!.Parent!;
 
-                var repoResult = GitRunner.FindRepository(workingFolder.FullName);
+                var (repo, foundRepo) = GitRunner.FindRepository(workingFolder.FullName);
 
-                if (!repoResult.foundRepo)
+                if (!foundRepo || repo == null)
                 {
                     logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.",
                         workingFolder.FullName);
@@ -143,18 +143,18 @@ namespace Incrementalist.Cmd
                 }
 
                 // validate the target branch
-                if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch!))
+                if (!DiffHelper.HasBranch(repo, options.GitBranch!))
                 {
                     // workaround common CI server issues and check to see if this same branch is located
                     // under "origin/{branchname}"
                     options.GitBranch = $"origin/{options.GitBranch}";
-                    if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
+                    if (!DiffHelper.HasBranch(repo, options.GitBranch))
                     {
                         logger.LogError(
                             "Current git repository doesn't have any branch named [{Branch}]. Shutting down.",
                             options.GitBranch);
                         logger.LogInformation("Here are all of the currently known branches in this repository:");
-                        foreach (var b in repoResult.repo.Branches)
+                        foreach (var b in repo.Branches)
                         {
                             logger.LogInformation(b.FriendlyName);
                         }

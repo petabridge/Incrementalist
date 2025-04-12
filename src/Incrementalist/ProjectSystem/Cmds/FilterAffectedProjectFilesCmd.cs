@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -39,37 +40,42 @@ namespace Incrementalist.ProjectSystem.Cmds
             var fileDictObj = await previousTask;
 
             var (repo, foundRepo) = GitRunner.FindRepository(_workingDirectory);
-            if (!foundRepo)
+            if (!foundRepo || repo == null)
             {
-                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", _workingDirectory);
+                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", _workingDirectory);
                 return new Dictionary<string, SlnFile>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repo, _targetGitBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", _targetGitBranch);
+                Logger.LogError("Current git repository doesn't have any branch named [{TargetBranch}]. Shutting down.", _targetGitBranch);
                 return new Dictionary<string, SlnFile>();
             }
 
             var affectedFiles = DiffHelper.ChangedFiles(repo, _targetGitBranch).ToList();
 
             var projectFiles = fileDictObj.Where(x => x.Value.FileType == FileType.Project).ToList();
-            var projectFolders = projectFiles.ToLookup(x => Path.GetDirectoryName(x.Key), v => Tuple.Create(v.Key, v.Value));
+            var projectFolders = projectFiles.Where(x => Path.GetDirectoryName(x.Key) is not null)
+                .ToLookup(x => Path.GetDirectoryName(x.Key)!, v => Tuple.Create(v.Key, v.Value));
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles.Select(pair => new SlnFileWithPath(pair.Key, pair.Value)));
 
             // filter out any files that aren't affected by the diff
             var newDict = new Dictionary<string, SlnFile>();
             foreach (var file in affectedFiles)
             {
-                Logger.LogDebug("Affected file: {0}", file);
+                Logger.LogDebug("Affected file: {FilePath}", file);
                 // this file is in the solution
                 if (fileDictObj.TryGetValue(file, out var value)) newDict[file] = value;
                 else
                 {
-                    // special case - not all of the affected files were in the solution.
+                    // special case - not all the affected files were in the solution.
                     // Check to see if these affected files are in the same folder as any of the projects
                     var directoryName = Path.GetDirectoryName(file);
+                    if (string.IsNullOrEmpty(directoryName))
+                    {
+                        continue;
+                    }
 
                     if (TryFindSubFolder(projectFolders.Select(c => c.Key), directoryName, out var projectFolder))
                     {
@@ -97,7 +103,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             return newDict;
         }
 
-        private static bool TryFindSubFolder(IEnumerable<string> testFolders, string targetFolder, out string winningFolder)
+        private static bool TryFindSubFolder(IEnumerable<string> testFolders, string targetFolder, [NotNullWhen(true)] out string? winningFolder)
         {
             winningFolder = null;
             foreach(var startingFolder in testFolders)

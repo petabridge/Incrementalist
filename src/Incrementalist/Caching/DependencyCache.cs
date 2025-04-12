@@ -110,6 +110,7 @@ namespace Incrementalist.Caching
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(solution);
+            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
 
             // No cache exists
             if (cache is null)
@@ -178,6 +179,7 @@ namespace Incrementalist.Caching
             CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(solution);
+            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
 
             // Get the dependency graph from Roslyn
             var dependencyGraph = solution.GetProjectDependencyGraph();
