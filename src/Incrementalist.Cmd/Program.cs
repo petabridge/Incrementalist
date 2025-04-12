@@ -27,7 +27,7 @@ namespace Incrementalist.Cmd
 {
     internal class Program
     {
-        private static string _originalTitle;
+        private static string _originalTitle = string.Empty;
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         private static void SetTitle()
@@ -57,7 +57,7 @@ namespace Incrementalist.Cmd
             var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : [];
 
 
-            SlnOptions options = null;
+            SlnOptions? options = null;
             var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
             {
                 options = r;
@@ -72,11 +72,14 @@ namespace Incrementalist.Cmd
             }
 
             // Load configuration file if applicable
-            IncrementalistConfig config = null;
-            if (IncrementalistConfig.TryLoad(options.ConfigFile, out var loadedConfig))
+            IncrementalistConfig? config = null;
+            if (IncrementalistConfig.TryLoad(options?.ConfigFile, out var loadedConfig))
             {
                 config = loadedConfig;
             }
+            
+            // Options has to be populated by the CLI parser
+            Debug.Assert(options != null);
 
             // Merge CLI options with configuration file (CLI takes precedence)
             if (config != null)
@@ -96,7 +99,7 @@ namespace Incrementalist.Cmd
             // Check if we are creating a configuration file
             if (options.CreateConfig)
             {
-                var createConfigTask = new Commands.CreateConfigFileTask(options, loggerFactory.CreateLogger<Commands.CreateConfigFileTask>());
+                var createConfigTask = new CreateConfigFileTask(options, loggerFactory.CreateLogger<CreateConfigFileTask>());
                 var configResult = await createConfigTask.Run();
                 ResetTitle();
                 return configResult;
@@ -119,13 +122,14 @@ namespace Incrementalist.Cmd
                 var insideRepo = Repository.IsValid(pwd);
                 if (!insideRepo)
                 {
-                    logger.LogError("Current path {0} is not located inside any known Git repository.", pwd);
+                    logger.LogError("Current path {WorkingDirectory} is not located inside any known Git repository.", pwd);
                     return -2;
                 }
 
 
-                var repoFolder = Repository.Discover(pwd);
-                var workingFolder = Directory.GetParent(repoFolder).Parent;
+                // can't be null or Repository.IsValid(pwd) would have failed
+                var repoFolder = Repository.Discover(pwd)!;
+                var workingFolder = Directory.GetParent(repoFolder)!.Parent!;
 
                 var repoResult = GitRunner.FindRepository(workingFolder.FullName);
 
@@ -136,14 +140,14 @@ namespace Incrementalist.Cmd
                 }
 
                 // validate the target branch
-                if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
+                if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch!))
                 {
                     // workaround common CI server issues and check to see if this same branch is located
                     // under "origin/{branchname}"
                     options.GitBranch = $"origin/{options.GitBranch}";
                     if (!DiffHelper.HasBranch(repoResult.repo, options.GitBranch))
                     {
-                        logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", options.GitBranch);
+                        logger.LogError("Current git repository doesn't have any branch named [{Branch}]. Shutting down.", options.GitBranch);
                         logger.LogInformation("Here are all of the currently known branches in this repository:");
                         foreach (var b in repoResult.repo.Branches)
                         {

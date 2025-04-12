@@ -13,7 +13,7 @@ namespace Incrementalist.Cmd
 {
     public sealed class SlnOptions
     {
-        [Option('s', "sln", HelpText = "The name of the Solution file to be analyzed by Incrementalist.",
+        [Option('s', "sln", HelpText = "The name of the Solution file to be analyzed by Incrementalist. Defaults to '*.sln' in the current directory.",
             Required = false)]
         public string? SolutionFilePath { get; set; }
 
@@ -24,8 +24,7 @@ namespace Incrementalist.Cmd
             Default = false)]
         public bool ListFolders { get; set; }
 
-        [Option('b', "branch", HelpText = "The git branch to compare against, i.e. 'dev' or 'master'. Defaults to 'dev'.",
-            Default = "dev",
+        [Option('b', "branch", HelpText = "The git branch to compare against, i.e. 'dev' or 'master'.",
             Required = false)]
         public string? GitBranch { get; set; }
 
