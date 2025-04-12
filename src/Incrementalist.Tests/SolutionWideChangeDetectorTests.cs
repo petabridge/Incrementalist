@@ -98,7 +98,7 @@ namespace Incrementalist.Tests
         [Fact]
         public void NullChanges_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => _detector.RequiresFullSolutionBuild(null));
+            Assert.Throws<ArgumentNullException>(() => _detector.RequiresFullSolutionBuild(null!));
         }
 
         [Theory]

@@ -22,7 +22,7 @@ namespace Incrementalist.ProjectSystem
         /// <param name="searchFilter">Optional. A wildcard filter, e.g., "*.sln". If null or empty, defaults to searching for both "*.sln" and "*.slnx".</param>
         /// <param name="searchOption">Optional. Specifies whether to recurse sub-directories or not. Defaults to <see cref="SearchOption.AllDirectories"/>.</param>
         /// <returns>If any solutions are found, will return an enumerable list of their paths, ordered by filename.</returns>
-        public static IEnumerable<string> GetSolutions(string folderPath, string searchFilter = null,
+        public static IEnumerable<string> GetSolutions(string folderPath, string? searchFilter = null,
             SearchOption? searchOption = null)
         {
             var finalSearchOption = searchOption ?? SearchOption.AllDirectories;

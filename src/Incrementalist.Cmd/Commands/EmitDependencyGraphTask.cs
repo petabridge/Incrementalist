@@ -65,7 +65,7 @@ namespace Incrementalist.Cmd.Commands
             Logger.LogInformation("Found {Count} affected files", affectedFiles.Count);
 
             // Early check: if no files are affected, return an incremental build with empty list
-            if (!affectedFiles.Any())
+            if (affectedFiles.Count == 0)
             {
                 Logger.LogInformation("No files were affected by the changes");
                 return new IncrementalBuildResult(Array.Empty<string>());
@@ -91,7 +91,7 @@ namespace Incrementalist.Cmd.Commands
             if (detector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath);
+                return new FullSolutionBuildResult(solution.FilePath!);
             }
 
             // Get the list of affected projects
@@ -103,7 +103,7 @@ namespace Incrementalist.Cmd.Commands
             if (affectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath);
+                return new FullSolutionBuildResult(solution.FilePath!);
             }
             
             /* INCREMENTAL BUILDS */
@@ -189,7 +189,7 @@ namespace Incrementalist.Cmd.Commands
                     if (projectFilePaths.Count == solution.Projects.Count())
                     {
                         Logger.LogInformation("All projects are affected. Full solution build required");
-                        return new FullSolutionBuildResult(solution.FilePath);
+                        return new FullSolutionBuildResult(solution.FilePath!);
                     }
 
                     Logger.LogInformation("Incremental build possible. {RebuildCount} projects [{Projects}] need to be rebuilt", 

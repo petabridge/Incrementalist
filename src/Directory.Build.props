@@ -1,30 +1,33 @@
 <Project>
-  <PropertyGroup>
-    <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
-    <Authors>Petabridge</Authors>
-    <VersionPrefix>1.0.0-beta2</VersionPrefix>
-    <PackageReleaseNotes>* Added graph caching to prevent full Roslyn analysis every time: https://github.com/petabridge/Incrementalist/blob/dev/docs/caching.md
-* Added support for detecting unstaged file changes [#331](https://github.com/petabridge/Incrementalist/pull/331)
-* Improved logging system [#336](https://github.com/petabridge/Incrementalist/pull/336) 
-* Fixed NuGet metadata [#337](https://github.com/petabridge/Incrementalist/pull/337)</PackageReleaseNotes>
-    <tags>build, msbuild, incremental build, roslyn, git</tags>
-    <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
-    <PackageProjectUrl>
-      https://github.com/petabridge/Incrementalist
-    </PackageProjectUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
-  </PropertyGroup>
-  <PropertyGroup>
-    <NBenchVersion>1.2.2</NBenchVersion>
-    <XunitVersion>2.9.3</XunitVersion>
-    <TestSdkVersion>17.13.0</TestSdkVersion>
-    <RoslynVersion>4.13.0</RoslynVersion>
-    <NugetVersion>6.13.2</NugetVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
-    <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\" />
-  </ItemGroup>
+    <PropertyGroup>
+        <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
+        <Authors>Petabridge</Authors>
+        <VersionPrefix>1.0.0-beta2</VersionPrefix>
+        <PackageReleaseNotes>* Added graph caching to prevent full Roslyn analysis every time: https://github.com/petabridge/Incrementalist/blob/dev/docs/caching.md
+            * Added support for detecting unstaged file changes [#331](https://github.com/petabridge/Incrementalist/pull/331)
+            * Improved logging system [#336](https://github.com/petabridge/Incrementalist/pull/336)
+            * Fixed NuGet metadata [#337](https://github.com/petabridge/Incrementalist/pull/337)
+        </PackageReleaseNotes>
+        <tags>build, msbuild, incremental build, roslyn, git</tags>
+        <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
+        <PackageProjectUrl>
+            https://github.com/petabridge/Incrementalist
+        </PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+    <PropertyGroup>
+        <NBenchVersion>1.2.2</NBenchVersion>
+        <XunitVersion>2.9.3</XunitVersion>
+        <TestSdkVersion>17.13.0</TestSdkVersion>
+        <RoslynVersion>4.13.0</RoslynVersion>
+        <NugetVersion>6.13.2</NugetVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\"/>
+        <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\"/>
+    </ItemGroup>
 </Project>

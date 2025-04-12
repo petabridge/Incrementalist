@@ -34,18 +34,18 @@ namespace Incrementalist.Cmd.Commands
         public async Task<Dictionary<string, ICollection<string>>> Run()
         {
             // load the git repository
-            var repoResult = GitRunner.FindRepository(Settings.WorkingDirectory);
+            var (repo, foundRepo) = GitRunner.FindRepository(Settings.WorkingDirectory);
 
-            if (!repoResult.foundRepo)
+            if (!foundRepo || repo == null)
             {
-                Logger.LogError("Unable to find Git repository located in {0}. Shutting down.", Settings.WorkingDirectory);
+                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", Settings.WorkingDirectory);
                 return new Dictionary<string, ICollection<string>>();
             }
 
             // validate the target branch
-            if (!DiffHelper.HasBranch(repoResult.repo, Settings.TargetBranch))
+            if (!DiffHelper.HasBranch(repo, Settings.TargetBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{0}]. Shutting down.", Settings.TargetBranch);
+                Logger.LogError("Current git repository doesn't have any branch named [{BranchName}]. Shutting down.", Settings.TargetBranch);
                 return new Dictionary<string, ICollection<string>>();
             }
 
@@ -54,7 +54,7 @@ namespace Incrementalist.Cmd.Commands
             var listAllFilesCmd = new ListAffectedFilesCmd(Logger, _cts.Token, Settings.TargetBranch);
             var filterAllFolders = new FilterAffectedFoldersCmd(Logger, _cts.Token);
 
-            return await filterAllFolders.Process(listAllFilesCmd.Process(Task.FromResult(repoResult.repo)));
+            return await filterAllFolders.Process(listAllFilesCmd.Process(Task.FromResult(repo)));
         }
     }
 }

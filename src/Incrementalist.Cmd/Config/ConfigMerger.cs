@@ -20,7 +20,7 @@ namespace Incrementalist.Cmd.Config
         /// <param name="options">The command-line options.</param>
         /// <param name="config">The configuration file settings.</param>
         /// <returns>A new SlnOptions instance with the merged values.</returns>
-        public static SlnOptions Merge(SlnOptions options, IncrementalistConfig config)
+        public static SlnOptions Merge(SlnOptions options, IncrementalistConfig? config)
         {
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
@@ -39,7 +39,7 @@ namespace Incrementalist.Cmd.Config
             // Merge string properties (CLI takes precedence)
             merged.SolutionFilePath = options.SolutionFilePath ?? config.SolutionFilePath;
             merged.OutputFile = options.OutputFile ?? config.OutputFile;
-            merged.GitBranch = options.GitBranch ?? config.GitBranch;
+            merged.GitBranch = (options.GitBranch ?? config.GitBranch) ?? "dev";
             merged.WorkingDirectory = options.WorkingDirectory ?? config.WorkingDirectory;
 
             // Merge bool properties (CLI takes precedence)

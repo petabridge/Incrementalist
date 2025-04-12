@@ -26,7 +26,7 @@ namespace Incrementalist.Tests
         [Fact]
         public void IncrementalBuildResult_Constructor_ThrowsOnNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new IncrementalBuildResult(null));
+            Assert.Throws<ArgumentNullException>(() => new IncrementalBuildResult(null!));
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace Incrementalist.Tests
         [Fact]
         public void FullSolutionBuildResult_Constructor_ThrowsOnNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null));
+            Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null!));
         }
 
         [Fact]
@@ -120,7 +120,8 @@ namespace Incrementalist.Tests
         [Fact]
         public void CreateBuildResult_NullSolution_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(null, new[] { "Project1.csproj" }));
+            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(null!,
+                ["Project1.csproj"]));
         }
 
         [Fact]
@@ -131,7 +132,7 @@ namespace Incrementalist.Tests
                 SolutionId.CreateNewId(),
                 VersionStamp.Create(),
                 "test.sln"));
-            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(solution, null));
+            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(solution, null!));
         }
     }
 } 

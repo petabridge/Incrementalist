@@ -38,10 +38,12 @@ namespace Incrementalist
         /// </summary>
         public SolutionWideChangeDetector(Solution solution)
         {
-            if (solution == null) throw new ArgumentNullException(nameof(solution));
-            
+            ArgumentNullException.ThrowIfNull(solution);
+            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
+
             var projectFiles = solution.Projects
-                .Select(p => new SlnFileWithPath(p.FilePath, new SlnFile(FileType.Project, p.Id)))
+                .Where(p => p.FilePath != null)
+                .Select(p => new SlnFileWithPath(p.FilePath!, new SlnFile(FileType.Project, p.Id)))
                 .ToList();
             
             _projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
@@ -115,8 +117,9 @@ namespace Incrementalist
         /// <returns>A FullSolutionBuildResult if all projects are affected, otherwise an IncrementalBuildResult.</returns>
         public static BuildAnalysisResult CreateBuildResult(Solution solution, IReadOnlyList<string> affectedProjects)
         {
-            if (solution == null) throw new ArgumentNullException(nameof(solution));
-            if (affectedProjects == null) throw new ArgumentNullException(nameof(affectedProjects));
+            ArgumentNullException.ThrowIfNull(solution);
+            ArgumentNullException.ThrowIfNull(affectedProjects);
+            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
 
             var totalProjects = solution.Projects.Count();
             
