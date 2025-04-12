@@ -97,7 +97,7 @@ namespace Incrementalist.Tests.Caching
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
 
-            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateClassicSolutionFile("test", ["Project1", "Project2"]));
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
             await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
             
@@ -119,19 +119,24 @@ namespace Incrementalist.Tests.Caching
         public async Task IsCacheValidAsync_WithValidCache_ReturnsTrue()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var project1Path = Path.Combine("src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine("src", "Project2", "Project2.csproj");
 
             // Create project directories and files
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
 
-            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
-            await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
-            await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
+            var solutionBuilder = new SolutionModelBuilder(_repository.BasePath, "test", SolutionFormat.Sln);
+            var project1 = solutionBuilder.AddProject(project1Path, ProjectTypes.CSharp);
+            var project2 = solutionBuilder.AddProject(project2Path, ProjectTypes.CSharp);
+            project2.AddDependency(project1);
+            await solutionBuilder.SaveAsync();
+            
+            // await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateClassicSolutionFile("test", ["Project1", "Project2"]));
+            // await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
+            // await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
 
-            var solution = await LoadSolutionCmd.GetSolutionDetailsAsync(solutionPath);
+            var solution = await LoadSolutionCmd.GetSolutionDetailsAsync(solutionBuilder.GetAbsoluteSolutionPath());
 
             // Create valid cache
             var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
@@ -155,7 +160,7 @@ namespace Incrementalist.Tests.Caching
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
 
-            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateSolutionFile("test", ["Project1", "Project2"]));
+            await File.WriteAllTextAsync(solutionPath, ProjectSampleGenerator.CreateClassicSolutionFile("test", ["Project1", "Project2"]));
             await File.WriteAllTextAsync(project1Path, ProjectSampleGenerator.CreateProjectFile("Project1"));
             await File.WriteAllTextAsync(project2Path, ProjectSampleGenerator.CreateProjectFile("Project2", ["Project1"]));
 
@@ -188,7 +193,7 @@ namespace Incrementalist.Tests.Caching
         private async Task<SolutionDetails> CreateEmptySolution()
         {
             var emptySolutionPath = Path.Combine(_repository.BasePath, "Base.sln");
-            var slnContent = ProjectSampleGenerator.CreateSolutionFile("Base", []);
+            var slnContent = ProjectSampleGenerator.CreateClassicSolutionFile("Base", []);
             _repository.WriteFile("Base.sln", slnContent);
             return await LoadSolutionCmd.GetSolutionDetailsAsync(emptySolutionPath);
         }

@@ -56,7 +56,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             }
 
             // Special case: if the solution itself is modified, return all projects
-            if (_solution.SolutionFilePath != null && affectedSlnFiles.ContainsKey(_solution.SolutionFilePath))
+            if (affectedSlnFiles.ContainsKey(_solution.SolutionFilePath))
             {
                 return new Dictionary<string, ICollection<string>>()
                 {
@@ -69,8 +69,6 @@ namespace Incrementalist.ProjectSystem.Cmds
 
             var uniqueProjectIds = affectedSlnFiles.Select(x => (Guid)x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
-            
-            
             
             
             var graphs = uniqueProjectIds.ToDictionary(x => x,

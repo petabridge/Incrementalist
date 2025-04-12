@@ -44,7 +44,7 @@ namespace Incrementalist.Tests.Helpers
         /// <summary>
         /// Creates a sample solution file content
         /// </summary>
-        public static string CreateSolutionFile(string solutionName, IEnumerable<string> projectNames)
+        public static string CreateClassicSolutionFile(string solutionName, IEnumerable<string> projectNames)
         {
             var sb = new StringBuilder();
             sb.AppendLine("Microsoft Visual Studio Solution File, Format Version 12.00");
