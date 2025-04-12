@@ -50,7 +50,9 @@ namespace Incrementalist.Cmd.Commands
                     ContinueOnError = _options.ContinueOnError,
                     RunInParallel = _options.RunInParallel,
                     FailOnNoProjects = _options.FailOnNoProjects,
-                    NoCache = _options.NoCache
+                    NoCache = _options.NoCache,
+                    SkipGlob = _options.SkipGlob,
+                    TargetGlob = _options.TargetGlob,
                 };
 
                 // Determine the output file path
