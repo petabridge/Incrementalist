@@ -15,21 +15,22 @@ namespace Incrementalist.Cmd
     {
         [Option('s', "sln", HelpText = "The name of the Solution file to be analyzed by Incrementalist.",
             Required = false)]
-        public string SolutionFilePath { get; set; }
+        public string? SolutionFilePath { get; set; }
 
         [Option('f', "file", HelpText = "If specified, writes the output to the named file.", Required = false)]
-        public string OutputFile { get; set; }
+        public string? OutputFile { get; set; }
 
         [Option('l', "folders-only", HelpText = "List affected folders instead of .NET projects", Required = false,
             Default = false)]
         public bool ListFolders { get; set; }
 
         [Option('b', "branch", HelpText = "The git branch to compare against, i.e. 'dev' or 'master'. Defaults to 'dev'.",
+            Default = "dev",
             Required = false)]
-        public string GitBranch { get; set; }
+        public string? GitBranch { get; set; }
 
         [Option('d', "dir", HelpText = "Specify the working directory explicitly. Defaults to using the current working directory.")]
-        public string WorkingDirectory { get; set; }
+        public string? WorkingDirectory { get; set; }
 
         [Option(
             Default = false,
@@ -55,12 +56,12 @@ namespace Incrementalist.Cmd
         public bool NoCache { get; set; }
 
         [Option('c', "config", HelpText = "Path to the configuration file. Defaults to .incrementalist/incrementalist.json in the current directory.", Required = false)]
-        public string ConfigFile { get; set; }
+        public string? ConfigFile { get; set; }
 
         [Option("create-config", HelpText = "Create a new configuration file with current options. If config file path is specified with -c, that path will be used; otherwise default path (.incrementalist/incrementalist.json) is used.", Required = false)]
         public bool CreateConfig { get; set; }
 
         // Property to store dotnet CLI arguments that come after --
-        public string[] DotNetArgs { get; set; }
+        public string[] DotNetArgs { get; set; } = [];
     }
 }

@@ -34,7 +34,9 @@ namespace Incrementalist.Cmd
         {
             if (IsWindows) // changing console title is not supported on OS X or Linux
             {
+#pragma warning disable CA1416
                 _originalTitle = Console.Title;
+#pragma warning restore CA1416
                 Console.Title = StartupData.ConsoleWindowTitle;
             }
         }

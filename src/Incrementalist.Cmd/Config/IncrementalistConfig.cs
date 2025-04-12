@@ -31,13 +31,13 @@ namespace Incrementalist.Cmd.Config
         /// The name of the Solution file to be analyzed by Incrementalist.
         /// </summary>
         [JsonPropertyName("solutionFilePath")]
-        public string SolutionFilePath { get; set; }
+        public string? SolutionFilePath { get; set; }
 
         /// <summary>
         /// If specified, writes the output to the named file.
         /// </summary>
         [JsonPropertyName("outputFile")]
-        public string OutputFile { get; set; }
+        public string? OutputFile { get; set; }
 
         /// <summary>
         /// List affected folders instead of .NET projects
@@ -49,13 +49,13 @@ namespace Incrementalist.Cmd.Config
         /// The git branch to compare against. i.e. the `dev` or the `master` branch.
         /// </summary>
         [JsonPropertyName("gitBranch")]
-        public string GitBranch { get; set; }
+        public string? GitBranch { get; set; }
 
         /// <summary>
         /// Specify the working directory explicitly. Defaults to using the current working directory.
         /// </summary>
         [JsonPropertyName("workingDirectory")]
-        public string WorkingDirectory { get; set; }
+        public string? WorkingDirectory { get; set; }
 
         /// <summary>
         /// Prints out extensive debug logs during operation.
@@ -99,7 +99,7 @@ namespace Incrementalist.Cmd.Config
         /// <param name="filePath">The path to the configuration file. If null, will use the default name in the current directory.</param>
         /// <param name="config">The loaded configuration, or null if the file doesn't exist or couldn't be parsed.</param>
         /// <returns>True if the configuration was loaded successfully, false otherwise.</returns>
-        public static bool TryLoad(string filePath, out IncrementalistConfig config)
+        public static bool TryLoad(string? filePath, out IncrementalistConfig? config)
         {
             config = null;
             //filePath ??= DefaultConfigFileName;

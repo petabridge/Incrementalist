@@ -54,7 +54,7 @@ namespace Incrementalist.Cmd.Commands
                 };
 
                 // Determine the output file path
-                string configFilePath = _options.ConfigFile;
+                string? configFilePath = _options.ConfigFile;
                 if (string.IsNullOrEmpty(configFilePath))
                 {
                     // Use default filename in the same directory as the dependency cache
