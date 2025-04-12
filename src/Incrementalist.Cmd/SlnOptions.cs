@@ -64,10 +64,10 @@ namespace Incrementalist.Cmd
          */
 
         [Option("skip-glob", HelpText = "Glob pattern to exclude projects from the final list. Applied after analyzing dependencies.", Required = false)]
-        public IEnumerable<string>? SkipGlob { get; set; }
+        public IEnumerable<string>? SkipGlobs { get; set; }
 
         [Option("target-glob", HelpText = "Glob pattern to include only matching projects in the final list. Applied after analyzing dependencies.", Required = false)]
-        public IEnumerable<string>? TargetGlob { get; set; }
+        public IEnumerable<string>? TargetGlobs { get; set; }
 
         // Property to store dotnet CLI arguments that come after --
         public string[] DotNetArgs { get; set; } = [];
