@@ -17,6 +17,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{79D71264
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Incrementalist.Cmd", "src\Incrementalist.Cmd\Incrementalist.Cmd.csproj", "{48A85CA0-FA3A-4F7A-A651-B091C5F3A9CB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{1EE78661-C13A-4BDA-8CA1-DE2F23FBB92A}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\getReleaseNotes.ps1 = scripts\getReleaseNotes.ps1
+		scripts\integration-tests.ps1 = scripts\integration-tests.ps1
+		scripts\bumpVersion.ps1 = scripts\bumpVersion.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,5 +48,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B99E6BB8-642A-4A68-86DF-69567CBA700A}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1EE78661-C13A-4BDA-8CA1-DE2F23FBB92A} = {79D71264-186B-4F62-8930-35DD9ECCAF3B}
 	EndGlobalSection
 EndGlobal

@@ -177,6 +177,73 @@ function Test-ComplexCommandArguments {
     }
 }
 
+# Test targeting with glob patterns
+function Test-GlobTargeting {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $targetGlobOutput = Join-Path $TestResultsDir "incrementalist-target-glob.txt"
+    Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Run Incrementalist with target glob
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command failed with exit code $LASTEXITCODE" }
+
+        # Verification logic
+        $actualProjects = Get-Content $targetGlobOutput -ErrorAction SilentlyContinue
+        # Normalize paths to handle potential differences (e.g., \ vs /)
+        $expectedProjectRelative = "src/Incrementalist/Incrementalist.csproj"
+        $expectedProjectFullPath = (Resolve-Path (Join-Path $PSScriptRoot ".." $expectedProjectRelative)).Path
+        
+        # Check if the file contains exactly one line matching the expected project string, ignoring whitespace
+        if (($actualProjects | Measure-Object).Count -ne 1 -or `
+            -not ($actualProjects[0].Trim() -eq $expectedProjectFullPath.Trim()) ) { # Trim both sides before string comparison
+            Write-Host "Expected output:`n$expectedProjectFullPath`nActual output:`n$($actualProjects -join "`n")" -ForegroundColor Yellow
+            throw "Glob targeting verification failed. Output file content did not match expected project."
+        }
+    }
+}
+
+# Test skipping with glob patterns
+function Test-GlobSkipping {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $baselineOutput = Join-Path $TestResultsDir "incrementalist-skip-baseline.txt"
+    $skipGlobOutput = Join-Path $TestResultsDir "incrementalist-skip-glob.txt"
+    Invoke-IncrementalistTest -TestName "Glob skipping" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # 1. Run without skip to get baseline affected projects
+        Write-Host "Running baseline to determine affected projects..."
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (baseline) failed with exit code $LASTEXITCODE" }
+        $baselineProjects = (Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
+        Write-Host "Baseline projects count: $($baselineProjects.Count)"
+
+        # 2. Run with skip glob
+        Write-Host "Running with skip glob..."
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --skip-glob "**/*.Tests.csproj" --no-cache -f $skipGlobOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $LASTEXITCODE" }
+        $skippedProjects = (Get-Content $skipGlobOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
+        Write-Host "Skipped projects count: $($skippedProjects.Count)"
+        
+        # 3. Verification logic
+        $expectedSkippedProjects = $baselineProjects | Where-Object { $_ -notlike "*.Tests.csproj" }
+        Write-Host "Expected skipped projects count: $($expectedSkippedProjects.Count)"
+        
+        # Compare the actual list after skipping with the expected list
+        $diff = Compare-Object -ReferenceObject $expectedSkippedProjects -DifferenceObject $skippedProjects -IncludeEqual
+        $mismatched = $diff | Where-Object { $_.SideIndicator -ne "==" }
+        
+        if ($mismatched.Count -ne 0) {
+            Write-Host "Verification failed. Expected projects after skipping did not match actual." -ForegroundColor Yellow
+            Write-Host "--- Expected Projects ($($expectedSkippedProjects.Count)) ---" -ForegroundColor Yellow
+            $expectedSkippedProjects | Write-Host -ForegroundColor Yellow
+            Write-Host "--- Actual Projects ($($skippedProjects.Count)) ---" -ForegroundColor Yellow
+            $skippedProjects | Write-Host -ForegroundColor Yellow
+            Write-Host "--- Differences ---" -ForegroundColor Yellow
+            $mismatched | Format-Table -AutoSize | Out-String | Write-Host -ForegroundColor Yellow
+            throw "Glob skipping verification failed."
+        }
+    }
+}
+
 # Main execution
 Write-Host "Running Incrementalist integration tests..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
@@ -204,6 +271,10 @@ foreach ($project in $incrementalistProjects) {
     # Run cache-specific tests
     Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
     Test-CacheReuse -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    
+    # Run glob tests
+    Test-GlobTargeting -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    Test-GlobSkipping -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
 }
 
 # Final status report
