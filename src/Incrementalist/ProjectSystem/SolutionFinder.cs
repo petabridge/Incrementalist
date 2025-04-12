@@ -11,31 +11,33 @@ using System.Linq;
 namespace Incrementalist.ProjectSystem
 {
     /// <summary>
-    ///     Used to look for .sln files in a given directory.
+    ///     Used to look for .sln and .slnx files in a given directory.
     /// </summary>
     public static class SolutionFinder
     {
         /// <summary>
-        ///     The default filter used to look for solutions in a given folder.
-        /// </summary>
-        public const string DefaultSolutionFilter = "*.sln";
-
-        /// <summary>
-        ///     Enumerate all of the MSBuild solution files in a given folder.
+        ///     Enumerate all of the MSBuild solution files (.sln and .slnx) in a given folder.
         /// </summary>
         /// <param name="folderPath">The top level path to search.</param>
-        /// <param name="searchFilter">Optional. A wildcard filter in the form of "*.sln".</param>
-        /// <param name="searchOption">Optional. Specifies whether to recurse sub-directories or not.</param>
-        /// <returns>If any solutions are found, will return an enumerable list of them in order in which they are discovered.</returns>
+        /// <param name="searchFilter">Optional. A wildcard filter, e.g., "*.sln". If null or empty, defaults to searching for both "*.sln" and "*.slnx".</param>
+        /// <param name="searchOption">Optional. Specifies whether to recurse sub-directories or not. Defaults to <see cref="SearchOption.AllDirectories"/>.</param>
+        /// <returns>If any solutions are found, will return an enumerable list of their paths, ordered by filename.</returns>
         public static IEnumerable<string> GetSolutions(string folderPath, string searchFilter = null,
             SearchOption? searchOption = null)
         {
-            if (string.IsNullOrEmpty(searchFilter))
-                return Directory.EnumerateFileSystemEntries(folderPath, DefaultSolutionFilter,
-                    searchOption ?? SearchOption.AllDirectories).OrderBy(Path.GetFileName);
+            var finalSearchOption = searchOption ?? SearchOption.AllDirectories;
 
-            return Directory.EnumerateFileSystemEntries(folderPath, searchFilter,
-                searchOption ?? SearchOption.AllDirectories).OrderBy(Path.GetFileName);
+            if (string.IsNullOrEmpty(searchFilter))
+            {
+                // Search for both .sln and .slnx if no specific filter is provided
+                var slnFiles = Directory.EnumerateFileSystemEntries(folderPath, "*.sln", finalSearchOption);
+                var slnxFiles = Directory.EnumerateFileSystemEntries(folderPath, "*.slnx", finalSearchOption);
+                return slnFiles.Concat(slnxFiles).OrderBy(Path.GetFileName);
+            }
+            
+            // Use the provided search filter
+            return Directory.EnumerateFileSystemEntries(folderPath, searchFilter, finalSearchOption)
+                .OrderBy(Path.GetFileName);
         }
     }
 }
