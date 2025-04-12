@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Incrementalist.Cmd;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Cmd.Config;
@@ -179,8 +178,8 @@ namespace Incrementalist.Tests.Config
                 Assert.True(IncrementalistConfig.TryLoad(configPath, out var loadedConfig));
                 Assert.NotNull(loadedConfig);
                 
-                loadedConfig.SkipGlob.Should().BeEquivalentTo(skipGlobs);
-                loadedConfig.TargetGlob.Should().BeEquivalentTo(targetGlobs);
+                Assert.Equivalent(skipGlobs, loadedConfig.SkipGlob);
+                Assert.Equivalent(targetGlobs, loadedConfig.TargetGlob);
             }
             finally
             {

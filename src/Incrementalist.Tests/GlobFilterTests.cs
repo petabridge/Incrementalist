@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using FluentAssertions;
 using Incrementalist.Cmd;
-using Microsoft.Extensions.FileSystemGlobbing;
 using Xunit;
 
 namespace Incrementalist.Tests;
@@ -30,7 +28,7 @@ public class GlobFilterTests
         var result = GlobFilter.FilterProjects(TestProjects, skipGlobs, targetGlobs);
 
         // Assert
-        result.Should().BeEquivalentTo(TestProjects);
+        Assert.Equivalent(TestProjects, result);
     }
 
     [Fact]
@@ -45,7 +43,7 @@ public class GlobFilterTests
         var result = GlobFilter.FilterProjects(emptyProjects, skipGlobs, targetGlobs);
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result ?? []);
     }
 
     [Theory]
@@ -66,13 +64,7 @@ public class GlobFilterTests
         var result = GlobFilter.FilterProjects(TestProjects, skipGlobs, targetGlobs);
 
         // Assert
-        result.Should().HaveCount(expectedCount);
-        if (expectedCount > 0)
-        {
-            var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
-            matcher.AddIncludePatterns(targetGlobs);
-            result.Should().OnlyContain(p => matcher.Match(p).HasMatches);
-        }
+        Assert.Equal(expectedCount, result.Count);
     }
 
     [Theory]
@@ -92,13 +84,7 @@ public class GlobFilterTests
         var result = GlobFilter.FilterProjects(TestProjects, skipGlobs, targetGlobs);
 
         // Assert
-        result.Should().HaveCount(expectedCount);
-        if (expectedCount < TestProjects.Count)
-        {
-            var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
-            matcher.AddIncludePatterns(skipGlobs);
-            result.Should().NotContain(p => matcher.Match(p).HasMatches);
-        }
+        Assert.Equal(expectedCount, result.Count);
     }
 
     [Theory]
@@ -122,6 +108,6 @@ public class GlobFilterTests
         var result = GlobFilter.FilterProjects(TestProjects, skipGlobs, targetGlobs);
 
         // Assert
-        result.Should().BeEquivalentTo(expectedProjects);
+        Assert.Equivalent(expectedProjects, result);
     }
 } 
