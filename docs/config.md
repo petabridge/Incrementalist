@@ -23,6 +23,8 @@ The following settings can be specified in the configuration file:
 | `runInParallel` | boolean | Run commands in parallel | `--parallel` |
 | `failOnNoProjects` | boolean | Fail if no projects are affected | `--fail-on-no-projects` |
 | `noCache` | boolean | Ignore existing cache file | `--no-cache` |
+| `skip` | string array | Glob patterns to exclude projects from the final list | `--skip-glob` |
+| `target` | string array | Glob patterns to include only matching projects in the final list | `--target-glob` |
 
 ## Sample Configuration File
 
@@ -40,7 +42,9 @@ Here's an example configuration file with all available settings:
   "continueOnError": true,
   "runInParallel": false,
   "failOnNoProjects": false,
-  "noCache": false
+  "noCache": false,
+  "skip": ["**/bin/**", "**/obj/**"],
+  "target": ["src/**/*.csproj"]
 }
 ```
 
