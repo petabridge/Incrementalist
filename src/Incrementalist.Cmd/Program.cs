@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using CommandLine;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Cmd.Config;
 using Incrementalist.Git;
@@ -21,6 +20,7 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
+using static Incrementalist.Cmd.SlnOptionsParser;
 
 namespace Incrementalist.Cmd
 {
@@ -50,19 +50,7 @@ namespace Incrementalist.Cmd
         {
             SetTitle();
 
-            // Split args at -- to separate incrementalist args from dotnet args
-            var splitIndex = Array.IndexOf(args, "--");
-            var incrementalistArgs = splitIndex >= 0 ? args.Take(splitIndex).ToArray() : args;
-            var dotnetArgs = splitIndex >= 0 ? args.Skip(splitIndex + 1).ToArray() : [];
-
-
-            SlnOptions? options = null;
-            var result = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
-            {
-                options = r;
-                options.DotNetArgs = dotnetArgs;
-                return 0;
-            }, _ => 1);
+            var result = TryParseSlnOptions(args, out var options);
 
             if (result != 0)
             {
