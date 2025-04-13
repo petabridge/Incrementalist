@@ -363,6 +363,9 @@ function Test-GlobSkipping {
             $mismatched | Format-Table -AutoSize | Out-String | Write-Host -ForegroundColor Yellow
             throw "Glob skipping verification failed."
         }
+        
+        # Return success if all verifications passed
+        return 0
     }
 }
 
