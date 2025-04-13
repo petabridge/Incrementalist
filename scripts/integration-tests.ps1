@@ -199,7 +199,7 @@ function Run-Incrementalist {
             }
 
             # Execute the command
-            $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru
+            $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
             
             # Wait with timeout
             $completed = $process.WaitForExit($TimeoutSeconds * 1000)
@@ -228,7 +228,7 @@ function Run-Incrementalist {
             }
             
             # Execute the command
-            $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru
+            $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru -Wait
             
             # Wait with timeout
             $completed = $process.WaitForExit($TimeoutSeconds * 1000)
