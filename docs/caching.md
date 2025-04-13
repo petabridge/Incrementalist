@@ -1,5 +1,8 @@
 # 🚀 Dependency Graph Caching
 
+> ![WARNING]
+> Caching is currently disabled due to https://github.com/petabridge/Incrementalist/issues/350 - we'll need to implement an alternative way of identifying projects in order to remedy this, as their MSBUILD `ProjectId`s are not stable between executions.
+
 Incrementalist includes a caching system that significantly improves performance by storing and reusing project dependency information. This document explains how the cache works and provides best practices for using it effectively.
 
 ## How It Works

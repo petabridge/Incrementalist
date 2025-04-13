@@ -134,6 +134,15 @@ incrementalist -b dev -r -- test -c Release --no-build --nologo /p:CollectCovera
 
 # Save affected projects AND run commands
 incrementalist -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
+
+# Create configuration file with current settings (default path: .incrementalist/incrementalist.json)
+incrementalist -b dev --verbose --parallel --create-config
+
+# Create configuration file with current settings and custom file name
+incrementalist -b dev --verbose --parallel --create-config -c ./my-incrementalist-config.json
+
+# Run incrementalist with a custom configuration file
+incrementalist -c ./my-incrementalist-config.json -r -- build -c Release
 ```
 
 ## 📄 Output Files
