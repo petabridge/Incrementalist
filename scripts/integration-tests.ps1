@@ -189,9 +189,11 @@ function Test-GlobTargeting {
 
         # Verification logic
         $actualProjects = @(Get-Content $targetGlobOutput -ErrorAction SilentlyContinue) # Ensure it's always an array
-        # Normalize paths to handle potential differences (e.g., \ vs /)
-        $expectedProjectRelative = "src/Incrementalist/Incrementalist.csproj"
-        $expectedProjectFullPath = (Resolve-Path (Join-Path $PSScriptRoot ".." $expectedProjectRelative)).Path
+        
+        # Construct the expected path more explicitly
+        $parentDir = Split-Path -Path $PSScriptRoot -Parent
+        $expectedProjectFullPath = Join-Path -Path $parentDir -ChildPath "src\Incrementalist\Incrementalist.csproj" # Use Windows-style separator here for Join-Path robustness
+        $expectedProjectFullPath = (Resolve-Path -Path $expectedProjectFullPath -ErrorAction Stop).Path # Resolve the final path
         
         # Check if the file contains exactly one line matching the expected project string, ignoring whitespace
         if (($actualProjects | Measure-Object).Count -ne 1 -or `

@@ -273,9 +273,12 @@ namespace Incrementalist.Cmd
                 
                 // Need to process our globs
                 var filteredProjects = GlobFilter.FilterProjects(projectsToRebuild, skipGlobs, targetGlobs);
-                
-                logger.LogInformation("Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
-                    filteredProjects.Count, filteredProjects.Count);
+
+                if (filteredProjects.Count != projectsToRebuild.Count)
+                {
+                    logger.LogInformation("Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
+                        projectsToRebuild.Count, filteredProjects.Count);
+                }
 
                 var affectedFilesStr = string.Join(Environment.NewLine, filteredProjects);
 
