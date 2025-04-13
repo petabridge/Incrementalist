@@ -265,9 +265,6 @@ function Run-Incrementalist {
                 Write-Host "Error cleaning up process resources: $_" -ForegroundColor Yellow
             }
         }
-        
-        # Small delay to ensure file handles are released
-        Start-Sleep -Milliseconds 500
     }
 }
 
