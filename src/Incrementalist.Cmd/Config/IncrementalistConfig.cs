@@ -92,6 +92,12 @@ namespace Incrementalist.Cmd.Config
         /// </summary>
         [JsonPropertyName("noCache")]
         public bool? NoCache { get; set; }
+        
+        [JsonPropertyName("skip")]
+        public string[]? SkipGlob { get; set; }
+
+        [JsonPropertyName("target")]
+        public string[]? TargetGlob { get; set; }
 
         /// <summary>
         /// Tries to load the Incrementalist configuration from the specified file path.

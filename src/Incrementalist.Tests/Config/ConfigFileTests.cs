@@ -6,9 +6,13 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Incrementalist.Cmd;
+using Incrementalist.Cmd.Commands;
 using Incrementalist.Cmd.Config;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Incrementalist.Tests.Config
@@ -144,6 +148,45 @@ namespace Incrementalist.Tests.Config
             Assert.False(options.RunInParallel);
             Assert.False(options.FailOnNoProjects);
             Assert.False(options.NoCache);
+        }
+        
+        [Fact]
+        public async Task CreateConfigFile_WithGlobs_RoundTripSerialization()
+        {
+            // Arrange
+            var configPath = Path.GetTempFileName();
+            var skipGlobs = new[] { "**/obj/**", "**/bin/**" };
+            var targetGlobs = new[] { "src/**/*.csproj", "tests/**/*.csproj" };
+            
+            var options = new SlnOptions
+            {
+                CreateConfig = true,
+                ConfigFile = configPath, // Specify path for CreateConfigFileTask
+                SkipGlobs = skipGlobs,
+                TargetGlobs = targetGlobs
+            };
+            
+            var createConfigTask = new CreateConfigFileTask(options, NullLogger.Instance);
+
+            try
+            {
+                // Act
+                var exitCode = await createConfigTask.Run();
+                Assert.Equal(0, exitCode);
+
+                // Assert - load the config back and verify globs
+                Assert.True(IncrementalistConfig.TryLoad(configPath, out var loadedConfig));
+                Assert.NotNull(loadedConfig);
+                
+                Assert.Equivalent(skipGlobs, loadedConfig.SkipGlob);
+                Assert.Equivalent(targetGlobs, loadedConfig.TargetGlob);
+            }
+            finally
+            {
+                // Clean up
+                if(File.Exists(configPath))
+                    File.Delete(configPath);
+            }
         }
     }
 } 
