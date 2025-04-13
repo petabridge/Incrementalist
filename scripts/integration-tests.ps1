@@ -1,7 +1,11 @@
 [CmdletBinding()]
 param(
     [ValidateSet("Release", "Debug")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [Parameter()]
+    [ValidateSet("Project", "Tool")]
+    [string]$ExecutionMode = "Project"
 )
 
 # Track overall success/failure and test counts
@@ -11,12 +15,84 @@ $script:passedTests = 0
 $script:failedTests = 0
 $script:expectedFailures = 0
 
+
+# Global variables for tool installation if needed
+$script:toolPath = $null
+$script:toolInstalled = $false
+
 function Initialize-TestEnvironment {
     $testResultsDir = Join-Path (Get-Location) "TestResults"
     if (-not (Test-Path $testResultsDir)) {
         New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
     return $testResultsDir
+}
+
+# Helper function to install Incrementalist as a tool
+function Install-IncrementalistTool {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ProjectPath,
+        
+        [Parameter(Mandatory=$true)]
+        [string]$Configuration
+    )
+    
+    # Create a temporary directory for packaging and installation
+    $packageOutput = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
+    
+    try {
+        # Pack the tool
+        Write-Host "Packing Incrementalist tool..."
+        $packResult = Start-Process -FilePath "dotnet" -ArgumentList @("pack", $ProjectPath, "-c", $Configuration, "-o", $packageOutput) -NoNewWindow -PassThru -Wait
+        if ($packResult.ExitCode -ne 0) {
+            throw "Failed to pack Incrementalist with exit code $($packResult.ExitCode)"
+        }
+        
+        # Find the package
+        $nupkg = Get-ChildItem -Path $packageOutput -Filter "*.nupkg" | Select-Object -First 1
+        if (-not $nupkg) {
+            throw "No package was created by dotnet pack"
+        }
+        
+        # Install the tool
+        Write-Host "Installing Incrementalist tool..."
+        $installResult = Start-Process -FilePath "dotnet" -ArgumentList @("tool", "install", "--add-source", $packageOutput, "--tool-path", $packageOutput, "incrementalist") -NoNewWindow -PassThru -Wait
+        if ($installResult.ExitCode -ne 0) {
+            throw "Failed to install Incrementalist tool with exit code $($installResult.ExitCode)"
+        }
+        
+        # Set the global tool path
+        $script:toolPath = Join-Path $packageOutput "incrementalist"
+        if (-not (Test-Path $script:toolPath)) {
+            $script:toolPath = Join-Path $packageOutput "incrementalist.exe" # For Windows
+        }
+        
+        if (-not (Test-Path $script:toolPath)) {
+            throw "Could not find the installed Incrementalist tool executable"
+        }
+        
+        $script:toolInstalled = $true
+        Write-Host "Incrementalist tool installed at: $script:toolPath"
+    }
+    catch {
+        Write-Host "Error installing Incrementalist tool: $_" -ForegroundColor Red
+        # Clean up
+        if (Test-Path $packageOutput) {
+            Remove-Item -Path $packageOutput -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        throw
+    }
+}
+
+# Clean up resources when the script exits
+trap {
+    # Clean up the tool installation if it exists
+    if ($script:toolPath -and (Test-Path (Split-Path $script:toolPath -Parent))) {
+        Remove-Item -Path (Split-Path $script:toolPath -Parent) -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    exit
 }
 
 # Abstracts how we invoke the Incrementalist executable
@@ -29,32 +105,67 @@ function Run-Incrementalist {
         [Parameter(Mandatory=$false)]
         [string]$Configuration = "Release",
 
+        [Parameter(Mandatory=$false)]
+        [string]$Mode = $ExecutionMode,  # Use the global parameter by default
+
         [Parameter(Mandatory=$true)]
-        [string[]]$IncrementalistArgs
+        [string[]]$IncrementalistArgs       
     )
 
-    # Run using dotnet run --project approach
-    $cmd = "dotnet"
-    $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
-    $argList += $IncrementalistArgs
+    if($Mode -eq "Project"){
+         # Run using dotnet run --project approach
+        $cmd = "dotnet"
+        $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
+        $argList += $IncrementalistArgs
 
-    # Add delimiter and dotnet args if provided
-    if ($DotNetArgs.Count -gt 0) {
-        $argList += "--"
-        $argList += $DotNetArgs
+        # Add delimiter and dotnet args if provided
+        if ($DotNetArgs.Count -gt 0) {
+            $argList += "--"
+            $argList += $DotNetArgs
+        }
+
+        # Execute the command
+        $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
+        $exitCode = $process.ExitCode
+        
+        # Explicitly dispose the process object
+        $process.Dispose()
+        
+        # Small delay to ensure file handles are released
+        Start-Sleep -Milliseconds 500
+        
+        return $exitCode
     }
+    elseif ($Mode -eq "Tool") {
+        # Install the tool if not already installed
+        if (-not $script:toolInstalled) {
+            Install-IncrementalistTool -ProjectPath $ProjectPath -Configuration $Configuration
+        }
+        
+        # Run using the installed tool
+        $argList = $IncrementalistArgs
+        
+        # Add delimiter and dotnet args if provided
+        if ($DotNetArgs.Count -gt 0) {
+            $argList += "--"
+            $argList += $DotNetArgs
+        }
+        
+        # Execute the command
+        $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru -Wait
 
-    # Execute the command
-    $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
-    $exitCode = $process.ExitCode
-    
-    # Explicitly dispose the process object
-    $process.Dispose()
-    
-    # Small delay to ensure file handles are released
-    Start-Sleep -Milliseconds 500
-    
-    return $exitCode
+        # Explicitly dispose the process object
+        $process.Dispose()
+        
+        # Small delay to ensure file handles are released
+        Start-Sleep -Milliseconds 500
+
+        return $process.ExitCode
+    }
+    else {
+        throw "Unsupported execution mode: $Mode"
+    }
+   
 }
 
 function Remove-IncrementalistCache {
@@ -378,7 +489,7 @@ function Test-GlobSkipping {
 }
 
 # Main execution
-Write-Host "Running Incrementalist integration tests..." -ForegroundColor Cyan
+Write-Host "Running Incrementalist integration tests in $ExecutionMode mode..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
 
 $incrementalistProjects = Get-ChildItem -Path "src" -Filter "Incrementalist.Cmd.csproj" -Recurse
