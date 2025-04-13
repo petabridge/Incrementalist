@@ -192,12 +192,6 @@ function Run-Incrementalist {
             $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
             $argList += $IncrementalistArgs
 
-            # Add delimiter and dotnet args if provided
-            if ($DotNetArgs.Count -gt 0) {
-                $argList += "--"
-                $argList += $DotNetArgs
-            }
-
             # Execute the command
             $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
             
@@ -220,12 +214,6 @@ function Run-Incrementalist {
             
             # Run using the installed tool
             $argList = $IncrementalistArgs
-            
-            # Add delimiter and dotnet args if provided
-            if ($DotNetArgs.Count -gt 0) {
-                $argList += "--"
-                $argList += $DotNetArgs
-            }
             
             # Execute the command
             $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru -Wait

@@ -3,24 +3,24 @@
   "SolutionPath": "Incrementalist.sln",
   "Checksum": "OcSCcm0WTBiFzepjWnB4NPN7owAP4tabbID7qr6e5ng=",
   "Projects": {
-    "89c25c69-7fe6-47d5-b5d0-b86435c88f05": {
-      "Id": "89c25c69-7fe6-47d5-b5d0-b86435c88f05",
-      "Path": "src\\Incrementalist.Cmd\\Incrementalist.Cmd.csproj",
-      "Dependencies": [
-        "8b10927b-57a5-41c0-a7d1-639c2766eba3"
-      ]
-    },
-    "8b10927b-57a5-41c0-a7d1-639c2766eba3": {
-      "Id": "8b10927b-57a5-41c0-a7d1-639c2766eba3",
+    "c4f73520-4477-4893-a230-4711a818c210": {
+      "Id": "c4f73520-4477-4893-a230-4711a818c210",
       "Path": "src\\Incrementalist\\Incrementalist.csproj",
       "Dependencies": []
     },
-    "88cf6349-2b46-4ebe-b025-81fda84dc814": {
-      "Id": "88cf6349-2b46-4ebe-b025-81fda84dc814",
+    "17829299-a186-4828-84b5-3bddc3f0c398": {
+      "Id": "17829299-a186-4828-84b5-3bddc3f0c398",
+      "Path": "src\\Incrementalist.Cmd\\Incrementalist.Cmd.csproj",
+      "Dependencies": [
+        "c4f73520-4477-4893-a230-4711a818c210"
+      ]
+    },
+    "f46b23e7-71a4-4fae-90e0-9e90b2ee6177": {
+      "Id": "f46b23e7-71a4-4fae-90e0-9e90b2ee6177",
       "Path": "src\\Incrementalist.Tests\\Incrementalist.Tests.csproj",
       "Dependencies": [
-        "89c25c69-7fe6-47d5-b5d0-b86435c88f05",
-        "8b10927b-57a5-41c0-a7d1-639c2766eba3"
+        "c4f73520-4477-4893-a230-4711a818c210",
+        "17829299-a186-4828-84b5-3bddc3f0c398"
       ]
     }
   }
