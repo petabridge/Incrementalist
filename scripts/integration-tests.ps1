@@ -19,6 +19,36 @@ function Initialize-TestEnvironment {
     return $testResultsDir
 }
 
+# Abstracts how we invoke the Incrementalist executable
+function Run-Incrementalist {
+    param(
+        [Parameter(Mandatory=$false)]
+        [string]$ProjectPath,
+
+        [ValidateSet("Release", "Debug")]
+        [Parameter(Mandatory=$false)]
+        [string]$Configuration = "Release",
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$IncrementalistArgs
+    )
+
+    # Run using dotnet run --project approach
+    $cmd = "dotnet"
+    $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
+    $argList += $IncrementalistArgs
+
+    # Add delimiter and dotnet args if provided
+    if ($DotNetArgs.Count -gt 0) {
+        $argList += "--"
+        $argList += $DotNetArgs
+    }
+
+    # Execute the command
+    $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
+    return $process.ExitCode
+}
+
 function Remove-IncrementalistCache {
     param(
         [Parameter(Mandatory=$true)]
@@ -91,7 +121,7 @@ function Test-FoldersOnly {
     
     $folderTestOutput = Join-Path $TestResultsDir "incrementalist-affected-folders.txt"
     Invoke-IncrementalistTest -TestName "Folders-only check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -l --no-cache -f $folderTestOutput
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-l", "--no-cache", "-f" , $folderTestOutput)
     }
 }
 
