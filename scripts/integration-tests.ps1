@@ -216,17 +216,33 @@ function Test-GlobTargeting {
             return # Skip the rest of the test if no changes detected
         }
 
+        # Construct the expected path more explicitly
+        $parentDir = Split-Path -Path $PSScriptRoot -Parent
+        $expectedProjectPath = Join-Path -Path $parentDir -ChildPath "src\Incrementalist\Incrementalist.csproj"
+        $expectedProjectFullPath = (Resolve-Path -Path $expectedProjectPath -ErrorAction Stop).Path
+        
+        # Check if the expected project is in the baseline changes
+        $expectedProjectInChanges = $false
+        foreach ($project in $baselineProjects) {
+            if ($project.Trim() -eq $expectedProjectFullPath.Trim()) {
+                $expectedProjectInChanges = $true
+                break
+            }
+        }
+        
+        if (-not $expectedProjectInChanges) {
+            Write-Host "Expected project ($expectedProjectFullPath) not found in detected changes. Skipping verification." -ForegroundColor Yellow
+            Write-Host "Detected changes:" -ForegroundColor Yellow
+            $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
+            return # Skip the rest of the test if the expected project isn't in the changes
+        }
+
         # Run Incrementalist with target glob
         dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
         if ($LASTEXITCODE -ne 0) { throw "Incrementalist command failed with exit code $LASTEXITCODE" }
 
         # Verification logic
         $actualProjects = @(Get-Content $targetGlobOutput -ErrorAction SilentlyContinue) # Ensure it's always an array
-        
-        # Construct the expected path more explicitly
-        $parentDir = Split-Path -Path $PSScriptRoot -Parent
-        $expectedProjectFullPath = Join-Path -Path $parentDir -ChildPath "src\Incrementalist\Incrementalist.csproj" # Use Windows-style separator here for Join-Path robustness
-        $expectedProjectFullPath = (Resolve-Path -Path $expectedProjectFullPath -ErrorAction Stop).Path # Resolve the final path
         
         # Check if the file contains exactly one line matching the expected project string, ignoring whitespace
         if (($actualProjects | Measure-Object).Count -ne 1 -or `
@@ -255,6 +271,29 @@ function Test-GlobSkipping {
         # Check if any changes were detected
         if ($baselineProjects.Count -eq 0) {
             Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
+            return # Skip the rest of the test
+        }
+        
+        # Check if any Test projects are in the baseline changes
+        $testProjectsInChanges = $baselineProjects | Where-Object { $_ -like "*.Tests.csproj" }
+        $hasTestProjects = ($testProjectsInChanges | Measure-Object).Count -gt 0
+        
+        # Detect non-test projects
+        $nonTestProjects = $baselineProjects | Where-Object { $_ -notlike "*.Tests.csproj" }
+        $hasNonTestProjects = ($nonTestProjects | Measure-Object).Count -gt 0
+        
+        # If there are no test projects or no non-test projects, we can't properly verify skipping behavior
+        if (-not $hasTestProjects) {
+            Write-Host "No test projects (*.Tests.csproj) found in detected changes. Skipping verification as the skip-glob pattern wouldn't affect results." -ForegroundColor Yellow
+            Write-Host "Detected changes:" -ForegroundColor Yellow
+            $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
+            return # Skip the rest of the test
+        }
+        
+        if (-not $hasNonTestProjects) {
+            Write-Host "Only test projects found in detected changes. Skipping verification as there would be no projects after skipping." -ForegroundColor Yellow
+            Write-Host "Detected changes:" -ForegroundColor Yellow
+            $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
             return # Skip the rest of the test
         }
 
