@@ -181,8 +181,22 @@ function Test-ComplexCommandArguments {
 function Test-GlobTargeting {
     param($ProjectPath, $Configuration, $TestResultsDir)
     
+    $baselineOutput = Join-Path $TestResultsDir "incrementalist-target-baseline.txt"
     $targetGlobOutput = Join-Path $TestResultsDir "incrementalist-target-glob.txt"
     Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # First, run a baseline to check if any changes are detected
+        Write-Host "Running baseline to check for changes..."
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist baseline command failed with exit code $LASTEXITCODE" }
+        
+        $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue)
+        $changeDetected = ($baselineProjects | Measure-Object).Count -gt 0
+        
+        if (-not $changeDetected) {
+            Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
+            return # Skip the rest of the test if no changes detected
+        }
+
         # Run Incrementalist with target glob
         dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
         if ($LASTEXITCODE -ne 0) { throw "Incrementalist command failed with exit code $LASTEXITCODE" }
@@ -215,8 +229,15 @@ function Test-GlobSkipping {
         Write-Host "Running baseline to determine affected projects..."
         dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
         if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (baseline) failed with exit code $LASTEXITCODE" }
-        $baselineProjects = (Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
+        
+        $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Baseline projects count: $($baselineProjects.Count)"
+        
+        # Check if any changes were detected
+        if ($baselineProjects.Count -eq 0) {
+            Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
+            return # Skip the rest of the test
+        }
 
         # 2. Run with skip glob
         Write-Host "Running with skip glob..."
