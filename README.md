@@ -50,6 +50,9 @@ incrementalist -b dev -f ./affected-projects.txt
 
 # Run tests for affected projects
 incrementalist -b dev -r -- test -c Release --no-build --nologo
+
+# Run tests for affected projects those matching a glob
+incrementalist -b dev -r --target-glob "src/*.Tests.csproj" -- test -c Release
 ```
 
 ### Running as a Local Tool
@@ -120,6 +123,12 @@ incrementalist -b dev -r -- build -c Release --nologo
 # Run tests for affected projects
 incrementalist -b dev -r -- test -c Release --no-build --nologo
 
+# Only include test projects in the final list
+incrementalist -b dev --target-glob "**/*.Tests.csproj" -f ./affected-test-projects.txt
+
+# Exclude test projects from the final list
+incrementalist -b dev --skip-glob "**/*.Tests.csproj" -f ./affected-non-test-projects.txt
+
 # Run tests with code coverage
 incrementalist -b dev -r -- test -c Release --no-build --nologo /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/
 
@@ -178,6 +187,17 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
   -c, --config          Optional. Path to the configuration file. Defaults to 
                         .incrementalist/incrementalist.json in the current directory.
 
+  --skip-glob           Optional. Glob pattern to exclude projects from the final
+                        list. Applied after analyzing dependencies. Can be used
+                        multiple times.
+                        
+  --target-glob         Optional. Glob pattern to include only matching projects in
+                        the final list. Applied after analyzing dependencies. Can
+                        be used multiple times.
+
+  --create-config       Optional. Create a new configuration file with current 
+                        options. See docs/config.md for details.
+
   --help                Display help screen.
 
   --version             Display version information.
@@ -199,6 +219,21 @@ incrementalist -b dev -r --parallel -- build -c Release --nologo
 
 # Stop on first error
 incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
+```
+
+## 🌐 Filtering Projects with Glob Patterns
+
+After Incrementalist determines the initial set of affected projects based on Git changes and project dependencies, you can further refine this list using glob patterns.
+
+- **`--target-glob "<pattern>"`**: Only includes projects whose paths match the specified glob pattern(s). If multiple patterns are provided, a project matching *any* of them will be included. This filter is applied first.
+- **`--skip-glob "<pattern>"`**: Excludes projects whose paths match the specified glob pattern(s) from the list remaining after any `--target-glob` filters have been applied. If multiple patterns are provided, a project matching *any* of them will be excluded.
+
+Both options can be specified multiple times on the command line.
+
+**Example:** Find all affected projects, but only run the build command on non-test projects within the `src` directory.
+
+```shell
+incrementalist -b dev --target-glob "src/**/*.csproj" --skip-glob "**/*.Tests.csproj" -r -- build -c Release --nologo
 ```
 
 ## 📚 Documentation
