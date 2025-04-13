@@ -1,33 +1,49 @@
 <Project>
-    <PropertyGroup>
-        <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
-        <Authors>Petabridge</Authors>
-        <VersionPrefix>1.0.0-beta2</VersionPrefix>
-        <PackageReleaseNotes>* Added graph caching to prevent full Roslyn analysis every time: https://github.com/petabridge/Incrementalist/blob/dev/docs/caching.md
-            * Added support for detecting unstaged file changes [#331](https://github.com/petabridge/Incrementalist/pull/331)
-            * Improved logging system [#336](https://github.com/petabridge/Incrementalist/pull/336)
-            * Fixed NuGet metadata [#337](https://github.com/petabridge/Incrementalist/pull/337)
-        </PackageReleaseNotes>
-        <tags>build, msbuild, incremental build, roslyn, git</tags>
-        <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
-        <PackageProjectUrl>
+  <PropertyGroup>
+    <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
+    <Authors>Petabridge</Authors>
+    <VersionPrefix>1.0.0-rc1</VersionPrefix>
+    <PackageReleaseNotes>Added major new features to enhance usability and extend capabilities:
+
+* **File-based Configuration**: Added support for `.incrementalist.yml` configuration files. Store common settings and project filters in a single file rather than passing command-line arguments. Example: `incrementalist -c .incrementalist.yml` loads all settings from the file.
+
+* **File Globbing Support**: Added file globbing pattern support for command execution. Target files using glob patterns for selective builds or testing. Example: `incrementalist -b dev -r --glob "**/*.Tests.csproj" -- test` runs tests only on affected test projects.
+
+* **`.slnx` Support**: Added support for [modern Visual Studio solution files](https://devblogs.microsoft.com/dotnet/introducing-slnx-support-dotnet-cli/) (`.slnx`). Incrementalist now properly processes these files alongside standard `.sln` files, enabling better integration with Visual Studio's "Open Folder" feature.
+
+All changes:
+
+* [Enable `Nullability` and `TreatWarningsAsErrors`](https://github.com/petabridge/Incrementalist/pull/372)
+* [Added support for file globbing commands](https://github.com/petabridge/Incrementalist/pull/371)
+* [Added `.slnx` support](https://github.com/petabridge/Incrementalist/pull/370)
+* [Solution cleanup](https://github.com/petabridge/Incrementalist/pull/369)
+* [Disable caching](https://github.com/petabridge/Incrementalist/pull/367)
+* [File-based configuration format](https://github.com/petabridge/Incrementalist/pull/357)
+* [Bump Microsoft.Extensions.Logging.Console from 9.0.3 to 9.0.4](https://github.com/petabridge/Incrementalist/pull/364)
+* [Bump Microsoft.Build.Locator from 1.7.8 to 1.9.1](https://github.com/petabridge/Incrementalist/pull/362)
+* [Bump Microsoft.Extensions.Logging from 9.0.2 to 9.0.3](https://github.com/petabridge/Incrementalist/pull/361)
+* [Bump Microsoft.Extensions.Logging.Console from 9.0.2 to 9.0.3](https://github.com/petabridge/Incrementalist/pull/360)
+* [Bump NuGet.ProjectModel from 6.13.1 to 6.13.2](https://github.com/petabridge/Incrementalist/pull/359)</PackageReleaseNotes>
+    <tags>build, msbuild, incremental build, roslyn, git</tags>
+    <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
+    <PackageProjectUrl>
             https://github.com/petabridge/Incrementalist
         </PackageProjectUrl>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <NoWarn>$(NoWarn);CS1591</NoWarn>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
-    <PropertyGroup>
-        <NBenchVersion>1.2.2</NBenchVersion>
-        <XunitVersion>2.9.3</XunitVersion>
-        <TestSdkVersion>17.13.0</TestSdkVersion>
-        <RoslynVersion>4.13.0</RoslynVersion>
-        <NugetVersion>6.13.2</NugetVersion>
-    </PropertyGroup>
-    <ItemGroup>
-        <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\"/>
-        <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\"/>
-    </ItemGroup>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NBenchVersion>1.2.2</NBenchVersion>
+    <XunitVersion>2.9.3</XunitVersion>
+    <TestSdkVersion>17.13.0</TestSdkVersion>
+    <RoslynVersion>4.13.0</RoslynVersion>
+    <NugetVersion>6.13.2</NugetVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\" />
+  </ItemGroup>
 </Project>
