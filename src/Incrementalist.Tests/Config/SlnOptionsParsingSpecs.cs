@@ -13,6 +13,7 @@ public class SlnOptionsParsingSpecs
     /// </summary>
     [Theory]
     [InlineData("--config -r -- build -c Release")]
+    [InlineData("-c -r -- build -c Release")]
     public void ShouldSeparateDotnetArgsFromSlnOptions(string cliArg)
     {
         var args = CommandLineParser
