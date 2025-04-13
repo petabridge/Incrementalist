@@ -57,16 +57,19 @@ function Install-IncrementalistTool {
     $fullVersion = "$($baseVersion)-$($suffix)"
     Write-Host "Using Version: $fullVersion (Base: $baseVersion, Suffix: $suffix)" -ForegroundColor Yellow
 
-    # Create temporary directories for packaging and installation
+    # Create temporary directory for packaging
     $packageOutput = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N"))
-    $installPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N"))
+    # $installPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N")) # No longer needed
     New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
-    New-Item -ItemType Directory -Path $installPath -Force | Out-Null
+    # New-Item -ItemType Directory -Path $installPath -Force | Out-Null # No longer needed
     
+    # Define workspace root
+    $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+
     # Ensure packageOutput is cleaned up if the script is terminated prematurely
     $script:cleanupPaths = @{
         PackageOutput = $packageOutput
-        InstallPath = $null # InstallPath is handled by $script:toolPath cleanup
+        # InstallPath = $null # No longer needed
     }
     
     try {
@@ -89,31 +92,32 @@ function Install-IncrementalistTool {
         $packageName = "Incrementalist.Cmd" # Correct package ID
         $packageVersion = $fullVersion 
 
-        # Install the tool into the separate install path, specifying the exact version
-        Write-Host "Installing Incrementalist tool..."
-        $installArgs = @("tool", "install", "--add-source", $packageOutput, "--tool-path", $installPath, $packageName, "--version", $packageVersion)
-        Write-Host "Executing: dotnet $($installArgs -join ' ')"
-        Write-Host "Attempting to start dotnet tool install process..."
-        $installResult = Start-Process -FilePath "dotnet" -ArgumentList $installArgs -NoNewWindow -PassThru -Wait
+        # Ensure tool manifest exists in workspace root
+        Write-Host "Ensuring tool manifest exists at $workspaceRoot..."
+        $manifestResult = Start-Process -FilePath "dotnet" -ArgumentList @("new", "tool-manifest", "--force") -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait
+        if ($manifestResult.ExitCode -ne 0) {
+            throw "Failed to create/update tool manifest with exit code $($manifestResult.ExitCode)"
+        }
+
+        # Install the tool to the manifest, specifying the exact version
+        Write-Host "Installing Incrementalist tool to manifest..."
+        $installArgs = @("tool", "install", "--add-source", $packageOutput, $packageName, "--version", $packageVersion)
+        Write-Host "Executing: dotnet $($installArgs -join ' ') in $workspaceRoot"
+        $installResult = Start-Process -FilePath "dotnet" -ArgumentList $installArgs -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait
         if ($installResult.ExitCode -ne 0) {
-            throw "Failed to install Incrementalist tool with exit code $($installResult.ExitCode)"
+            # Attempt uninstall just in case it was partially installed
+            try {
+                Write-Host "Install failed, attempting cleanup uninstall..." -ForegroundColor Yellow
+                Start-Process -FilePath "dotnet" -ArgumentList @("tool", "uninstall", $packageName) -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait | Out-Null
+            }
+            catch {
+                Write-Host "Cleanup uninstall failed: $_" -ForegroundColor Yellow
+            }
+            throw "Failed to install Incrementalist tool to manifest with exit code $($installResult.ExitCode)"
         }
-        
-        # Set the global tool path using the install path
-        $script:toolPath = Join-Path $installPath "incrementalist"
-        if (-not (Test-Path $script:toolPath)) {
-            $script:toolPath = Join-Path $installPath "incrementalist.exe" # For Windows
-        }
-        
-        if (-not (Test-Path $script:toolPath)) {
-            throw "Could not find the installed Incrementalist tool executable in $installPath"
-        }
-        
-        # Update cleanup paths - InstallPath will now be cleaned via toolPath
-        $script:cleanupPaths.InstallPath = $installPath 
         
         $script:toolInstalled = $true
-        Write-Host "Incrementalist tool installed at: $script:toolPath"
+        Write-Host "Incrementalist tool installed to manifest."
     }
     catch {
         Write-Host "Error installing Incrementalist tool: $_" -ForegroundColor Red
@@ -122,10 +126,6 @@ function Install-IncrementalistTool {
             Write-Host "Cleaning up package output: $packageOutput"
             Remove-Item -Path $packageOutput -Recurse -Force -ErrorAction SilentlyContinue
         }
-        if (Test-Path $installPath) {
-            Write-Host "Cleaning up install path: $installPath"
-            Remove-Item -Path $installPath -Recurse -Force -ErrorAction SilentlyContinue
-        }
         throw
     }
     # No finally block needed here as catch handles cleanup on error, 
@@ -133,31 +133,44 @@ function Install-IncrementalistTool {
     # doesn't need explicit cleanup on success as it's not used further.
 }
 
+function Do-CleanUp {
+    # Define workspace root for cleanup
+    $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+
+    # Uninstall the tool if it was installed via manifest
+    if ($script:toolInstalled) {
+        try {
+            Write-Host "Attempting tool uninstall from manifest..."
+            $uninstallResult = Start-Process -FilePath "dotnet" -ArgumentList @("tool", "uninstall", "Incrementalist.Cmd") -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait
+            if ($uninstallResult.ExitCode -ne 0) {
+                Write-Host "Tool uninstall failed with exit code $($uninstallResult.ExitCode)" -ForegroundColor Yellow
+            }
+            else {
+                Write-Host "Tool uninstalled successfully."
+            }
+        }
+        catch {
+            Write-Host "Error during tool uninstall: $_" -ForegroundColor Yellow
+        }
+    }
+
+    # Remove the .config directory containing the manifest
+    $configDir = Join-Path $workspaceRoot ".config"
+    if (Test-Path $configDir) {
+        Write-Host "Removing tool manifest directory: $configDir"
+        Remove-Item -Path $configDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+   
+}
+
 # Clean up resources when the script exits
 trap {
     Write-Host "Executing trap handler for script cleanup..."
     
-    # Clean up the tool installation directory if it exists and path was set
-    if ($script:toolPath -and (Test-Path $script:toolPath)) {
-        $installDir = Split-Path $script:toolPath -Parent
-        if (Test-Path $installDir) {
-            Write-Host "Cleaning up tool install directory: $installDir"
-            Remove-Item -Path $installDir -Recurse -Force -ErrorAction SilentlyContinue
-        }
-    } elseif ($script:cleanupPaths -ne $null -and $script:cleanupPaths.InstallPath -ne $null -and (Test-Path $script:cleanupPaths.InstallPath)) {
-        # Fallback: clean up installPath if toolPath wasn't set but installPath was created
-        Write-Host "Cleaning up install path (fallback): $($script:cleanupPaths.InstallPath)"
-        Remove-Item -Path $script:cleanupPaths.InstallPath -Recurse -Force -ErrorAction SilentlyContinue
-    }
+    Do-CleanUp
 
-    # Clean up the package output directory if it was created
-    if ($script:cleanupPaths -ne $null -and $script:cleanupPaths.PackageOutput -ne $null -and (Test-Path $script:cleanupPaths.PackageOutput)) {
-        Write-Host "Cleaning up package output directory: $($script:cleanupPaths.PackageOutput)"
-        Remove-Item -Path $script:cleanupPaths.PackageOutput -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    
     Write-Host "Trap handler finished."
-    # Allow the original error to propagate if there was one
+     # Allow the original error to propagate if there was one
     exit $LASTEXITCODE 
 }
 
@@ -212,12 +225,11 @@ function Run-Incrementalist {
                 Install-IncrementalistTool -ProjectPath $ProjectPath -Configuration $Configuration
             }
             
-            # Run using the installed tool
-            $argList = $IncrementalistArgs
-            
-            # Execute the command
-            $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru -Wait
-            
+            $cmd = "dotnet"
+            $argList = @("tool", "run", "incrementalist") + $IncrementalistArgs
+            Write-Host "Executing: $($cmd) $($argList -join ' ')" -ForegroundColor Magenta
+            $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
+
             # Wait with timeout
             $completed = $process.WaitForExit($TimeoutSeconds * 1000)
             if (-not $completed) {
@@ -621,4 +633,5 @@ if ($script:hasUnexpectedFailures) {
     exit 1
 }
 Write-Host "`n[PASS] All integration tests completed with expected results." -ForegroundColor Green
+Do-CleanUp
 exit 0 
