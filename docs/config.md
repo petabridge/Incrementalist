@@ -80,4 +80,49 @@ dotnet run -- --config my-custom-config.json --run -- build
 dotnet run -- --branch dev --verbose false --run -- build
 ```
 
-This will use the `dev` branch and disable verbose logging, overriding any values in the configuration file. 
+This will use the `dev` branch and disable verbose logging, overriding any values in the configuration file.
+
+## Creating Configuration Files
+
+Incrementalist provides a convenient way to generate configuration files based on your current command-line options using the `--create-config` flag.
+
+### Using the Default Path
+
+By default, configuration files are created in the `.incrementalist` directory within your working directory:
+
+```bash
+incrementalist -b master --verbose --parallel --create-config
+```
+
+This will create a file at `.incrementalist/incrementalist.json` containing all the specified options.
+
+### Using a Custom File Name
+
+You can specify a custom file name and location using the `-c` or `--config` option:
+
+```bash
+incrementalist -b master --verbose --parallel --create-config -c ./my-config.json
+```
+
+This will create the configuration file at `./my-config.json` instead of the default location.
+
+### Workflow Example
+
+A typical workflow might be:
+
+1. Create a configuration file with your commonly used settings:
+   ```bash
+   incrementalist -b main --verbose --parallel --create-config
+   ```
+
+2. Use the configuration file for subsequent runs:
+   ```bash
+   incrementalist -r -- build -c Release
+   ```
+
+3. Override specific settings when needed:
+   ```bash
+   incrementalist -b feature-branch -r -- test
+   ```
+
+This approach allows you to maintain consistent settings while still having the flexibility to override them when necessary. 
