@@ -177,6 +177,25 @@ function Test-ComplexCommandArguments {
     }
 }
 
+# Reproduction for https://github.com/petabridge/Incrementalist/issues/378
+function Test-SimilarDotnetArguments {
+    param($ProjectPath, $Configuration)
+    # Create a test results directory with spaces to test path handling
+    $testResultsDir = Join-Path ([System.IO.Path]::GetTempPath()) "Incrementalist Test Results"
+    if (-not (Test-Path $testResultsDir)) {
+        New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
+    }
+
+    Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c Debug --no-build -- -b dev -c -r --no-cache -- build -c Release
+    }
+
+    # Cleanup
+    if (Test-Path $testResultsDir) {
+        Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # Test targeting with glob patterns
 function Test-GlobTargeting {
     param($ProjectPath, $Configuration, $TestResultsDir)
@@ -290,6 +309,7 @@ foreach ($project in $incrementalistProjects) {
     Test-ParallelExecution -ProjectPath $project.FullName -Configuration $Configuration
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
     Test-ComplexCommandArguments -ProjectPath $project.FullName -Configuration $Configuration
+    Test-SimilarDotnetArguments -ProjectPath $project.FullName -Configuration $Configuration
     
     # Run cache-specific tests
     Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
