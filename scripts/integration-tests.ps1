@@ -1,11 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet("Release", "Debug")]
-    [string]$Configuration = "Release",
-    
-    [Parameter()]
-    [ValidateSet("Project", "Tool")]
-    [string]$ExecutionMode = "Project"
+    [string]$Configuration = "Release"
 )
 
 # Track overall success/failure and test counts
@@ -15,143 +11,12 @@ $script:passedTests = 0
 $script:failedTests = 0
 $script:expectedFailures = 0
 
-# Global variables for tool installation if needed
-$script:toolPath = $null
-$script:toolInstalled = $false
-
 function Initialize-TestEnvironment {
     $testResultsDir = Join-Path (Get-Location) "TestResults"
     if (-not (Test-Path $testResultsDir)) {
         New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
     return $testResultsDir
-}
-
-# Abstract over different ways to call Incrementalist
-function Invoke-Incrementalist {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$ProjectPath,
-        
-        [Parameter(Mandatory=$true)]
-        [string]$Configuration,
-        
-        [Parameter(Mandatory=$true)]
-        [string[]]$IncrementalistArgs,
-        
-        [Parameter(Mandatory=$false)]
-        [string[]]$DotNetArgs = @(),
-        
-        [Parameter(Mandatory=$false)]
-        [string]$Mode = $ExecutionMode  # Use the global parameter by default
-    )
-    
-    # Construct the command based on the execution mode
-    if ($Mode -eq "Project") {
-        # Run using dotnet run --project approach
-        $cmd = "dotnet"
-        $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
-        $argList += $IncrementalistArgs
-        
-        # Add delimiter and dotnet args if provided
-        if ($DotNetArgs.Count -gt 0) {
-            $argList += "--"
-            $argList += $DotNetArgs
-        }
-        
-        # Execute the command
-        $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
-        return $process.ExitCode
-    }
-    elseif ($Mode -eq "Tool") {
-        # Install the tool if not already installed
-        if (-not $script:toolInstalled) {
-            Install-IncrementalistTool -ProjectPath $ProjectPath -Configuration $Configuration
-        }
-        
-        # Run using the installed tool
-        $argList = $IncrementalistArgs
-        
-        # Add delimiter and dotnet args if provided
-        if ($DotNetArgs.Count -gt 0) {
-            $argList += "--"
-            $argList += $DotNetArgs
-        }
-        
-        # Execute the command
-        $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru -Wait
-        return $process.ExitCode
-    }
-    else {
-        throw "Unsupported execution mode: $Mode"
-    }
-}
-
-# Helper function to install Incrementalist as a tool
-function Install-IncrementalistTool {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$ProjectPath,
-        
-        [Parameter(Mandatory=$true)]
-        [string]$Configuration
-    )
-    
-    # Create a temporary directory for packaging and installation
-    $packageOutput = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
-    New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
-    
-    try {
-        # Pack the tool
-        Write-Host "Packing Incrementalist tool..."
-        $packResult = Start-Process -FilePath "dotnet" -ArgumentList @("pack", $ProjectPath, "-c", $Configuration, "-o", $packageOutput) -NoNewWindow -PassThru -Wait
-        if ($packResult.ExitCode -ne 0) {
-            throw "Failed to pack Incrementalist with exit code $($packResult.ExitCode)"
-        }
-        
-        # Find the package
-        $nupkg = Get-ChildItem -Path $packageOutput -Filter "*.nupkg" | Select-Object -First 1
-        if (-not $nupkg) {
-            throw "No package was created by dotnet pack"
-        }
-        
-        # Install the tool
-        Write-Host "Installing Incrementalist tool..."
-        $installResult = Start-Process -FilePath "dotnet" -ArgumentList @("tool", "install", "--add-source", $packageOutput, "--tool-path", $packageOutput, "incrementalist") -NoNewWindow -PassThru -Wait
-        if ($installResult.ExitCode -ne 0) {
-            throw "Failed to install Incrementalist tool with exit code $($installResult.ExitCode)"
-        }
-        
-        # Set the global tool path
-        $script:toolPath = Join-Path $packageOutput "incrementalist"
-        if (-not (Test-Path $script:toolPath)) {
-            $script:toolPath = Join-Path $packageOutput "incrementalist.exe" # For Windows
-        }
-        
-        if (-not (Test-Path $script:toolPath)) {
-            throw "Could not find the installed Incrementalist tool executable"
-        }
-        
-        $script:toolInstalled = $true
-        Write-Host "Incrementalist tool installed at: $script:toolPath"
-    }
-    catch {
-        Write-Host "Error installing Incrementalist tool: $_" -ForegroundColor Red
-        # Clean up
-        if (Test-Path $packageOutput) {
-            Remove-Item -Path $packageOutput -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        throw
-    }
-}
-
-# Clean up resources when the script exits
-trap {
-    # Clean up the tool installation if it exists
-    if ($script:toolPath -and (Test-Path (Split-Path $script:toolPath -Parent))) {
-        Remove-Item -Path (Split-Path $script:toolPath -Parent) -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    exit
 }
 
 function Remove-IncrementalistCache {
@@ -226,10 +91,7 @@ function Test-FoldersOnly {
     
     $folderTestOutput = Join-Path $TestResultsDir "incrementalist-affected-folders.txt"
     Invoke-IncrementalistTest -TestName "Folders-only check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        # Use the abstracted function instead of direct dotnet run
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-l", "--no-cache", "-f", $folderTestOutput)
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -l --no-cache -f $folderTestOutput
     }
 }
 
@@ -238,9 +100,7 @@ function Test-SolutionCheck {
     
     $solutionTestOutput = Join-Path $TestResultsDir "incrementalist-affected-files.txt"
     Invoke-IncrementalistTest -TestName "Solution check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $solutionTestOutput)
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $solutionTestOutput
     }
 }
 
@@ -248,10 +108,7 @@ function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-r", "--no-cache") `
-            -DotNetArgs @("build", "-c", "Release", "--nologo")
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- build -c Release --nologo
     }
 }
 
@@ -259,10 +116,7 @@ function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-r", "--parallel", "--no-cache") `
-            -DotNetArgs @("build", "-c", "Release", "--nologo")
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- build -c Release --nologo
     }
 }
 
@@ -270,10 +124,7 @@ function Test-ErrorHandling {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Error handling (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-r", "--fail-on-no-projects", "--no-cache") `
-            -DotNetArgs @("invalid-command")
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --fail-on-no-projects --no-cache -- "invalid-command"
     } -ExpectFailure $true
 }
 
@@ -286,9 +137,7 @@ function Test-CacheCreation {
     $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-creation.txt"
     Invoke-IncrementalistTest -TestName "Cache creation" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # Run without --no-cache to create the cache
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-f", $cacheTestOutput)
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $cacheTestOutput
     }
 }
 
@@ -298,9 +147,7 @@ function Test-CacheReuse {
     $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-reuse.txt"
     Invoke-IncrementalistTest -TestName "Cache reuse" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # Run again without --no-cache to reuse the existing cache
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-f", $cacheTestOutput)
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $cacheTestOutput
     }
 }
 
@@ -314,17 +161,14 @@ function Test-ComplexCommandArguments {
     }
     
     Invoke-IncrementalistTest -TestName "Complex command arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-r", "--no-cache") `
-            -DotNetArgs @("test", 
-                "--logger", "console;verbosity=detailed", 
-                "--collect:XPlat Code Coverage", 
-                "--results-directory:$testResultsDir", 
-                "/p:CollectCoverage=true", 
-                "/p:CoverletOutputFormat=cobertura", 
-                "/p:CoverletOutput=$testResultsDir/coverage.xml", 
-                "--blame-hang-timeout", "5m")
-        return $exitCode
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- test `
+            --logger "console;verbosity=detailed" `
+            --collect:"XPlat Code Coverage" `
+            --results-directory:"$testResultsDir" `
+            /p:CollectCoverage=true `
+            /p:CoverletOutputFormat=cobertura `
+            /p:CoverletOutput="$testResultsDir/coverage.xml" `
+            --blame-hang-timeout 5m
     }
     
     # Cleanup
@@ -336,38 +180,19 @@ function Test-ComplexCommandArguments {
 # Reproduction for https://github.com/petabridge/Incrementalist/issues/378
 function Test-SimilarDotnetArguments {
     param($ProjectPath, $Configuration)
-    
-    Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        # Use the abstracted function with -c for config
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "-c", "-r", "--no-cache") `
-            -DotNetArgs @("build", "-c", "Release")
-        return $exitCode
+    # Create a test results directory with spaces to test path handling
+    $testResultsDir = Join-Path ([System.IO.Path]::GetTempPath()) "Incrementalist Test Results"
+    if (-not (Test-Path $testResultsDir)) {
+        New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
-}
 
-# Test specific issue #378 with --config (empty value) and dotnet -c
-function Test-Issue378ConfigArgConflict {
-    param($ProjectPath, $Configuration)
-    
-    Invoke-IncrementalistTest -TestName "Issue #378 - Config argument conflict" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        # This is the exact reproduction of the issue as reported
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "--config", "-r") `
-            -DotNetArgs @("build", "-c", "Release")
-        return $exitCode
+    Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        dotnet run --project $ProjectPath -c Debug --no-build -- -b dev -c -r --no-cache -- build -c Release
     }
-    
-    # Also test with explicit tool mode to ensure it works there
-    if ($ExecutionMode -ne "Tool") {
-        Invoke-IncrementalistTest -TestName "Issue #378 - Config argument conflict (as tool)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-            # Force tool mode for this test
-            $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-                -IncrementalistArgs @("-b", "dev", "--config", "-r") `
-                -DotNetArgs @("build", "-c", "Release") `
-                -Mode "Tool"
-            return $exitCode
-        }
+
+    # Cleanup
+    if (Test-Path $testResultsDir) {
+        Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -380,9 +205,8 @@ function Test-GlobTargeting {
     Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # First, run a baseline to check if any changes are detected
         Write-Host "Running baseline to check for changes..."
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $baselineOutput)
-        if ($exitCode -ne 0) { throw "Incrementalist baseline command failed with exit code $exitCode" }
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist baseline command failed with exit code $LASTEXITCODE" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue)
         $changeDetected = ($baselineProjects | Measure-Object).Count -gt 0
@@ -414,9 +238,8 @@ function Test-GlobTargeting {
         }
 
         # Run Incrementalist with target glob
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "--target-glob", "**/Incrementalist.csproj", "--no-cache", "-f", $targetGlobOutput)
-        if ($exitCode -ne 0) { throw "Incrementalist command failed with exit code $exitCode" }
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command failed with exit code $LASTEXITCODE" }
 
         # Verification logic
         $actualProjects = @(Get-Content $targetGlobOutput -ErrorAction SilentlyContinue) # Ensure it's always an array
@@ -439,9 +262,8 @@ function Test-GlobSkipping {
     Invoke-IncrementalistTest -TestName "Glob skipping" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # 1. Run without skip to get baseline affected projects
         Write-Host "Running baseline to determine affected projects..."
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $baselineOutput)
-        if ($exitCode -ne 0) { throw "Incrementalist command (baseline) failed with exit code $exitCode" }
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (baseline) failed with exit code $LASTEXITCODE" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Baseline projects count: $($baselineProjects.Count)"
@@ -477,9 +299,8 @@ function Test-GlobSkipping {
 
         # 2. Run with skip glob
         Write-Host "Running with skip glob..."
-        $exitCode = Invoke-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration `
-            -IncrementalistArgs @("-b", "dev", "--skip-glob", "**/*.Tests.csproj", "--no-cache", "-f", $skipGlobOutput)
-        if ($exitCode -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $exitCode" }
+        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --skip-glob "**/*.Tests.csproj" --no-cache -f $skipGlobOutput
+        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $LASTEXITCODE" }
         $skippedProjects = (Get-Content $skipGlobOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Skipped projects count: $($skippedProjects.Count)"
         
@@ -505,7 +326,7 @@ function Test-GlobSkipping {
 }
 
 # Main execution
-Write-Host "Running Incrementalist integration tests in $ExecutionMode mode..." -ForegroundColor Cyan
+Write-Host "Running Incrementalist integration tests..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
 
 $incrementalistProjects = Get-ChildItem -Path "src" -Filter "Incrementalist.Cmd.csproj" -Recurse
@@ -528,7 +349,6 @@ foreach ($project in $incrementalistProjects) {
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
     Test-ComplexCommandArguments -ProjectPath $project.FullName -Configuration $Configuration
     Test-SimilarDotnetArguments -ProjectPath $project.FullName -Configuration $Configuration
-    Test-Issue378ConfigArgConflict -ProjectPath $project.FullName -Configuration $Configuration
     
     # Run cache-specific tests
     Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
