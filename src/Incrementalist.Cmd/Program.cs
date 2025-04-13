@@ -19,7 +19,6 @@ using LibGit2Sharp;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
 
@@ -268,8 +267,20 @@ namespace Incrementalist.Cmd
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
                     return;
                 }
+                
+                var skipGlobs = options.SkipGlobs?.ToArray() ?? [];
+                var targetGlobs = options.TargetGlobs?.ToArray() ?? [];
+                
+                // Need to process our globs
+                var filteredProjects = GlobFilter.FilterProjects(projectsToRebuild, skipGlobs, targetGlobs);
 
-                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
+                if (filteredProjects.Count != projectsToRebuild.Count)
+                {
+                    logger.LogInformation("Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
+                        projectsToRebuild.Count, filteredProjects.Count);
+                }
+
+                var affectedFilesStr = string.Join(Environment.NewLine, filteredProjects);
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
@@ -293,7 +304,7 @@ namespace Incrementalist.Cmd
         {
             if (affectedFilesCount == 0)
             {
-                logger.LogInformation("No changes detected by Incrementalist when analyzing {0}.",
+                logger.LogInformation("No changes detected by Incrementalist when analyzing {FileSysType}.",
                     options.ListFolders ? "repository folders" : "solution");
                 return;
             }
@@ -301,7 +312,7 @@ namespace Incrementalist.Cmd
             // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
-                logger.LogInformation("Detected {0} affected {1} - writing out to {2}", affectedFilesCount,
+                logger.LogInformation("Detected {AffectedFiles} affected {FileSysType} - writing out to {OutputFile}", affectedFilesCount,
                     options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }

@@ -3,13 +3,12 @@
 //      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
-#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Caching;
