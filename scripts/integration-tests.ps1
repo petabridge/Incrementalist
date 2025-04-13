@@ -46,7 +46,15 @@ function Run-Incrementalist {
 
     # Execute the command
     $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
-    return $process.ExitCode
+    $exitCode = $process.ExitCode
+    
+    # Explicitly dispose the process object
+    $process.Dispose()
+    
+    # Small delay to ensure file handles are released
+    Start-Sleep -Milliseconds 500
+    
+    return $exitCode
 }
 
 function Remove-IncrementalistCache {
