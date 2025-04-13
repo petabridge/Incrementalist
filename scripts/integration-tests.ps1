@@ -8,6 +8,9 @@ param(
     [string]$ExecutionMode = "Project"
 )
 
+# Source helper scripts
+. "$PSScriptRoot/getReleaseNotes.ps1"
+
 # Track overall success/failure and test counts
 $script:hasUnexpectedFailures = $false
 $script:totalTests = 0
@@ -38,14 +41,40 @@ function Install-IncrementalistTool {
         [string]$Configuration
     )
     
-    # Create a temporary directory for packaging and installation
-    $packageOutput = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    # Get base version from release notes
+    $changelogPath = Join-Path $PSScriptRoot "..\RELEASE_NOTES.md"
+    if (-not (Test-Path $changelogPath)) {
+        throw "RELEASE_NOTES.md not found at $changelogPath"
+    }
+    $releaseInfo = Get-ReleaseNotes -MarkdownFile $changelogPath
+    $baseVersion = $releaseInfo.Version
+    if (-not $baseVersion) {
+        throw "Could not determine base version from $changelogPath"
+    }
+    
+    # Create unique suffix and full version
+    $suffix = "ci-$([DateTime]::UtcNow.Ticks)"
+    $fullVersion = "$($baseVersion)-$($suffix)"
+    Write-Host "Using Version: $fullVersion (Base: $baseVersion, Suffix: $suffix)" -ForegroundColor Yellow
+
+    # Create temporary directories for packaging and installation
+    $packageOutput = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N"))
+    $installPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
+    New-Item -ItemType Directory -Path $installPath -Force | Out-Null
+    
+    # Ensure packageOutput is cleaned up if the script is terminated prematurely
+    $script:cleanupPaths = @{
+        PackageOutput = $packageOutput
+        InstallPath = $null # InstallPath is handled by $script:toolPath cleanup
+    }
     
     try {
-        # Pack the tool
-        Write-Host "Packing Incrementalist tool..."
-        $packResult = Start-Process -FilePath "dotnet" -ArgumentList @("pack", $ProjectPath, "-c", $Configuration, "-o", $packageOutput) -NoNewWindow -PassThru -Wait
+        # Pack the tool with the specific version suffix
+        Write-Host "Packing Incrementalist tool (Version: $fullVersion)..."
+        $packArgs = @("pack", $ProjectPath, "-c", $Configuration, "-o", $packageOutput, "/p:VersionSuffix=$suffix")
+        Write-Host "Executing: dotnet $($packArgs -join ' ')"
+        $packResult = Start-Process -FilePath "dotnet" -ArgumentList $packArgs -NoNewWindow -PassThru -Wait
         if ($packResult.ExitCode -ne 0) {
             throw "Failed to pack Incrementalist with exit code $($packResult.ExitCode)"
         }
@@ -56,43 +85,80 @@ function Install-IncrementalistTool {
             throw "No package was created by dotnet pack"
         }
         
-        # Install the tool
+        # We know the package name and the exact version we built
+        $packageName = "Incrementalist.Cmd" # Correct package ID
+        $packageVersion = $fullVersion 
+
+        # Install the tool into the separate install path, specifying the exact version
         Write-Host "Installing Incrementalist tool..."
-        $installResult = Start-Process -FilePath "dotnet" -ArgumentList @("tool", "install", "--add-source", $packageOutput, "--tool-path", $packageOutput, "incrementalist") -NoNewWindow -PassThru -Wait
+        $installArgs = @("tool", "install", "--add-source", $packageOutput, "--tool-path", $installPath, $packageName, "--version", $packageVersion)
+        Write-Host "Executing: dotnet $($installArgs -join ' ')"
+        Write-Host "Attempting to start dotnet tool install process..."
+        $installResult = Start-Process -FilePath "dotnet" -ArgumentList $installArgs -NoNewWindow -PassThru -Wait
         if ($installResult.ExitCode -ne 0) {
             throw "Failed to install Incrementalist tool with exit code $($installResult.ExitCode)"
         }
         
-        # Set the global tool path
-        $script:toolPath = Join-Path $packageOutput "incrementalist"
+        # Set the global tool path using the install path
+        $script:toolPath = Join-Path $installPath "incrementalist"
         if (-not (Test-Path $script:toolPath)) {
-            $script:toolPath = Join-Path $packageOutput "incrementalist.exe" # For Windows
+            $script:toolPath = Join-Path $installPath "incrementalist.exe" # For Windows
         }
         
         if (-not (Test-Path $script:toolPath)) {
-            throw "Could not find the installed Incrementalist tool executable"
+            throw "Could not find the installed Incrementalist tool executable in $installPath"
         }
+        
+        # Update cleanup paths - InstallPath will now be cleaned via toolPath
+        $script:cleanupPaths.InstallPath = $installPath 
         
         $script:toolInstalled = $true
         Write-Host "Incrementalist tool installed at: $script:toolPath"
     }
     catch {
         Write-Host "Error installing Incrementalist tool: $_" -ForegroundColor Red
-        # Clean up
+        # Clean up both directories on error
         if (Test-Path $packageOutput) {
+            Write-Host "Cleaning up package output: $packageOutput"
             Remove-Item -Path $packageOutput -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path $installPath) {
+            Write-Host "Cleaning up install path: $installPath"
+            Remove-Item -Path $installPath -Recurse -Force -ErrorAction SilentlyContinue
         }
         throw
     }
+    # No finally block needed here as catch handles cleanup on error, 
+    # and trap handles cleanup on exit/termination. $packageOutput 
+    # doesn't need explicit cleanup on success as it's not used further.
 }
 
 # Clean up resources when the script exits
 trap {
-    # Clean up the tool installation if it exists
-    if ($script:toolPath -and (Test-Path (Split-Path $script:toolPath -Parent))) {
-        Remove-Item -Path (Split-Path $script:toolPath -Parent) -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "Executing trap handler for script cleanup..."
+    
+    # Clean up the tool installation directory if it exists and path was set
+    if ($script:toolPath -and (Test-Path $script:toolPath)) {
+        $installDir = Split-Path $script:toolPath -Parent
+        if (Test-Path $installDir) {
+            Write-Host "Cleaning up tool install directory: $installDir"
+            Remove-Item -Path $installDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } elseif ($script:cleanupPaths -ne $null -and $script:cleanupPaths.InstallPath -ne $null -and (Test-Path $script:cleanupPaths.InstallPath)) {
+        # Fallback: clean up installPath if toolPath wasn't set but installPath was created
+        Write-Host "Cleaning up install path (fallback): $($script:cleanupPaths.InstallPath)"
+        Remove-Item -Path $script:cleanupPaths.InstallPath -Recurse -Force -ErrorAction SilentlyContinue
     }
-    exit
+
+    # Clean up the package output directory if it was created
+    if ($script:cleanupPaths -ne $null -and $script:cleanupPaths.PackageOutput -ne $null -and (Test-Path $script:cleanupPaths.PackageOutput)) {
+        Write-Host "Cleaning up package output directory: $($script:cleanupPaths.PackageOutput)"
+        Remove-Item -Path $script:cleanupPaths.PackageOutput -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    
+    Write-Host "Trap handler finished."
+    # Allow the original error to propagate if there was one
+    exit $LASTEXITCODE 
 }
 
 # Abstracts how we invoke the Incrementalist executable
