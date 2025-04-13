@@ -253,7 +253,7 @@ function Test-GlobTargeting {
         
         if (-not $changeDetected) {
             Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
-            return # Skip the rest of the test if no changes detected
+            return 0 # Skip the rest of the test if no changes detected
         }
 
         # Construct the expected path more explicitly
@@ -274,7 +274,7 @@ function Test-GlobTargeting {
             Write-Host "Expected project ($expectedProjectFullPath) not found in detected changes. Skipping verification." -ForegroundColor Yellow
             Write-Host "Detected changes:" -ForegroundColor Yellow
             $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
-            return # Skip the rest of the test if the expected project isn't in the changes
+            return 0 # Skip the rest of the test if the expected project isn't in the changes
         }
 
         # Run Incrementalist with target glob
@@ -312,7 +312,7 @@ function Test-GlobSkipping {
         # Check if any changes were detected
         if ($baselineProjects.Count -eq 0) {
             Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
-            return # Skip the rest of the test
+            return 0 # Skip the rest of the test
         }
         
         # Check if any Test projects are in the baseline changes
@@ -328,14 +328,14 @@ function Test-GlobSkipping {
             Write-Host "No test projects (*.Tests.csproj) found in detected changes. Skipping verification as the skip-glob pattern wouldn't affect results." -ForegroundColor Yellow
             Write-Host "Detected changes:" -ForegroundColor Yellow
             $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
-            return # Skip the rest of the test
+            return 0 # Skip the rest of the test
         }
         
         if (-not $hasNonTestProjects) {
             Write-Host "Only test projects found in detected changes. Skipping verification as there would be no projects after skipping." -ForegroundColor Yellow
             Write-Host "Detected changes:" -ForegroundColor Yellow
             $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
-            return # Skip the rest of the test
+            return 0 # Skip the rest of the test
         }
 
         # 2. Run with skip glob
