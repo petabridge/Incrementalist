@@ -174,101 +174,64 @@ function Run-Incrementalist {
         [Parameter(Mandatory=$false)]
         [string]$Mode = $ExecutionMode,  # Use the global parameter by default
 
-        [Parameter(Mandatory=$false)]
-        [int]$TimeoutSeconds = 120, # Default 2 minute timeout
-
         [Parameter(Mandatory=$true)]
         [string[]]$IncrementalistArgs       
     )
 
-    # Initialize process variable in the function scope so it's accessible in finally block
-    [System.Diagnostics.Process]$process = $null
-    $exitCode = -1
+    if($Mode -eq "Project"){
+         # Run using dotnet run --project approach
+        $cmd = "dotnet"
+        $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
+        $argList += $IncrementalistArgs
 
-    try {
-        if($Mode -eq "Project"){
-             # Run using dotnet run --project approach
-            $cmd = "dotnet"
-            $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
-            $argList += $IncrementalistArgs
+        # Add delimiter and dotnet args if provided
+        if ($DotNetArgs.Count -gt 0) {
+            $argList += "--"
+            $argList += $DotNetArgs
+        }
 
-            # Add delimiter and dotnet args if provided
-            if ($DotNetArgs.Count -gt 0) {
-                $argList += "--"
-                $argList += $DotNetArgs
-            }
-
-            # Execute the command
-            $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru
-            
-            # Wait with timeout
-            $completed = $process.WaitForExit($TimeoutSeconds * 1000)
-            if (-not $completed) {
-                Write-Host "Process timed out after $TimeoutSeconds seconds" -ForegroundColor Yellow
-                $process.Kill()
-                return -1
-            }
-            
-            $exitCode = $process.ExitCode
-            return $exitCode
-        }
-        elseif ($Mode -eq "Tool") {
-            # Install the tool if not already installed
-            if (-not $script:toolInstalled) {
-                Install-IncrementalistTool -ProjectPath $ProjectPath -Configuration $Configuration
-            }
-            
-            # Run using the installed tool
-            $argList = $IncrementalistArgs
-            
-            # Add delimiter and dotnet args if provided
-            if ($DotNetArgs.Count -gt 0) {
-                $argList += "--"
-                $argList += $DotNetArgs
-            }
-            
-            # Execute the command
-            $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru
-            
-            # Wait with timeout
-            $completed = $process.WaitForExit($TimeoutSeconds * 1000)
-            if (-not $completed) {
-                Write-Host "Process timed out after $TimeoutSeconds seconds" -ForegroundColor Yellow
-                $process.Kill()
-                return -1
-            }
-            
-            $exitCode = $process.ExitCode
-            return $exitCode
-        }
-        else {
-            throw "Unsupported execution mode: $Mode"
-        }
-    }
-    catch {
-        Write-Host "Error executing Incrementalist: $_" -ForegroundColor Red
-        return -1 # Return a standard error code
-    }
-    finally {
-        # Ensure process is properly disposed of
-        if ($process) {
-            try {
-                # Check if process is still running and terminate if needed
-                if (-not $process.HasExited) {
-                    Write-Host "Process did not exit properly - terminating..." -ForegroundColor Yellow
-                    $process.Kill()
-                }
-                $process.Dispose()
-            }
-            catch {
-                # Just log if we can't clean up properly
-                Write-Host "Error cleaning up process resources: $_" -ForegroundColor Yellow
-            }
-        }
+        # Execute the command
+        $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
+        $exitCode = $process.ExitCode
+        
+        # Explicitly dispose the process object
+        $process.Dispose()
         
         # Small delay to ensure file handles are released
         Start-Sleep -Milliseconds 500
+        
+        return $exitCode
     }
+    elseif ($Mode -eq "Tool") {
+        # Install the tool if not already installed
+        if (-not $script:toolInstalled) {
+            Install-IncrementalistTool -ProjectPath $ProjectPath -Configuration $Configuration
+        }
+        
+        # Run using the installed tool
+        $argList = $IncrementalistArgs
+        
+        # Add delimiter and dotnet args if provided
+        if ($DotNetArgs.Count -gt 0) {
+            $argList += "--"
+            $argList += $DotNetArgs
+        }
+        
+        # Execute the command
+        $process = Start-Process -FilePath $script:toolPath -ArgumentList $argList -NoNewWindow -PassThru -Wait
+
+        # Explicitly dispose the process object
+        $process.Dispose()
+        
+        # Small delay to ensure file handles are released
+        Start-Sleep -Milliseconds 500
+
+        return $process.ExitCode
+    }
+    else {
+        throw "Unsupported execution mode: $Mode"
+    }
+   
 }
 
 function Remove-IncrementalistCache {
