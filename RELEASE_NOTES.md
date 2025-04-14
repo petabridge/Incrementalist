@@ -1,3 +1,19 @@
+#### 1.0.0-rc2 Apr 13 2025 ####
+
+Bug fixes and improvements:
+
+* Fixed issues with command-line parsing and configuration
+* Resolved globbing functionality for `dotnet` commands
+* Enhanced documentation with more examples
+
+All changes:
+
+* [Fix globbing for `dotnet` commands](https://github.com/petabridge/Incrementalist/pull/384)
+* [Resolve `--create-config` issues](https://github.com/petabridge/Incrementalist/pull/382)
+* [Resolve Option 'c, config' is defined multiple times](https://github.com/petabridge/Incrementalist/pull/379)
+* [Add globbing examples to config docs](https://github.com/petabridge/Incrementalist/pull/376)
+* [README: expand examples of configuration file support](https://github.com/petabridge/Incrementalist/pull/375)
+
 #### 1.0.0-rc1 Apr 13 2025 ####
 
 Added major new features to enhance usability and extend capabilities:
