@@ -589,6 +589,102 @@ function Test-GlobSkipping {
     }
 }
 
+# Test for https://github.com/petabridge/Incrementalist/issues/380
+function Test-CreateConfigCustomPath {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $customConfigFileName = "customConfig-$([guid]::NewGuid()).json" # Ensure unique name
+    $customConfigPath = Join-Path $TestResultsDir $customConfigFileName # Use TestResultsDir for easier cleanup
+    
+    Invoke-IncrementalistTest -TestName "Create config with custom path (#380)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Define parameters for first and second invocations - used only to run command, not check content
+        $firstBaseBranch = "custom-path-first"
+        $secondBaseBranch = "custom-path-second"
+
+        # First invocation
+        Write-Host "First invocation: Attempting create config at $customConfigPath"
+        $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $customConfigPath, "-b", $firstBaseBranch)
+        if ($exitCode1 -ne 0) {
+            throw "Incrementalist first command failed with exit code $exitCode1 when creating custom config."
+        }
+
+        # Second invocation (overwrite)
+        Write-Host "Second invocation: Attempting overwrite config at $customConfigPath"
+        # Use different/additional params to ensure command runs
+        $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $customConfigPath, "-b", $secondBaseBranch, "--parallel")
+        if ($exitCode2 -ne 0) {
+            throw "Incrementalist second command failed with exit code $exitCode2 when overwriting custom config."
+        }
+
+        # Verification: Check if the custom config file exists and is valid JSON
+        if (-not (Test-Path $customConfigPath)) {
+            throw "Custom configuration file was not found at $customConfigPath after second invocation."
+        }
+
+        try {
+            $null = Get-Content $customConfigPath | ConvertFrom-Json
+            Write-Host "Successfully parsed created/overwritten config file at $customConfigPath"
+        } catch {
+            throw "Failed to parse the created/overwritten configuration file at $customConfigPath as JSON: $_"
+        }
+        
+        # Cleanup is handled by the main test cleanup for TestResultsDir
+        return 0 # Success
+    }
+}
+
+# Test for https://github.com/petabridge/Incrementalist/issues/381
+function Test-CreateConfigOverwrite {
+    param($ProjectPath, $Configuration)
+    
+    $tempConfigName = "temp-incrementalist-$([guid]::NewGuid()).json"
+    $tempConfigPath = Join-Path (Get-Location) $tempConfigName 
+
+    Invoke-IncrementalistTest -TestName "Create config overwrites existing specified file (#381)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Use try/finally for reliable cleanup within the script block
+        try {
+            # Define parameters for first and second invocations - used only to run command
+            $firstBaseBranch = "overwrite-first"
+            $secondBaseBranch = "overwrite-second"
+
+            # First invocation (create)
+            Write-Host "First invocation: Attempting create config at $tempConfigPath"
+            $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $tempConfigPath, "-b", $firstBaseBranch)
+            if ($exitCode1 -ne 0) {
+                throw "Incrementalist first command failed with exit code $exitCode1 when creating config at $tempConfigPath."
+            }
+
+            # Second invocation (overwrite)
+            Write-Host "Second invocation: Attempting overwrite config at $tempConfigPath"
+            $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $tempConfigPath, "-b", $secondBaseBranch, "--parallel")
+            if ($exitCode2 -ne 0) {
+                throw "Incrementalist second command failed with exit code $exitCode2 when overwriting config at $tempConfigPath."
+            }
+
+            # Verification: Check if the file exists and is valid JSON after overwrite
+            if (-not (Test-Path $tempConfigPath)) {
+                throw "Configuration file ($tempConfigPath) does not exist after second invocation."
+            }
+            
+            try {
+                $null = Get-Content $tempConfigPath | ConvertFrom-Json
+                 Write-Host "Successfully parsed overwritten config file at $tempConfigPath"
+            } catch {
+                throw "Failed to parse the overwritten configuration file at $tempConfigPath as JSON: $_"
+            }
+
+            return 0 # Success
+        }
+        finally {
+            # Cleanup: Remove the temp config file
+            if (Test-Path $tempConfigPath) {
+                Write-Host "Cleaning up temp config file: $tempConfigPath"
+                Remove-Item -Path $tempConfigPath -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 # Main execution
 Write-Host "Running Incrementalist integration tests in $ExecutionMode mode..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
@@ -604,6 +700,10 @@ foreach ($project in $incrementalistProjects) {
         Write-Host "[FAIL] Failed to build Incrementalist.Cmd project" -ForegroundColor Red
         exit 1
     }
+
+    # Run config tests
+    Test-CreateConfigCustomPath -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    Test-CreateConfigOverwrite -ProjectPath $project.FullName -Configuration $Configuration
     
     # Run all test scenarios
     Test-FoldersOnly -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
@@ -621,6 +721,8 @@ foreach ($project in $incrementalistProjects) {
     # Run glob tests
     Test-GlobTargeting -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
     Test-GlobSkipping -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    
+  
 }
 
 # Final status report

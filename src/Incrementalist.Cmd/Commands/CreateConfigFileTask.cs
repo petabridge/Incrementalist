@@ -57,7 +57,7 @@ namespace Incrementalist.Cmd.Commands
                 };
 
                 // Determine the output file path
-                string? configFilePath = _options.ConfigFile;
+                var configFilePath = _options.ConfigFile;
                 if (string.IsNullOrEmpty(configFilePath))
                 {
                     // Use default filename in the same directory as the dependency cache
@@ -82,7 +82,7 @@ namespace Incrementalist.Cmd.Commands
                 };
 
                 // Serialize and write the config to file
-                string json = JsonSerializer.Serialize(config, options);
+                var json = JsonSerializer.Serialize(config, options);
                 await File.WriteAllTextAsync(configFilePath, json);
 
                 _logger.LogInformation("Configuration file created: {FilePath}", configFilePath);
