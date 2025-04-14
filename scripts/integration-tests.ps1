@@ -606,7 +606,7 @@ function Test-CreateConfigCustomPath {
         # Use specific, non-default values to check they are written
         $testBaseBranch = "custom-path-test"
         $testTimeout = 15
-        $exitCode = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", $customConfigPath, "-b", $testBaseBranch, "-t", $testTimeout.ToString())
+        $exitCode = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $customConfigPath, "-b", $testBaseBranch, "-t", $testTimeout.ToString())
         if ($exitCode -ne 0) {
             throw "Incrementalist command failed with exit code $exitCode when creating custom config."
         }
@@ -653,7 +653,7 @@ function Test-CreateConfigOverwrite {
             # Run Incrementalist with --create-config targeting the temp file path and different parameters
             $newBaseBranch = "overwrite-test"
             $newTimeout = 5
-            $exitCode = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", $tempConfigPath, "-b", $newBaseBranch, "-t", $newTimeout.ToString(), "--parallel")
+            $exitCode = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $tempConfigPath, "-b", $newBaseBranch, "-t", $newTimeout.ToString(), "--parallel")
             if ($exitCode -ne 0) {
                 throw "Incrementalist command failed with exit code $exitCode when overwriting config at $tempConfigPath."
             }
