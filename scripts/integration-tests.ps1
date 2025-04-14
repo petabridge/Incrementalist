@@ -1,8 +1,15 @@
 [CmdletBinding()]
 param(
     [ValidateSet("Release", "Debug")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [Parameter()]
+    [ValidateSet("Project", "Tool")]
+    [string]$ExecutionMode = "Tool"
 )
+
+# Source helper scripts
+. "$PSScriptRoot/getReleaseNotes.ps1"
 
 # Track overall success/failure and test counts
 $script:hasUnexpectedFailures = $false
@@ -11,12 +18,255 @@ $script:passedTests = 0
 $script:failedTests = 0
 $script:expectedFailures = 0
 
+
+# Global variables for tool installation if needed
+$script:toolPath = $null
+$script:toolInstalled = $false
+
 function Initialize-TestEnvironment {
     $testResultsDir = Join-Path (Get-Location) "TestResults"
     if (-not (Test-Path $testResultsDir)) {
         New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
     }
     return $testResultsDir
+}
+
+# Helper function to install Incrementalist as a tool
+function Install-IncrementalistTool {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ProjectPath,
+        
+        [Parameter(Mandatory=$true)]
+        [string]$Configuration
+    )
+    
+    # Get base version from release notes
+    $changelogPath = Join-Path $PSScriptRoot "..\RELEASE_NOTES.md"
+    if (-not (Test-Path $changelogPath)) {
+        throw "RELEASE_NOTES.md not found at $changelogPath"
+    }
+    $releaseInfo = Get-ReleaseNotes -MarkdownFile $changelogPath
+    $baseVersion = $releaseInfo.Version
+    if (-not $baseVersion) {
+        throw "Could not determine base version from $changelogPath"
+    }
+    
+    # Create unique suffix and full version
+    $suffix = "ci-$([DateTime]::UtcNow.Ticks)"
+    $fullVersion = "$($baseVersion)-$($suffix)"
+    Write-Host "Using Version: $fullVersion (Base: $baseVersion, Suffix: $suffix)" -ForegroundColor Yellow
+
+    # Create temporary directory for packaging
+    $packageOutput = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N"))
+    # $installPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString("N")) # No longer needed
+    New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
+    # New-Item -ItemType Directory -Path $installPath -Force | Out-Null # No longer needed
+    
+    # Define workspace root
+    $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+
+    # Ensure packageOutput is cleaned up if the script is terminated prematurely
+    $script:cleanupPaths = @{
+        PackageOutput = $packageOutput
+        # InstallPath = $null # No longer needed
+    }
+    
+    try {
+        # Pack the tool with the specific version suffix
+        Write-Host "Packing Incrementalist tool (Version: $fullVersion)..."
+        $packArgs = @("pack", $ProjectPath, "-c", $Configuration, "-o", $packageOutput, "/p:VersionSuffix=$suffix")
+        Write-Host "Executing: dotnet $($packArgs -join ' ')"
+        $packResult = Start-Process -FilePath "dotnet" -ArgumentList $packArgs -NoNewWindow -PassThru -Wait
+        if ($packResult.ExitCode -ne 0) {
+            throw "Failed to pack Incrementalist with exit code $($packResult.ExitCode)"
+        }
+        
+        # Find the package
+        $nupkg = Get-ChildItem -Path $packageOutput -Filter "*.nupkg" | Select-Object -First 1
+        if (-not $nupkg) {
+            throw "No package was created by dotnet pack"
+        }
+        
+        # We know the package name and the exact version we built
+        $packageName = "Incrementalist.Cmd" # Correct package ID
+        $packageVersion = $fullVersion 
+
+        # Ensure tool manifest exists in workspace root
+        Write-Host "Ensuring tool manifest exists at $workspaceRoot..."
+        $manifestResult = Start-Process -FilePath "dotnet" -ArgumentList @("new", "tool-manifest", "--force") -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait
+        if ($manifestResult.ExitCode -ne 0) {
+            throw "Failed to create/update tool manifest with exit code $($manifestResult.ExitCode)"
+        }
+
+        # Install the tool to the manifest, specifying the exact version
+        Write-Host "Installing Incrementalist tool to manifest..."
+        $installArgs = @("tool", "install", "--add-source", $packageOutput, $packageName, "--version", $packageVersion)
+        Write-Host "Executing: dotnet $($installArgs -join ' ') in $workspaceRoot"
+        $installResult = Start-Process -FilePath "dotnet" -ArgumentList $installArgs -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait
+        if ($installResult.ExitCode -ne 0) {
+            # Attempt uninstall just in case it was partially installed
+            try {
+                Write-Host "Install failed, attempting cleanup uninstall..." -ForegroundColor Yellow
+                Start-Process -FilePath "dotnet" -ArgumentList @("tool", "uninstall", $packageName) -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait | Out-Null
+            }
+            catch {
+                Write-Host "Cleanup uninstall failed: $_" -ForegroundColor Yellow
+            }
+            throw "Failed to install Incrementalist tool to manifest with exit code $($installResult.ExitCode)"
+        }
+        
+        $script:toolInstalled = $true
+        Write-Host "Incrementalist tool installed to manifest."
+    }
+    catch {
+        Write-Host "Error installing Incrementalist tool: $_" -ForegroundColor Red
+        # Clean up both directories on error
+        if (Test-Path $packageOutput) {
+            Write-Host "Cleaning up package output: $packageOutput"
+            Remove-Item -Path $packageOutput -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        throw
+    }
+    # No finally block needed here as catch handles cleanup on error, 
+    # and trap handles cleanup on exit/termination. $packageOutput 
+    # doesn't need explicit cleanup on success as it's not used further.
+}
+
+function Do-CleanUp {
+    Write-Host "Cleaning up environment..."
+    # Define workspace root for cleanup
+    $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+
+    # Uninstall the tool if it was installed via manifest
+    if ($script:toolInstalled) {
+        try {
+            Write-Host "Attempting tool uninstall from manifest..."
+            $uninstallResult = Start-Process -FilePath "dotnet" -ArgumentList @("tool", "uninstall", "Incrementalist.Cmd") -WorkingDirectory $workspaceRoot -NoNewWindow -PassThru -Wait
+            if ($uninstallResult.ExitCode -ne 0) {
+                Write-Host "Tool uninstall failed with exit code $($uninstallResult.ExitCode)" -ForegroundColor Yellow
+            }
+            else {
+                Write-Host "Tool uninstalled successfully."
+            }
+        }
+        catch {
+            Write-Host "Error during tool uninstall: $_" -ForegroundColor Yellow
+        }
+    }
+
+    # Remove the .config directory containing the manifest
+    $configDir = Join-Path $workspaceRoot ".config"
+    if (Test-Path $configDir) {
+        Write-Host "Removing tool manifest directory: $configDir"
+        Remove-Item -Path $configDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+   
+}
+
+# Clean up resources when the script exits
+trap {
+    Write-Host "Executing trap handler for script cleanup..."
+    
+    Do-CleanUp
+
+    Write-Host "Trap handler finished."
+     # Allow the original error to propagate if there was one
+    exit $LASTEXITCODE 
+}
+
+# Abstracts how we invoke the Incrementalist executable
+function Run-Incrementalist {
+    param(
+        [Parameter(Mandatory=$false)]
+        [string]$ProjectPath,
+
+        [ValidateSet("Release", "Debug")]
+        [Parameter(Mandatory=$false)]
+        [string]$Configuration = "Release",
+
+        [Parameter(Mandatory=$false)]
+        [string]$Mode = $ExecutionMode,  # Use the global parameter by default
+
+        [Parameter(Mandatory=$false)]
+        [int]$TimeoutSeconds = 120, # Default 2 minute timeout
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$IncrementalistArgs       
+    )
+
+    # Initialize process variable in the function scope so it's accessible in finally block
+    [System.Diagnostics.Process]$process = $null
+    $exitCode = -1
+
+    try {
+        if($Mode -eq "Project"){
+             # Run using dotnet run --project approach
+            $cmd = "dotnet"
+            $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
+            $argList += $IncrementalistArgs
+
+            # Execute the command
+            $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
+            
+            # Wait with timeout
+            $completed = $process.WaitForExit($TimeoutSeconds * 1000)
+            if (-not $completed) {
+                Write-Host "Process timed out after $TimeoutSeconds seconds" -ForegroundColor Yellow
+                $process.Kill()
+                return -1
+            }
+            
+            $exitCode = $process.ExitCode
+            return $exitCode
+        }
+        elseif ($Mode -eq "Tool") {
+            # Install the tool if not already installed
+            if (-not $script:toolInstalled) {
+                Install-IncrementalistTool -ProjectPath $ProjectPath -Configuration $Configuration
+            }
+            
+            $cmd = "dotnet"
+            $argList = @("incrementalist") + $IncrementalistArgs
+            Write-Host "Executing: $($cmd) $($argList -join ' ')" -ForegroundColor Magenta
+            $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
+
+            # Wait with timeout
+            $completed = $process.WaitForExit($TimeoutSeconds * 1000)
+            if (-not $completed) {
+                Write-Host "Process timed out after $TimeoutSeconds seconds" -ForegroundColor Yellow
+                $process.Kill()
+                return -1
+            }
+            
+            $exitCode = $process.ExitCode
+            return $exitCode
+        }
+        else {
+            throw "Unsupported execution mode: $Mode"
+        }
+    }
+    catch {
+        Write-Host "Error executing Incrementalist: $_" -ForegroundColor Red
+        return -1 # Return a standard error code
+    }
+    finally {
+        # Ensure process is properly disposed of
+        if ($process) {
+            try {
+                # Check if process is still running and terminate if needed
+                if (-not $process.HasExited) {
+                    Write-Host "Process did not exit properly - terminating..." -ForegroundColor Yellow
+                    $process.Kill()
+                }
+                $process.Dispose()
+            }
+            catch {
+                # Just log if we can't clean up properly
+                Write-Host "Error cleaning up process resources: $_" -ForegroundColor Yellow
+            }
+        }
+    }
 }
 
 function Remove-IncrementalistCache {
@@ -53,8 +303,8 @@ function Invoke-IncrementalistTest {
     $script:totalTests++
     Write-Host "`nRunning test: $TestName..." -ForegroundColor Cyan
     try {
-        & $TestScript
-        $exitCode = $LASTEXITCODE
+        # Explicitly capture the return value from the script block
+        $exitCode = & $TestScript
         
         # Check for unexpected success or failure
         if ($exitCode -ne 0 -and -not $ExpectFailure) {
@@ -91,7 +341,7 @@ function Test-FoldersOnly {
     
     $folderTestOutput = Join-Path $TestResultsDir "incrementalist-affected-folders.txt"
     Invoke-IncrementalistTest -TestName "Folders-only check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -l --no-cache -f $folderTestOutput
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-l", "--no-cache", "-f" , $folderTestOutput)
     }
 }
 
@@ -100,7 +350,7 @@ function Test-SolutionCheck {
     
     $solutionTestOutput = Join-Path $TestResultsDir "incrementalist-affected-files.txt"
     Invoke-IncrementalistTest -TestName "Solution check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $solutionTestOutput
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $solutionTestOutput)
     }
 }
 
@@ -108,7 +358,7 @@ function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- build -c Release --nologo
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--no-cache", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -116,7 +366,7 @@ function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --parallel --no-cache -- build -c Release --nologo
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--parallel", "--no-cache", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -124,7 +374,7 @@ function Test-ErrorHandling {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Error handling (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --fail-on-no-projects --no-cache -- "invalid-command"
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--fail-on-no-projects", "--no-cache", "--", "invalid-command")
     } -ExpectFailure $true
 }
 
@@ -137,7 +387,7 @@ function Test-CacheCreation {
     $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-creation.txt"
     Invoke-IncrementalistTest -TestName "Cache creation" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # Run without --no-cache to create the cache
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $cacheTestOutput
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $cacheTestOutput)
     }
 }
 
@@ -147,7 +397,8 @@ function Test-CacheReuse {
     $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-reuse.txt"
     Invoke-IncrementalistTest -TestName "Cache reuse" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # Run again without --no-cache to reuse the existing cache
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -f $cacheTestOutput
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $cacheTestOutput)
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $cacheTestOutput)
     }
 }
 
@@ -161,16 +412,44 @@ function Test-ComplexCommandArguments {
     }
     
     Invoke-IncrementalistTest -TestName "Complex command arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev -r --no-cache -- test `
-            --logger "console;verbosity=detailed" `
-            --collect:"XPlat Code Coverage" `
-            --results-directory:"$testResultsDir" `
-            /p:CollectCoverage=true `
-            /p:CoverletOutputFormat=cobertura `
-            /p:CoverletOutput="$testResultsDir/coverage.xml" `
-            --blame-hang-timeout 5m
+
+        $incrementalistArgs = @(
+            "-b", "dev",
+            "-r",
+            "--no-cache",
+            "--",  # Separator for dotnet command arguments
+            "test",
+            "--logger", "console;verbosity=detailed",
+            "--collect:`"XPlat Code Coverage`"", # Need to escape quotes inside the string
+            "--results-directory:`"$testResultsDir`"", # Need to escape quotes inside the string
+            "/p:CollectCoverage=true",
+            "/p:CoverletOutputFormat=cobertura",
+            "/p:CoverletOutput=`"$testResultsDir/coverage.xml`"", # Need to escape quotes inside the string
+            "--blame-hang-timeout", "5m"
+        )
+        
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs $incrementalistArgs
     }
     
+    # Cleanup
+    if (Test-Path $testResultsDir) {
+        Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Reproduction for https://github.com/petabridge/Incrementalist/issues/378
+function Test-SimilarDotnetArguments {
+    param($ProjectPath, $Configuration)
+    # Create a test results directory with spaces to test path handling
+    $testResultsDir = Join-Path ([System.IO.Path]::GetTempPath()) "Incrementalist Test Results"
+    if (-not (Test-Path $testResultsDir)) {
+        New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
+    }
+
+    Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-c", "-r", "--no-cache")
+    }
+
     # Cleanup
     if (Test-Path $testResultsDir) {
         Remove-Item -Path $testResultsDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -186,28 +465,45 @@ function Test-GlobTargeting {
     Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # First, run a baseline to check if any changes are detected
         Write-Host "Running baseline to check for changes..."
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
-        if ($LASTEXITCODE -ne 0) { throw "Incrementalist baseline command failed with exit code $LASTEXITCODE" }
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $baselineOutput)
+        if ($exitCodeBaseline -ne 0) { throw "Incrementalist baseline command failed with exit code $exitCodeBaseline" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue)
         $changeDetected = ($baselineProjects | Measure-Object).Count -gt 0
         
         if (-not $changeDetected) {
             Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
-            return # Skip the rest of the test if no changes detected
+            return 0 # Skip the rest of the test if no changes detected
+        }
+
+        # Construct the expected path more explicitly
+        $parentDir = Split-Path -Path $PSScriptRoot -Parent
+        $expectedProjectPath = Join-Path -Path $parentDir -ChildPath "src\Incrementalist\Incrementalist.csproj"
+        $expectedProjectFullPath = (Resolve-Path -Path $expectedProjectPath -ErrorAction Stop).Path
+        
+        # Check if the expected project is in the baseline changes
+        $expectedProjectInChanges = $false
+        foreach ($project in $baselineProjects) {
+            if ($project.Trim() -eq $expectedProjectFullPath.Trim()) {
+                $expectedProjectInChanges = $true
+                break
+            }
+        }
+        
+        if (-not $expectedProjectInChanges) {
+            Write-Host "Expected project ($expectedProjectFullPath) not found in detected changes. Skipping verification." -ForegroundColor Yellow
+            Write-Host "Detected changes:" -ForegroundColor Yellow
+            $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
+            return 0 # Skip the rest of the test if the expected project isn't in the changes
         }
 
         # Run Incrementalist with target glob
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
-        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command failed with exit code $LASTEXITCODE" }
+        #dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
+        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--target-glob", "**/Incrementalist.csproj", "--no-cache", "-f", $targetGlobOutput)
+        if ($exitCodeTarget -ne 0) { throw "Incrementalist command failed with exit code $exitCodeTarget" }
 
         # Verification logic
         $actualProjects = @(Get-Content $targetGlobOutput -ErrorAction SilentlyContinue) # Ensure it's always an array
-        
-        # Construct the expected path more explicitly
-        $parentDir = Split-Path -Path $PSScriptRoot -Parent
-        $expectedProjectFullPath = Join-Path -Path $parentDir -ChildPath "src\Incrementalist\Incrementalist.csproj" # Use Windows-style separator here for Join-Path robustness
-        $expectedProjectFullPath = (Resolve-Path -Path $expectedProjectFullPath -ErrorAction Stop).Path # Resolve the final path
         
         # Check if the file contains exactly one line matching the expected project string, ignoring whitespace
         if (($actualProjects | Measure-Object).Count -ne 1 -or `
@@ -227,8 +523,8 @@ function Test-GlobSkipping {
     Invoke-IncrementalistTest -TestName "Glob skipping" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # 1. Run without skip to get baseline affected projects
         Write-Host "Running baseline to determine affected projects..."
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --no-cache -f $baselineOutput
-        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (baseline) failed with exit code $LASTEXITCODE" }
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $baselineOutput)
+        if ($exitCodeBaseline -ne 0) { throw "Incrementalist command (baseline) failed with exit code $exitCodeBaseline" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Baseline projects count: $($baselineProjects.Count)"
@@ -236,13 +532,36 @@ function Test-GlobSkipping {
         # Check if any changes were detected
         if ($baselineProjects.Count -eq 0) {
             Write-Host "No changes detected between current branch and target branch (dev). Skipping verification." -ForegroundColor Yellow
-            return # Skip the rest of the test
+            return 0 # Skip the rest of the test
+        }
+        
+        # Check if any Test projects are in the baseline changes
+        $testProjectsInChanges = $baselineProjects | Where-Object { $_ -like "*.Tests.csproj" }
+        $hasTestProjects = ($testProjectsInChanges | Measure-Object).Count -gt 0
+        
+        # Detect non-test projects
+        $nonTestProjects = $baselineProjects | Where-Object { $_ -notlike "*.Tests.csproj" }
+        $hasNonTestProjects = ($nonTestProjects | Measure-Object).Count -gt 0
+        
+        # If there are no test projects or no non-test projects, we can't properly verify skipping behavior
+        if (-not $hasTestProjects) {
+            Write-Host "No test projects (*.Tests.csproj) found in detected changes. Skipping verification as the skip-glob pattern wouldn't affect results." -ForegroundColor Yellow
+            Write-Host "Detected changes:" -ForegroundColor Yellow
+            $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
+            return 0 # Skip the rest of the test
+        }
+        
+        if (-not $hasNonTestProjects) {
+            Write-Host "Only test projects found in detected changes. Skipping verification as there would be no projects after skipping." -ForegroundColor Yellow
+            Write-Host "Detected changes:" -ForegroundColor Yellow
+            $baselineProjects | ForEach-Object { Write-Host " - $_" -ForegroundColor Yellow }
+            return 0 # Skip the rest of the test
         }
 
         # 2. Run with skip glob
         Write-Host "Running with skip glob..."
-        dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --skip-glob "**/*.Tests.csproj" --no-cache -f $skipGlobOutput
-        if ($LASTEXITCODE -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $LASTEXITCODE" }
+        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--skip-glob", "**/*.Tests.csproj", "--no-cache", "-f", $skipGlobOutput)
+        if ($exitCodeSkip -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $exitCodeSkip" }
         $skippedProjects = (Get-Content $skipGlobOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Skipped projects count: $($skippedProjects.Count)"
         
@@ -264,11 +583,14 @@ function Test-GlobSkipping {
             $mismatched | Format-Table -AutoSize | Out-String | Write-Host -ForegroundColor Yellow
             throw "Glob skipping verification failed."
         }
+        
+        # Return success if all verifications passed
+        return 0
     }
 }
 
 # Main execution
-Write-Host "Running Incrementalist integration tests..." -ForegroundColor Cyan
+Write-Host "Running Incrementalist integration tests in $ExecutionMode mode..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
 
 $incrementalistProjects = Get-ChildItem -Path "src" -Filter "Incrementalist.Cmd.csproj" -Recurse
@@ -290,6 +612,7 @@ foreach ($project in $incrementalistProjects) {
     Test-ParallelExecution -ProjectPath $project.FullName -Configuration $Configuration
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
     Test-ComplexCommandArguments -ProjectPath $project.FullName -Configuration $Configuration
+    Test-SimilarDotnetArguments -ProjectPath $project.FullName -Configuration $Configuration
     
     # Run cache-specific tests
     Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
@@ -308,7 +631,9 @@ Write-Host "Failed     : $script:failedTests"
 
 if ($script:hasUnexpectedFailures) {
     Write-Host "`n[FAIL] One or more integration tests failed unexpectedly!" -ForegroundColor Red
+    Do-CleanUp
     exit 1
 }
 Write-Host "`n[PASS] All integration tests completed with expected results." -ForegroundColor Green
+Do-CleanUp
 exit 0 

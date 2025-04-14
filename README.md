@@ -61,20 +61,23 @@ When using Incrementalist as a local tool, you need to use `dotnet tool run` wit
 
 ```shell
 # Get list of affected projects
-dotnet tool run incrementalist -- -b dev -f ./affected-projects.txt
+dotnet incrementalist -- -b dev -f ./affected-projects.txt
 
 # Build affected projects
-dotnet tool run incrementalist -- -b dev -r -- build -c Release --nologo
+dotnet incrementalist -- -b dev -r -- build -c Release --nologo
 
 # Run tests with coverage
-dotnet tool run incrementalist -- -b dev -r -- test -c Release --no-build --logger:trx --collect:"XPlat Code Coverage" --results-directory ./testresults
+dotnet incrementalist -- -b dev -r -- test -c Release --no-build --logger:trx --collect:"XPlat Code Coverage" --results-directory ./testresults
 
 # Run in parallel mode
-dotnet tool run incrementalist -- -b dev -r --parallel -- build -c Release --nologo
+dotnet incrementalist -- -b dev -r --parallel -- build -c Release --nologo
 
 # Save affected projects AND run commands
-dotnet tool run incrementalist -- -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
+dotnet incrementalist -- -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
 ```
+
+> ![NOTE]
+> Don't call `dotnet tool run incrementalist` - this runs into some very annoying parse issues: https://github.com/petabridge/Incrementalist/issues/378
 
 Note the command structure when using as a local tool:
 - First `--` after `dotnet tool run incrementalist` is for Incrementalist options
