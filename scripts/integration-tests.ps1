@@ -5,7 +5,7 @@ param(
 
     [Parameter()]
     [ValidateSet("Project", "Tool")]
-    [string]$ExecutionMode = "Project"
+    [string]$ExecutionMode = "Tool"
 )
 
 # Source helper scripts
@@ -227,7 +227,7 @@ function Run-Incrementalist {
             }
             
             $cmd = "dotnet"
-            $argList = @("tool", "run", "incrementalist") + $IncrementalistArgs
+            $argList = @("incrementalist") + $IncrementalistArgs
             Write-Host "Executing: $($cmd) $($argList -join ' ')" -ForegroundColor Magenta
             $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
 
