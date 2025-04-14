@@ -134,6 +134,7 @@ function Install-IncrementalistTool {
 }
 
 function Do-CleanUp {
+    Write-Host "Cleaning up environment..."
     # Define workspace root for cleanup
     $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
@@ -630,6 +631,7 @@ Write-Host "Failed     : $script:failedTests"
 
 if ($script:hasUnexpectedFailures) {
     Write-Host "`n[FAIL] One or more integration tests failed unexpectedly!" -ForegroundColor Red
+    Do-CleanUp
     exit 1
 }
 Write-Host "`n[PASS] All integration tests completed with expected results." -ForegroundColor Green
