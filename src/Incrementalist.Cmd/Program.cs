@@ -115,7 +115,6 @@ namespace Incrementalist.Cmd
                     return -2;
                 }
 
-
                 // can't be null or Repository.IsValid(pwd) would have failed
                 var repoFolder = Repository.Discover(pwd)!;
                 var workingFolder = Directory.GetParent(repoFolder)!.Parent!;
@@ -216,7 +215,7 @@ namespace Incrementalist.Cmd
 
             logger.LogInformation("Beginning dependency analysis...");
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-            var buildResult = await emitTask.Run();
+            var buildResult = FilterBuildResult(await emitTask.Run());
 
             var analysisTime = stopwatch.Elapsed;
             logger.LogInformation("Solution analysis completed in {Duration:g}", analysisTime);
@@ -256,19 +255,7 @@ namespace Incrementalist.Cmd
                     return;
                 }
                 
-                var skipGlobs = options.SkipGlobs?.ToArray() ?? [];
-                var targetGlobs = options.TargetGlobs?.ToArray() ?? [];
-                
-                // Need to process our globs
-                var filteredProjects = GlobFilter.FilterProjects(projectsToRebuild, skipGlobs, targetGlobs);
-
-                if (filteredProjects.Count != projectsToRebuild.Count)
-                {
-                    logger.LogInformation("Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
-                        projectsToRebuild.Count, filteredProjects.Count);
-                }
-
-                var affectedFilesStr = string.Join(Environment.NewLine, filteredProjects);
+                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
@@ -284,6 +271,40 @@ namespace Incrementalist.Cmd
                     logger.LogInformation("{BuildType} required:", buildType);
                     logger.LogInformation(affectedFilesStr);
                 }
+            }
+
+            return;
+
+            // Post-process the build result
+            BuildAnalysisResult FilterBuildResult(BuildAnalysisResult original)
+            {
+                var skipGlobs = options.SkipGlobs?.ToArray() ?? [];
+                var targetGlobs = options.TargetGlobs?.ToArray() ?? [];
+                
+                if(targetGlobs.Length == 0 && skipGlobs.Length == 0)
+                    return original;
+
+                var projectsToRebuild = original switch
+                {
+                    FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
+                        .Select(p => p.FilePath!).ToList(),
+                    IncrementalBuildResult incremental => incremental.AffectedProjects,
+                    _ => []
+                };
+                
+                // Need to process our globs
+                var filteredProjects = GlobFilter.FilterProjects(projectsToRebuild, skipGlobs, targetGlobs);
+
+                if (filteredProjects.Count != projectsToRebuild.Count)
+                {
+                    // had at least 1 hit on a filter
+                    logger.LogInformation("Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
+                        projectsToRebuild.Count, filteredProjects.Count);
+                    
+                    return new IncrementalBuildResult(filteredProjects);
+                }
+
+                return original;
             }
         }
 
