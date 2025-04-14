@@ -65,6 +65,11 @@ namespace Incrementalist.Cmd.Config
             if (options.FailOnNoProjects) merged.FailOnNoProjects = true;
             if (options.NoCache) merged.NoCache = true;
             if (options.TimeoutMinutes != 2) merged.TimeoutMinutes = options.TimeoutMinutes;
+            
+            // Bugfix for https://github.com/petabridge/Incrementalist/issues/381 and
+            // https://github.com/petabridge/Incrementalist/issues/380
+            if(options.CreateConfig) merged.CreateConfig = true;
+            if(options.ConfigFile != null) merged.ConfigFile = options.ConfigFile;
 
             return merged;
         }
