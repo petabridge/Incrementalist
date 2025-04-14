@@ -69,19 +69,19 @@ Command-line arguments take precedence over configuration file settings. For exa
 2. Run Incrementalist without specifying these options on the command line:
 
 ```bash
-dotnet run -- --run -- build
+dotnet incrementalist --run -- build
 ```
 
 ### Using a Different Configuration File
 
 ```bash
-dotnet run -- --config my-custom-config.json --run -- build
+dotnet incrementalist --config my-custom-config.json --run -- build
 ```
 
 ### Overriding Configuration Values
 
 ```bash
-dotnet run -- --branch dev --verbose false --run -- build
+dotnet incrementalist --branch dev --verbose false --run -- build
 ```
 
 This will use the `dev` branch and disable verbose logging, overriding any values in the configuration file.
@@ -95,7 +95,7 @@ Incrementalist provides a convenient way to generate configuration files based o
 By default, configuration files are created in the `.incrementalist` directory within your working directory:
 
 ```bash
-incrementalist -b master --verbose --parallel --create-config
+dotnet incrementalist -b master --verbose --parallel --create-config
 ```
 
 This will create a file at `.incrementalist/incrementalist.json` containing all the specified options.
@@ -105,7 +105,7 @@ This will create a file at `.incrementalist/incrementalist.json` containing all 
 You can specify a custom file name and location using the `-c` or `--config` option:
 
 ```bash
-incrementalist -b master --verbose --parallel --create-config -c ./my-config.json
+dotnet incrementalist -b master --verbose --parallel --create-config -c ./my-config.json
 ```
 
 This will create the configuration file at `./my-config.json` instead of the default location.
@@ -116,17 +116,17 @@ A typical workflow might be:
 
 1. Create a configuration file with your commonly used settings:
    ```bash
-   incrementalist -b main --verbose --parallel --create-config
+   dotnet incrementalist -b main --verbose --parallel --create-config
    ```
 
 2. Use the configuration file for subsequent runs:
    ```bash
-   incrementalist -r -- build -c Release
+   dotnet incrementalist -r -- build -c Release
    ```
 
 3. Override specific settings when needed:
    ```bash
-   incrementalist -b feature-branch -r -- test
+   dotnet incrementalist -b feature-branch -r -- test
    ```
 
 This approach allows you to maintain consistent settings while still having the flexibility to override them when necessary. 
