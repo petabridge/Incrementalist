@@ -589,6 +589,104 @@ function Test-GlobSkipping {
     }
 }
 
+# Test for https://github.com/petabridge/Incrementalist/issues/380
+function Test-CreateConfigCustomPath {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $customConfigFileName = "customConfig-$([guid]::NewGuid()).json" # Ensure unique name
+    $customConfigPath = Join-Path $TestResultsDir $customConfigFileName # Use TestResultsDir for easier cleanup
+    
+    Invoke-IncrementalistTest -TestName "Create config with custom path (#380)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Ensure the custom file doesn't exist before the test
+        if (Test-Path $customConfigPath) {
+            Remove-Item -Path $customConfigPath -Force -ErrorAction SilentlyContinue
+        }
+
+        # Run Incrementalist with --create-config and custom path
+        # Use specific, non-default values to check they are written
+        $testBaseBranch = "custom-path-test"
+        $testTimeout = 15
+        $exitCode = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", $customConfigPath, "-b", $testBaseBranch, "-t", $testTimeout.ToString())
+        if ($exitCode -ne 0) {
+            throw "Incrementalist command failed with exit code $exitCode when creating custom config."
+        }
+
+        # Verification: Check if the custom config file was created
+        if (-not (Test-Path $customConfigPath)) {
+            throw "Custom configuration file was not created at $customConfigPath"
+        }
+
+        # Verification: Check content
+        try {
+            $createdConfig = Get-Content $customConfigPath | ConvertFrom-Json
+            if ($createdConfig.BaseBranch -ne $testBaseBranch) {
+                throw "BaseBranch in custom config was '$($createdConfig.BaseBranch)', expected '$testBaseBranch'."
+            }
+            if ($createdConfig.Timeout -ne $testTimeout) {
+                throw "Timeout in custom config was '$($createdConfig.Timeout)', expected '$testTimeout'."
+            }
+        } catch {
+            throw "Failed to read or parse created custom configuration file: $_"
+        }
+        
+        # Cleanup is handled by the main test cleanup for TestResultsDir
+        return 0 # Success
+    }
+}
+
+# Test for https://github.com/petabridge/Incrementalist/issues/381
+function Test-CreateConfigOverwrite {
+    param($ProjectPath, $Configuration)
+    
+    # Use a unique name for the config file within the test's scope to avoid conflicts
+    $tempConfigName = "temp-incrementalist-$([guid]::NewGuid()).json"
+    # Assume execution from workspace root or a consistent directory; Get-Location should work
+    $tempConfigPath = Join-Path (Get-Location) $tempConfigName 
+
+    Invoke-IncrementalistTest -TestName "Create config overwrites existing specified file (#381)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        # Create a dummy initial config file at the temp path
+        $initialContent = '{"BaseBranch": "initial", "Timeout": 1, "RunInParallel": false}'
+        Set-Content -Path $tempConfigPath -Value $initialContent -Force
+        Write-Host "Created initial dummy config at $tempConfigPath"
+
+        try {
+            # Run Incrementalist with --create-config targeting the temp file path and different parameters
+            $newBaseBranch = "overwrite-test"
+            $newTimeout = 5
+            $exitCode = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", $tempConfigPath, "-b", $newBaseBranch, "-t", $newTimeout.ToString(), "--parallel")
+            if ($exitCode -ne 0) {
+                throw "Incrementalist command failed with exit code $exitCode when overwriting config at $tempConfigPath."
+            }
+
+            # Verification: Check if the file exists and was overwritten
+            if (-not (Test-Path $tempConfigPath)) {
+                throw "Configuration file ($tempConfigPath) does not exist after overwrite attempt."
+            }
+
+            $overwrittenConfig = Get-Content $tempConfigPath | ConvertFrom-Json
+            
+            if ($overwrittenConfig.BaseBranch -ne $newBaseBranch) {
+                throw "BaseBranch in config was '$($overwrittenConfig.BaseBranch)', expected '$newBaseBranch'."
+            }
+            if ($overwrittenConfig.Timeout -ne $newTimeout) {
+                throw "Timeout in config was '$($overwrittenConfig.Timeout)', expected '$newTimeout'."
+            }
+            if ($overwrittenConfig.RunInParallel -ne $true) {
+                throw "RunInParallel in config was '$($overwrittenConfig.RunInParallel)', expected '$true'."
+            }
+
+            return 0 # Success
+        }
+        finally {
+            # Cleanup: Remove the temp config file
+            if (Test-Path $tempConfigPath) {
+                Write-Host "Cleaning up temp config file: $tempConfigPath"
+                Remove-Item -Path $tempConfigPath -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 # Main execution
 Write-Host "Running Incrementalist integration tests in $ExecutionMode mode..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
@@ -621,6 +719,10 @@ foreach ($project in $incrementalistProjects) {
     # Run glob tests
     Test-GlobTargeting -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
     Test-GlobSkipping -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    
+    # Run config tests
+    Test-CreateConfigCustomPath -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
+    Test-CreateConfigOverwrite -ProjectPath $project.FullName -Configuration $Configuration
 }
 
 # Final status report
