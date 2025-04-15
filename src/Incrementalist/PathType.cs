@@ -32,7 +32,7 @@ public sealed record RelativePath : IHavePathType
     public RelativePath(string path)
     {
         if(System.IO.Path.IsPathFullyQualified(path))
-            throw new ArgumentException("Path is not relative", nameof(path));
+            throw new ArgumentException($"Path [{path}] is not relative", nameof(path));
         Path = path;
     }
     
@@ -54,7 +54,7 @@ public sealed record AbsolutePath : IHavePathType
     public AbsolutePath(string path)
     {
         if(!System.IO.Path.IsPathFullyQualified(path))
-            throw new ArgumentException("Path is not asbolute", nameof(path));
+            throw new ArgumentException($"Path [{path}] is not absolute", nameof(path));
         Path = path;
     }
 
