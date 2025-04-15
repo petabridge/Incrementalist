@@ -105,6 +105,75 @@ namespace Incrementalist.Tests.Helpers
             return this;
         }
 
+        public DisposableRepository WriteSolution(SolutionModel solutionModel)
+        {
+            // need to traverse the solution and write the entire graph
+            // of projects to disk
+            
+            // write the solution first
+            var solutionText = solutionModel.Serialize();
+            WriteFile(solutionModel.FileName, solutionText);
+
+            foreach (var c in solutionModel.FileStructure)
+            {
+                switch (c)
+                {
+                    case SolutionFolder dir:
+                        ProcessFolder(dir);
+                        break;
+                    case ProjectModel project:
+                        ProcessProject(project);
+                        break;
+                    case SampleFile sampleFile:
+                        WriteFile(sampleFile.Name, sampleFile.Content);
+                        break;
+                }
+            }
+
+            return this;
+
+            void ProcessProject(ProjectModel project)
+            {
+                var serializedProject = project.Serialize();
+                CreateDirectory(Path.GetDirectoryName(project.RelativePathFromRepository)!);
+                WriteFile(project.RelativePathFromRepository, serializedProject);
+                
+                foreach (var file in project.IncludedFiles)
+                {
+                    var fullPath = Path.Combine(project.RelativePathFromRepository, file.Name);
+                    WriteFile(fullPath, file.Content);
+                }
+            }
+
+            void ProcessFolder(SolutionFolder folder)
+            {
+                CreateDirectory(folder.Name);
+                foreach (var item in folder.Items)
+                {
+                    switch (item)
+                    {
+                        case SolutionFolder subDir:
+                            ProcessFolder(subDir);
+                            break;
+                        case ProjectModel project:
+                            ProcessProject(project);
+                            break;
+                        case SampleFile sampleFile:
+                            var path = Path.Combine(folder.Name, sampleFile.Name);
+                            WriteFile(path, sampleFile.Content);
+                            break;
+                    }
+                }
+            }
+        }
+
+        public DisposableRepository CreateDirectory(string directoryName)
+        {
+            var dirPath = Path.Combine(BasePath, directoryName);
+            Directory.CreateDirectory(dirPath);
+            return this;
+        }
+
         /// <summary>
         /// Adds or updates sample fime in the repository
         /// </summary>
@@ -123,6 +192,15 @@ namespace Incrementalist.Tests.Helpers
             var filePath = Path.Combine(BasePath, fileName);
             File.Delete(fileName);
             LibGit2Sharp.Commands.Remove(Repository, filePath);
+            return this;
+        }
+
+        public DisposableRepository AddOrModifyProjectFile(ProjectModel project, SampleFile sampleFile)
+        {
+            var filePath = Path.Combine(project.RelativePathFromRepository, sampleFile.Name);
+            
+            // this will overwrite the file if it already exists
+            WriteFile(filePath, sampleFile.Content);
             return this;
         }
 
