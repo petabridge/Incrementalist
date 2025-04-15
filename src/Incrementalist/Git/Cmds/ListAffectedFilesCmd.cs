@@ -15,7 +15,7 @@ namespace Incrementalist.Git.Cmds
     /// <summary>
     ///     List all affected files in the working directory.
     /// </summary>
-    public sealed class ListAffectedFilesCmd : BuildCommandBase<Repository, IEnumerable<string>>
+    public sealed class ListAffectedFilesCmd : BuildCommandBase<Repository, IEnumerable<AbsolutePath>>
     {
         private readonly string _targetBranch;
 
@@ -25,7 +25,7 @@ namespace Incrementalist.Git.Cmds
             _targetBranch = targetBranch;
         }
 
-        protected override async Task<IEnumerable<string>> ProcessImpl(Task<Repository> previousTask)
+        protected override async Task<IEnumerable<AbsolutePath>> ProcessImpl(Task<Repository> previousTask)
         {
             var repository = await previousTask;
 

@@ -106,8 +106,9 @@ namespace Incrementalist.Cmd
 
             try
             {
-                var pwd = options.WorkingDirectory ?? Directory.GetCurrentDirectory();
-                var insideRepo = Repository.IsValid(pwd);
+                var pwd = new AbsolutePath(Path.GetFullPath(options.WorkingDirectory ?? Directory.GetCurrentDirectory()));
+                
+                var insideRepo = Repository.IsValid(pwd.Path);
                 if (!insideRepo)
                 {
                     logger.LogError("Current path {WorkingDirectory} is not located inside any known Git repository.",
@@ -116,15 +117,15 @@ namespace Incrementalist.Cmd
                 }
 
                 // can't be null or Repository.IsValid(pwd) would have failed
-                var repoFolder = Repository.Discover(pwd)!;
-                var workingFolder = Directory.GetParent(repoFolder)!.Parent!;
+                var repoFolder = Repository.Discover(pwd.Path)!;
+                var workingFolder = new AbsolutePath(Directory.GetParent(repoFolder)!.Parent!.FullName);
 
-                var (repo, foundRepo) = GitRunner.FindRepository(workingFolder.FullName);
+                var (repo, foundRepo) = GitRunner.FindRepository(workingFolder);
 
                 if (!foundRepo || repo == null)
                 {
                     logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.",
-                        workingFolder.FullName);
+                        workingFolder);
                     return -3;
                 }
 
@@ -166,14 +167,14 @@ namespace Incrementalist.Cmd
             }
         }
 
-        private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        private static async Task AnalyzeFolderDiff(SlnOptions options, AbsolutePath workingFolder, ILogger logger)
         {
             /*
              * options.SolutionFilePath can be null here, but it won't affect this task
              */
 
-            var settings = new BuildSettings(options.GitBranch!, options.SolutionFilePath ?? string.Empty,
-                workingFolder.FullName,
+            var settings = new BuildSettings(options.GitBranch!, new FileName(options.SolutionFilePath ?? string.Empty),
+                workingFolder,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache
@@ -186,20 +187,20 @@ namespace Incrementalist.Cmd
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
-        private static async Task AnalyzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        private static async Task AnalyzeSolutionDIff(SlnOptions options, AbsolutePath workingFolder, ILogger logger)
         {
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
 
             var msBuild = MSBuildWorkspace.Create();
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
-                await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
+                await ProcessSln(options, new FileName(options.SolutionFilePath), workingFolder, msBuild, logger);
             else
-                foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
+                foreach (var sln in SolutionFinder.GetSolutions(workingFolder))
                     await ProcessSln(options, sln, workingFolder, msBuild, logger);
         }
 
-        private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
+        private static async Task ProcessSln(SlnOptions options, FileName sln, AbsolutePath workingFolder,
             MSBuildWorkspace msBuild, ILogger logger)
         {
             var stopwatch = new Stopwatch();
@@ -207,7 +208,7 @@ namespace Incrementalist.Cmd
 
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
-            var settings = new BuildSettings(options.GitBranch!, sln, workingFolder.FullName,
+            var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache

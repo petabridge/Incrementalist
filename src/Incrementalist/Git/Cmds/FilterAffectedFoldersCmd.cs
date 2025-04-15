@@ -16,19 +16,19 @@ namespace Incrementalist.Git.Cmds
     /// <summary>
     ///     Filters all of the unique folders that contain affected files
     /// </summary>
-    public sealed class FilterAffectedFoldersCmd : BuildCommandBase<IEnumerable<string>, Dictionary<string, ICollection<string>>>
+    public sealed class FilterAffectedFoldersCmd : BuildCommandBase<IEnumerable<AbsolutePath>, Dictionary<AbsolutePath, ICollection<AbsolutePath>>>
     {
         public FilterAffectedFoldersCmd(ILogger logger, CancellationToken cancellationToken) : base(
-            "FilterAffectedFiles", logger, cancellationToken)
+            "FilterAffectedFolders", logger, cancellationToken)
         {
         }
 
-        protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(Task<IEnumerable<string>> previousTask)
+        protected override async Task<Dictionary<AbsolutePath, ICollection<AbsolutePath>>> ProcessImpl(Task<IEnumerable<AbsolutePath>> previousTask)
         {
             var affectedFiles = await previousTask;
 
-            return affectedFiles.GroupBy(x => Path.GetDirectoryName(x)!)
-                .ToDictionary(x => x.Key, grouping => (ICollection<string>)grouping.Distinct().ToList());
+            return affectedFiles.GroupBy(x => new AbsolutePath(Path.GetDirectoryName(x.Path)!))
+                .ToDictionary(x => x.Key, grouping => (ICollection<AbsolutePath>)grouping.Distinct().ToList());
         }
     }
 }

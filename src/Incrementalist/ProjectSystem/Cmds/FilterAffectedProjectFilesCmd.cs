@@ -21,7 +21,7 @@ namespace Incrementalist.ProjectSystem.Cmds
     ///     they were touched via the GitDiff.
     /// </summary>
     public sealed class
-        FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<string, SlnFile>, Dictionary<string, SlnFile>>
+        FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile>, Dictionary<AbsolutePath, SlnFile>>
     {
         private readonly string _targetGitBranch;
         private readonly string _workingDirectory;
@@ -34,8 +34,8 @@ namespace Incrementalist.ProjectSystem.Cmds
             _targetGitBranch = targetGitBranch;
         }
 
-        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(
-            Task<Dictionary<string, SlnFile>> previousTask)
+        protected override async Task<Dictionary<AbsolutePath, SlnFile>> ProcessImpl(
+            Task<Dictionary<AbsolutePath, SlnFile>> previousTask)
         {
             var fileDictObj = await previousTask;
 
@@ -43,25 +43,25 @@ namespace Incrementalist.ProjectSystem.Cmds
             if (!foundRepo || repo == null)
             {
                 Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", _workingDirectory);
-                return new Dictionary<string, SlnFile>();
+                return new Dictionary<AbsolutePath, SlnFile>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repo, _targetGitBranch))
             {
                 Logger.LogError("Current git repository doesn't have any branch named [{TargetBranch}]. Shutting down.", _targetGitBranch);
-                return new Dictionary<string, SlnFile>();
+                return new Dictionary<AbsolutePath, SlnFile>();
             }
 
             var affectedFiles = DiffHelper.ChangedFiles(repo, _targetGitBranch).ToList();
 
             var projectFiles = fileDictObj.Where(x => x.Value.FileType == FileType.Project).ToList();
-            var projectFolders = projectFiles.Where(x => Path.GetDirectoryName(x.Key) is not null)
-                .ToLookup(x => Path.GetDirectoryName(x.Key)!, v => Tuple.Create(v.Key, v.Value));
+            var projectFolders = projectFiles.Where(x => Path.GetDirectoryName(x.Key.Path) is not null)
+                .ToLookup(x => new AbsolutePath(Path.GetDirectoryName(x.Key.Path)!), v => Tuple.Create(v.Key, v.Value));
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles.Select(pair => new SlnFileWithPath(pair.Key, pair.Value)));
 
             // filter out any files that aren't affected by the diff
-            var newDict = new Dictionary<string, SlnFile>();
+            var newDict = new Dictionary<AbsolutePath, SlnFile>();
             foreach (var file in affectedFiles)
             {
                 Logger.LogDebug("Affected file: {FilePath}", file);
@@ -71,13 +71,13 @@ namespace Incrementalist.ProjectSystem.Cmds
                 {
                     // special case - not all the affected files were in the solution.
                     // Check to see if these affected files are in the same folder as any of the projects
-                    var directoryName = Path.GetDirectoryName(file);
+                    var directoryName = Path.GetDirectoryName(file.Path);
                     if (string.IsNullOrEmpty(directoryName))
                     {
                         continue;
                     }
 
-                    if (TryFindSubFolder(projectFolders.Select(c => c.Key), directoryName, out var projectFolder))
+                    if (TryFindSubFolder(projectFolders.Select(c => c.Key), new AbsolutePath(directoryName), out var projectFolder))
                     {
                         var affectedProjects = projectFolders[projectFolder];
                         foreach (var (projectPath, project) in affectedProjects)
@@ -93,7 +93,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                 if (projectImports.TryGetValue(file, value: out var import))
                 { 
                     // Mark all dependant as affected
-                    foreach (var dependentProject in import.DependantProjects)
+                    foreach (var dependentProject in import.DependentProjects)
                     {
                         newDict[dependentProject.Path] = dependentProject.File;
                     }
@@ -103,13 +103,13 @@ namespace Incrementalist.ProjectSystem.Cmds
             return newDict;
         }
 
-        private static bool TryFindSubFolder(IEnumerable<string> testFolders, string targetFolder, [NotNullWhen(true)] out string? winningFolder)
+        private static bool TryFindSubFolder(IEnumerable<AbsolutePath> testFolders, AbsolutePath targetFolder, [NotNullWhen(true)] out AbsolutePath? winningFolder)
         {
             winningFolder = null;
             foreach(var startingFolder in testFolders)
-            foreach(var dir in Directory.EnumerateDirectories(startingFolder))
+            foreach(var dir in Directory.EnumerateDirectories(startingFolder.Path))
             {
-                if (Path.GetFullPath(dir).Equals(targetFolder))
+                if (Path.GetFullPath(dir).Equals(targetFolder.Path))
                 {
                     winningFolder = startingFolder;
                     return true;

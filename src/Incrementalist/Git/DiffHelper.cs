@@ -16,10 +16,10 @@ namespace Incrementalist.Git
     /// </summary>
     public static class DiffHelper
     {
-        public static IEnumerable<string> ChangedFiles(Repository repo, string targetBranch)
+        public static IEnumerable<AbsolutePath> ChangedFiles(Repository repo, string targetBranch)
         {
             var targetTree = repo.Branches[targetBranch].Tip.Tree;
-            var changes = new HashSet<string>();
+            var changes = new HashSet<AbsolutePath>();
 
             // Get all changes between target branch and current state (including both staged and unstaged)
             var status = repo.RetrieveStatus();
@@ -27,20 +27,20 @@ namespace Incrementalist.Git
             // Add staged changes
             foreach (var staged in status.Staged)
             {
-                changes.Add(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, staged.FilePath)));
+                changes.Add(new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, staged.FilePath))));
             }
 
             // Add unstaged changes
             foreach (var unstaged in status.Modified.Concat(status.Added).Concat(status.Untracked))
             {
-                changes.Add(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, unstaged.FilePath)));
+                changes.Add(new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, unstaged.FilePath))));
             }
 
             // Add changes between target branch and HEAD
             var branchDiff = repo.Diff.Compare<TreeChanges>(targetTree, repo.Head.Tip.Tree);
             foreach (var change in branchDiff)
             {
-                changes.Add(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, change.Path)));
+                changes.Add(new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, change.Path))));
             }
 
             return changes;

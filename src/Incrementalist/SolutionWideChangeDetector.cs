@@ -31,7 +31,7 @@ namespace Incrementalist
             ".sln"
         };
 
-        private readonly IReadOnlyDictionary<string, ImportedFile> _projectImports;
+        private readonly IReadOnlyDictionary<AbsolutePath, ImportedFile> _projectImports;
 
         /// <summary>
         /// Creates a new instance of the SolutionWideChangeDetector using a Solution object.
@@ -43,7 +43,7 @@ namespace Incrementalist
 
             var projectFiles = solution.Projects
                 .Where(p => p.FilePath != null)
-                .Select(p => new SlnFileWithPath(p.FilePath!, new SlnFile(FileType.Project, p.Id)))
+                .Select(p => new SlnFileWithPath(new AbsolutePath(p.FilePath!), new SlnFile(FileType.Project, p.Id)))
                 .ToList();
             
             _projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
@@ -52,7 +52,7 @@ namespace Incrementalist
         /// <summary>
         /// Creates a new instance of the SolutionWideChangeDetector using pre-computed project imports.
         /// </summary>
-        public SolutionWideChangeDetector(IReadOnlyDictionary<string, ImportedFile> projectImports)
+        public SolutionWideChangeDetector(IReadOnlyDictionary<AbsolutePath, ImportedFile> projectImports)
         {
             _projectImports = projectImports ?? throw new ArgumentNullException(nameof(projectImports));
         }
@@ -62,7 +62,7 @@ namespace Incrementalist
         /// </summary>
         /// <param name="changedFiles">The list of files that have changed.</param>
         /// <returns>True if a full solution build is required, false otherwise.</returns>
-        public bool RequiresFullSolutionBuild(IEnumerable<string> changedFiles)
+        public bool RequiresFullSolutionBuild(IEnumerable<AbsolutePath> changedFiles)
         {
             if (changedFiles == null) throw new ArgumentNullException(nameof(changedFiles));
 
@@ -85,10 +85,10 @@ namespace Incrementalist
         /// <summary>
         /// Determines if a file is considered solution-wide based on its name or extension.
         /// </summary>
-        internal static bool IsSolutionWideFile(string filePath)
+        internal static bool IsSolutionWideFile(AbsolutePath filePath)
         {
-            var fileName = Path.GetFileName(filePath);
-            var extension = Path.GetExtension(filePath);
+            var fileName = Path.GetFileName(filePath.Path);
+            var extension = Path.GetExtension(filePath.Path);
 
             return AlwaysSolutionWideFiles.Contains(fileName) || 
                    AlwaysSolutionWideExtensions.Contains(extension);
@@ -101,10 +101,10 @@ namespace Incrementalist
         {
             // If this props/targets file is imported by Directory.Build.props or affects multiple projects,
             // we should do a full solution build
-            var isImportedByDirectoryBuildProps = importedFile.DependantProjects
-                .Any(p => Path.GetFileName(p.Path).Equals("Directory.Build.props", StringComparison.OrdinalIgnoreCase));
+            var isImportedByDirectoryBuildProps = importedFile.DependentProjects
+                .Any(p => Path.GetFileName(p.Path.Path).Equals("Directory.Build.props", StringComparison.OrdinalIgnoreCase));
             
-            var affectsMultipleProjects = importedFile.DependantProjects.Count > 1;
+            var affectsMultipleProjects = importedFile.DependentProjects.Count > 1;
 
             return isImportedByDirectoryBuildProps || affectsMultipleProjects;
         }

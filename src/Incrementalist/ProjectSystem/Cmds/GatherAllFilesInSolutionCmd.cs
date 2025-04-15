@@ -16,7 +16,7 @@ namespace Incrementalist.ProjectSystem.Cmds
     /// <summary>
     ///     Gathers all of the files in a solution and categorizes them.
     /// </summary>
-    public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase<Solution, Dictionary<string, SlnFile>>
+    public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase<Solution, Dictionary<AbsolutePath, SlnFile>>
     {
         private readonly string _workingDirectory;
 
@@ -26,7 +26,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             _workingDirectory = workingDirectory;
         }
 
-        protected override async Task<Dictionary<string, SlnFile>> ProcessImpl(Task<Solution> previousTask)
+        protected override async Task<Dictionary<AbsolutePath, SlnFile>> ProcessImpl(Task<Solution> previousTask)
         {
             var slnObject = await previousTask;
             Contract.Assert(slnObject is not null,

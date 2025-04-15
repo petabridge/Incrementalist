@@ -135,8 +135,8 @@ namespace Incrementalist.Tests.Helpers
             void ProcessProject(ProjectModel project)
             {
                 var serializedProject = project.Serialize();
-                CreateDirectory(Path.GetDirectoryName(project.RelativePathFromRepository)!);
-                WriteFile(project.RelativePathFromRepository, serializedProject);
+                CreateDirectory(project.RelativePathFromRepository);
+                WriteFile(project.CompletePath, serializedProject);
                 
                 foreach (var file in project.IncludedFiles)
                 {
