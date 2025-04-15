@@ -9,7 +9,7 @@ namespace Incrementalist.Tests.Helpers;
 
 public sealed class SolutionBuilder
 {
-    private readonly string _baseDirectory;
+    private readonly RelativePath _baseDirectory;
     private readonly string _name;
     
     private readonly HashSet<ProjectModel> _projects = [];
@@ -17,7 +17,7 @@ public sealed class SolutionBuilder
 
     public SolutionBuilder(string name, string baseDirectory = "")
     {
-        _baseDirectory = baseDirectory;
+        _baseDirectory = new RelativePath(baseDirectory);
         _name = name;
     }
     
@@ -36,7 +36,7 @@ public sealed class SolutionBuilder
         var projectId = ProjectId.CreateNewId();
         
         // each project gets its own directory
-        var projectRelativePath = Path.Combine(_baseDirectory, projectName);
+        var projectRelativePath = Path.Combine(_baseDirectory.Path, projectName);
         var projectModel = new ProjectBuilder(projectId, projectRelativePath, projectName);
         builder(_projects, projectModel);
         var project = projectModel.Build();
@@ -63,7 +63,7 @@ public sealed class SolutionBuilder
         private readonly SolutionBuilder _builder;
         private readonly List<IMsBuildSerializable> _items = [];
         
-        public string CompleteRelativePath => Path.Combine(_builder._baseDirectory, _name);
+        public string CompleteRelativePath => Path.Combine(_builder._baseDirectory.Path, _name);
 
         public SolutionFolderBuilder(string name, SolutionBuilder solutionBuilder)
         {
@@ -111,7 +111,7 @@ public sealed class SolutionBuilder
     }
 }
 
-public sealed record SolutionModel(string Name, string BaseDirectory) : IMsBuildSerializable
+public sealed record SolutionModel(string Name, RelativePath BaseDirectory) : IMsBuildSerializable
 {
     /// <summary>
     /// Flat set of all projects
@@ -123,9 +123,9 @@ public sealed record SolutionModel(string Name, string BaseDirectory) : IMsBuild
     /// </summary>
     public ImmutableHashSet<IMsBuildSerializable> FileStructure { get; init; } = ImmutableHashSet<IMsBuildSerializable>.Empty;
     
-    public string FileName => $"{Name}.slnx";
+    public FileName FileName => new($"{Name}.slnx");
     
-    public string FilePath => Path.Combine(BaseDirectory, FileName);
+    public RelativePath FilePath => new(Path.Combine(BaseDirectory.Path, FileName.Name));
     public string Serialize()
     {
         return SolutionSerializer.Serialize(this);

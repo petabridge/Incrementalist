@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Incrementalist.Cmd;
 using Xunit;
 
@@ -7,7 +8,7 @@ namespace Incrementalist.Tests;
 
 public class GlobFilterTests
 {
-    public static readonly IReadOnlyList<string> TestProjects = new List<string>
+    public static readonly IReadOnlyList<RelativePath> TestProjects = new List<string>
     {
         "src/ProjectA/ProjectA.csproj",
         "src/ProjectB/ProjectB.csproj",
@@ -15,7 +16,7 @@ public class GlobFilterTests
         "tests/ProjectB.Tests/ProjectB.Tests.csproj",
         "samples/Sample1/Sample1.csproj",
         "samples/Sample2/Sample2.fsproj" // Different extension
-    }.AsReadOnly();
+    }.Select(c => new RelativePath(c)).ToList().AsReadOnly();
 
     [Fact]
     public void FilterProjects_NoFilters_ReturnsOriginalList()
@@ -35,7 +36,7 @@ public class GlobFilterTests
     public void FilterProjects_EmptyInput_ReturnsEmptyList()
     {
         // Arrange
-        var emptyProjects = Array.Empty<string>();
+        var emptyProjects = Array.Empty<RelativePath>();
         var skipGlobs = new[] { "**/ProjectA*" };
         var targetGlobs = new[] { "src/**" };
 

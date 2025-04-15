@@ -42,7 +42,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Single(solutions);
-            Assert.EndsWith("MySolution.sln", solutions.First());
+            Assert.EndsWith("MySolution.sln", solutions.First().Name);
         }
         
         /// <summary>
@@ -71,7 +71,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Single(solutions);
-            Assert.EndsWith("MySolution.slnx", solutions.First());
+            Assert.EndsWith("MySolution.slnx", solutions.First().Name);
         }
 
         [Fact(DisplayName = "Should find multiple solutions in root directory")]
@@ -87,8 +87,8 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Equal(2, solutions.Count);
-            Assert.Contains(solutions, s => s.EndsWith("Solution1.sln"));
-            Assert.Contains(solutions, s => s.EndsWith("Solution2.sln"));
+            Assert.Contains(solutions, s => s.Name.EndsWith("Solution1.sln"));
+            Assert.Contains(solutions, s => s.Name.EndsWith("Solution2.sln"));
         }
 
         [Fact(DisplayName = "Should find solutions in subdirectories")]
@@ -97,7 +97,7 @@ namespace Incrementalist.Tests.ProjectSystem
             // Arrange
             const string solutionContent = "dummy solution content";
             var expectedPath = Path.Join("src", "MySolution.sln");
-            Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src"));
+            Directory.CreateDirectory(Path.Combine(_repository.BasePath.Path, "src"));
             _repository.WriteFile("src/MySolution.sln", solutionContent);
 
             // Act
@@ -105,7 +105,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Single(solutions);
-            Assert.EndsWith(expectedPath, solutions.First());
+            Assert.EndsWith(expectedPath, solutions.First().Name);
         }
 
         [Fact(DisplayName = "Should return empty list when no solutions found")]
@@ -131,7 +131,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Single(solutions);
-            Assert.EndsWith("Test.sln", solutions.First());
+            Assert.EndsWith("Test.sln", solutions.First().Name);
         }
 
         [Fact(DisplayName = "Should respect search option when provided")]
@@ -139,7 +139,7 @@ namespace Incrementalist.Tests.ProjectSystem
         {
             // Arrange
             const string solutionContent = "dummy solution content";
-            Directory.CreateDirectory(Path.Combine(_repository.BasePath, "src"));
+            Directory.CreateDirectory(Path.Combine(_repository.BasePath.Path, "src"));
             _repository.WriteFile("Solution1.sln", solutionContent)
                       .WriteFile("src/Solution2.sln", solutionContent);
 
@@ -148,7 +148,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Single(topDirSolutions);
-            Assert.EndsWith("Solution1.sln", topDirSolutions.First());
+            Assert.EndsWith("Solution1.sln", topDirSolutions.First().Name);
         }
 
         [Fact(DisplayName = "Should process multiple solutions in deterministic order")]
@@ -165,7 +165,7 @@ namespace Incrementalist.Tests.ProjectSystem
 
             // Assert
             Assert.Equal(3, solutions.Count);
-            var orderedSolutions = solutions.Select(s => Path.GetFileName(s)).OrderBy(x => x).ToList();
+            var orderedSolutions = solutions.Select(s => Path.GetFileName(s.Name)).OrderBy(x => x).ToList();
             for (var i = 1; i < orderedSolutions.Count; i++)
             {
                 Assert.True(string.CompareOrdinal(orderedSolutions[i - 1], orderedSolutions[i]) <= 0, 

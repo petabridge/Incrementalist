@@ -27,19 +27,25 @@ namespace Incrementalist.Tests.Caching
         {
             _repository.Dispose();
         }
+        
+        private AbsolutePath GetCachePath(string fileName)
+        {
+            return new AbsolutePath(Path.Combine(_repository.BasePath.Path, fileName));
+        }
 
         [Fact]
         public void GetCachePath_ReturnsExpectedPath()
         {
             // Arrange
-            var solutionDir = Path.Combine(_repository.BasePath, "MySolution");
+            var solutionDir = new AbsolutePath(Path.Combine(_repository.BasePath.Path, "MySolution"));
 
             // Act
             var cachePath = DependencyCacheIO.GetCachePath(solutionDir);
 
             // Assert
-            Assert.Equal(
-                Path.Combine(solutionDir, ".incrementalist", "incrementalist.graphcache.json"),
+            var expectedPath =
+                new AbsolutePath(Path.Combine(solutionDir.Path, ".incrementalist", "incrementalist.graphcache.json"));
+            Assert.Equal(expectedPath,
                 cachePath);
         }
 
@@ -47,7 +53,7 @@ namespace Incrementalist.Tests.Caching
         public async Task LoadAsync_WithNonExistentFile_ReturnsNull()
         {
             // Arrange
-            var cachePath = Path.Combine(_repository.BasePath, "nonexistent.json");
+            var cachePath = GetCachePath("nonexistent.json");
 
             // Act
             var result = await DependencyCacheIO.LoadAsync(cachePath);
@@ -60,17 +66,17 @@ namespace Incrementalist.Tests.Caching
         public async Task SaveAndLoadAsync_WithValidCache_PreservesData()
         {
             // Arrange
-            var cachePath = Path.Combine(_repository.BasePath, "cache.json");
+            var cachePath = GetCachePath("cache.json");
             var solutionId = SolutionId.CreateNewId();
             var projectId = ProjectId.CreateNewId();
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: "test.sln",
+                SolutionPath: new RelativePath("test.sln"),
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty
                     .Add(projectId, new ProjectNode(
                         projectId,
-                        "test.csproj",
+                        new RelativePath("test.csproj"),
                         ImmutableList<ProjectId>.Empty)));
 
             // Act
@@ -90,7 +96,7 @@ namespace Incrementalist.Tests.Caching
         public async Task SaveAsync_WithNullCache_ThrowsArgumentNullException()
         {
             // Arrange
-            var cachePath = Path.Combine(_repository.BasePath, "cache.json");
+            var cachePath = GetCachePath("cache.json");
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -103,7 +109,7 @@ namespace Incrementalist.Tests.Caching
             // Arrange
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: "test.sln",
+                SolutionPath: new RelativePath("test.sln"),
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
@@ -113,29 +119,14 @@ namespace Incrementalist.Tests.Caching
         }
 
         [Fact]
-        public async Task SaveAsync_WithEmptyPath_ThrowsArgumentException()
-        {
-            // Arrange
-            var cache = new DependencyCache(
-                Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: "test.sln",
-                Checksum: "test-checksum",
-                Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                DependencyCacheIO.SaveAsync("", cache));
-        }
-
-        [Fact]
         public async Task SaveAsync_CreatesDirectoryIfNotExists()
         {
             // Arrange
-            var dir = Path.Combine(_repository.BasePath, "subdir");
-            var cachePath = Path.Combine(dir, "cache.json");
+            var dir = Path.Combine(_repository.BasePath.Path, "subdir");
+            var cachePath = new AbsolutePath(Path.Combine(dir, "cache.json"));
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: "test.sln",
+                SolutionPath: new RelativePath("test.sln"),
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
@@ -144,7 +135,7 @@ namespace Incrementalist.Tests.Caching
 
             // Assert
             Assert.True(Directory.Exists(dir));
-            Assert.True(File.Exists(cachePath));
+            Assert.True(File.Exists(cachePath.Path));
         }
     }
 } 

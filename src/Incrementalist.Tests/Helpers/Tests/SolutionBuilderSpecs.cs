@@ -39,7 +39,7 @@ public class SolutionBuilderSpecs
         
         // assert
         Assert.Equal("TestSolution", solution.Name);
-        Assert.Equal("TestSolution.slnx", solution.FilePath);
+        Assert.Equal("TestSolution.slnx", solution.FileName.Name);
         Assert.Equal(3, solution.FlatProjects.Count);
         
         var expectedProjectNames = new[]

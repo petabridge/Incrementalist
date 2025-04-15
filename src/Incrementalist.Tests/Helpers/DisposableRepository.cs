@@ -22,13 +22,13 @@ namespace Incrementalist.Tests.Helpers
         {
         }
 
-        public DisposableRepository(string basePath)
+        public DisposableRepository(AbsolutePath basePath)
         {
             BasePath = basePath;
             Init();
         }
 
-        public string BasePath { get; }
+        public AbsolutePath BasePath { get; }
 
         // Gets created via CTOR method call, so can't be null unless catastrophic failure
         public Repository Repository { get; private set; } = null!;
@@ -39,7 +39,7 @@ namespace Incrementalist.Tests.Helpers
             for (var attempt = 1; attempt <= MaxDeleteAttempts; attempt++)
                 try
                 {
-                    Directory.Delete(BasePath, true);
+                    Directory.Delete(BasePath.Path, true);
                     return;
                 }
                 catch (Exception)
@@ -52,16 +52,16 @@ namespace Incrementalist.Tests.Helpers
         ///     Needed to create repositories in random, temporary directories.
         /// </summary>
         /// <returns>The path to a temporary, random directory.</returns>
-        public static string CreateTempDirectory()
+        public static AbsolutePath CreateTempDirectory()
         {
             var dirPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(dirPath);
-            return dirPath;
+            return new AbsolutePath(dirPath);
         }
 
         private void Init()
         {
-            var repoPath = Repository.Init(BasePath);
+            var repoPath = Repository.Init(BasePath.Path);
             Repository = new Repository(repoPath);
             var sig = CreateSignature();
             Repository.Commit("First", sig, sig);
@@ -99,7 +99,7 @@ namespace Incrementalist.Tests.Helpers
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
         public DisposableRepository WriteFile(string fileName, string fileText)
         {
-            var filePath = Path.Combine(BasePath, fileName);
+            var filePath = Path.Combine(BasePath.Path, fileName);
             File.WriteAllText(filePath, fileText);
             LibGit2Sharp.Commands.Stage(Repository, filePath);
             return this;
@@ -112,7 +112,7 @@ namespace Incrementalist.Tests.Helpers
             
             // write the solution first
             var solutionText = solutionModel.Serialize();
-            WriteFile(solutionModel.FileName, solutionText);
+            WriteFile(solutionModel.FileName.Name, solutionText);
 
             foreach (var c in solutionModel.FileStructure)
             {
@@ -169,7 +169,7 @@ namespace Incrementalist.Tests.Helpers
 
         public DisposableRepository CreateDirectory(string directoryName)
         {
-            var dirPath = Path.Combine(BasePath, directoryName);
+            var dirPath = Path.Combine(BasePath.Path, directoryName);
             Directory.CreateDirectory(dirPath);
             return this;
         }
@@ -189,7 +189,7 @@ namespace Incrementalist.Tests.Helpers
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
         public DisposableRepository DeleteFile(string fileName)
         {
-            var filePath = Path.Combine(BasePath, fileName);
+            var filePath = Path.Combine(BasePath.Path, fileName);
             File.Delete(fileName);
             LibGit2Sharp.Commands.Remove(Repository, filePath);
             return this;

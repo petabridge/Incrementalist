@@ -37,7 +37,7 @@ namespace Incrementalist.Tests.Git
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
             Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Assert.Equal("fuber.txt", Path.GetFileName(file));
+            Assert.Equal("fuber.txt", Path.GetFileName(file.Path));
         }
 
         [Fact(DisplayName = "Should detect files that have been modified in existing repo")]
@@ -53,7 +53,7 @@ namespace Incrementalist.Tests.Git
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
             Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Assert.Equal("fuber.txt", Path.GetFileName(file));
+            Assert.Equal("fuber.txt", Path.GetFileName(file.Path));
         }
 
         [Fact(DisplayName = "Should detect files that have been deleted in existing repo")]
@@ -69,7 +69,7 @@ namespace Incrementalist.Tests.Git
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
             Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Assert.Equal("fuber.txt", Path.GetFileName(file));
+            Assert.Equal("fuber.txt", Path.GetFileName(file.Path));
         }
 
         [Fact(DisplayName = "Should detect unstaged changes in working directory")]
@@ -85,13 +85,13 @@ namespace Incrementalist.Tests.Git
                 .WriteFile("staged.txt", "staged");
 
             // Create an unstaged file
-            var unstagedPath = Path.Combine(Repository.BasePath, "unstaged.txt");
+            var unstagedPath = Path.Combine(Repository.BasePath.Path, "unstaged.txt");
             File.WriteAllText(unstagedPath, "unstaged");
 
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
             Assert.Equal(2, diffedFiles.Count);
-            Assert.Contains(diffedFiles, f => Path.GetFileName(f) == "staged.txt");
-            Assert.Contains(diffedFiles, f => Path.GetFileName(f) == "unstaged.txt");
+            Assert.Contains(diffedFiles, f => Path.GetFileName(f.Path) == "staged.txt");
+            Assert.Contains(diffedFiles, f => Path.GetFileName(f.Path) == "unstaged.txt");
         }
 
         [Fact(DisplayName = "Should not detect any changes when none are present")]
@@ -111,8 +111,8 @@ namespace Incrementalist.Tests.Git
             var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
             Assert.Single(diffedFiles);
             var file = diffedFiles[0];
-            Assert.Equal("fuber.txt", Path.GetFileName(file));
-            Assert.Equal(Path.GetFullPath("fuber.txt", Repository.BasePath), file);
+            Assert.Equal("fuber.txt", Path.GetFileName(file.Path));
+            Assert.Equal(Path.GetFullPath("fuber.txt", Repository.BasePath.Path), file.Path);
         }
     }
 }

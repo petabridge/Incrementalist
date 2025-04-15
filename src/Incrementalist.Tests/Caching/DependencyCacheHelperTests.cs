@@ -56,7 +56,7 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
             var cache = new DependencyCache(
                 Version: "0.9",
-                SolutionPath: solution.FilePath!,
+                SolutionPath: new RelativePath(solution.FilePath!),
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
@@ -74,7 +74,7 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: "different/path/solution.sln",
+                SolutionPath: new RelativePath("different/path/solution.sln"),
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
@@ -89,9 +89,9 @@ namespace Incrementalist.Tests.Caching
         public async Task IsCacheValidAsync_WithChecksumMismatch_ReturnsFalse()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             // Create project directories and files
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
@@ -104,7 +104,7 @@ namespace Incrementalist.Tests.Caching
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: solution.FilePath!,
+                SolutionPath: new RelativePath(solution.FilePath!),
                 Checksum: "different-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
@@ -119,9 +119,9 @@ namespace Incrementalist.Tests.Caching
         public async Task IsCacheValidAsync_WithValidCache_ReturnsTrue()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             // Create project directories and files
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
@@ -147,9 +147,9 @@ namespace Incrementalist.Tests.Caching
         public async Task CreateFromSolutionAsync_WithValidSolution_CreatesValidCache()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             // Create project directories and files
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
@@ -165,9 +165,10 @@ namespace Incrementalist.Tests.Caching
             var cache = await DependencyCacheHelper.CreateFromSolutionAsync(_repository.BasePath, solution);
 
             // Assert
+            var expectedPath = new RelativePath(Path.GetRelativePath(_repository.BasePath.Path, solution.FilePath!));
             Assert.NotNull(cache);
             Assert.Equal(IncrementalistFileConstants.CurrentVersion, cache.Version);
-            Assert.Equal(Path.GetRelativePath(_repository.BasePath, solution.FilePath!), cache.SolutionPath);
+            Assert.Equal(expectedPath, cache.SolutionPath);
             Assert.NotNull(cache.Checksum);
             Assert.Equal(2, cache.Projects.Count);
 
@@ -191,7 +192,7 @@ namespace Incrementalist.Tests.Caching
             var solutionInfo = SolutionInfo.Create(
                 SolutionId.CreateNewId(),
                 VersionStamp.Create(),
-                Path.Combine(_repository.BasePath, "test.sln"));
+                Path.Combine(_repository.BasePath.Path, "test.sln"));
             return workspace.AddSolution(solutionInfo);
         }
     }

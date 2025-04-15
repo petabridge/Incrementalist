@@ -12,7 +12,9 @@ public sealed record SampleFile(string Name, string Content) : IMsBuildSerializa
     /// <summary>
     /// Gets full file path
     /// </summary>
-    public string GetFullPath(string basePath) => Path.Combine(basePath, Name);
+    private string GetFullPath(string basePath) => Path.Combine(basePath, Name);
+
+    public AbsolutePath GetFullPath(AbsolutePath basePath) => new AbsolutePath(GetFullPath(basePath.Path));
 
     public string Serialize()
     {
