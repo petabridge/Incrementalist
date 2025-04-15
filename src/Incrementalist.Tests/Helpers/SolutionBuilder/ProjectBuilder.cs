@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -15,7 +16,7 @@ namespace Incrementalist.Tests.Helpers;
     
     public enum OutputType
     {
-        Executable,
+        Exe,
         Library
     }
     
@@ -71,6 +72,7 @@ namespace Incrementalist.Tests.Helpers;
     {
         private readonly ProjectId _projectId;
         private readonly string _basePath;
+        private readonly string _nameWithoutExtension;
         
         private readonly HashSet<IProjectModelProperty> _projectProperties = [];
         private readonly HashSet<ProjectImport> _projectImports = [];
@@ -92,9 +94,14 @@ namespace Incrementalist.Tests.Helpers;
                 throw new InvalidOperationException("Project has already been built.");
             }
             _isBuilt = true;
+            
+            if(_projectProperties.Count == 0) // need to add our default property for output type
+                _projectProperties.Add(new OutputTypeProperty(_projectType));
+            
             return new ProjectModel(
                 _projectId,
-                _basePath)
+                _basePath,
+                _nameWithoutExtension)
             {
                 ProjectProperties = _projectProperties,
                 ProjectReferences = _projectReferences,
@@ -106,10 +113,11 @@ namespace Incrementalist.Tests.Helpers;
             };
         }
 
-        public ProjectBuilder(ProjectId projectId, string basePath)
+        public ProjectBuilder(ProjectId projectId, string basePath, string nameWithoutExtension)
         {
             _projectId = projectId;
             _basePath = basePath;
+            _nameWithoutExtension = nameWithoutExtension;
         }
         
         public ProjectBuilder WithProjectLanguage(ProjectLanguage language)
@@ -155,6 +163,25 @@ namespace Incrementalist.Tests.Helpers;
             return this;
         }
         
+        public ProjectBuilder WithFile(SampleFile file)
+        {
+            _includedFiles.Add(file);
+            return this;
+        }
+        
+        public ProjectBuilder WithFile(string relativeToProjectFilePathWithExtension, string fileText)
+        {
+            var sampleFile = new SampleFile(relativeToProjectFilePathWithExtension, fileText);
+            _includedFiles.Add(sampleFile);
+            return this;
+        }
+        
+        public ProjectBuilder WithLanguage(ProjectLanguage language)
+        {
+            _language = language;
+            return this;
+        }
+        
         public ProjectModel Build() => BuildInternal();
     }
 
@@ -176,26 +203,24 @@ namespace Incrementalist.Tests.Helpers;
             {
                 sb.AppendLine($"  <Import Project=\"{projectImport.RelativePath}\" />");
             }
-            
-            sb.AppendLine($"  <ItemGroup>");
-            foreach (var projectReference in projectModel.ProjectReferences)
+
+            if (projectModel.ProjectReferences.Count > 0)
             {
-                sb.AppendLine($"  <ProjectReference Include=\"{projectReference.Value}\" />");
+                sb.AppendLine($"  <ItemGroup>");
+                foreach (var projectReference in projectModel.ProjectReferences)
+                {
+                    sb.AppendLine($"  <ProjectReference Include=\"{projectReference.Value}\" />");
+                }
+                sb.AppendLine($"  </ItemGroup>");
+                sb.AppendLine($"</Project>");
             }
-            sb.AppendLine($"  </ItemGroup>");
-            sb.AppendLine($"</Project>");
             
             return sb.ToString();
         }
     }
     
-    public sealed record ProjectModel(ProjectId ProjectId, string BaseDirectoryPath)
+    public sealed record ProjectModel(ProjectId ProjectId, string BaseDirectoryPath, string NameWithoutExtension) : IMsBuildSerializable
     {
-        /// <summary>
-        /// The absolute path to the project file directory
-        /// </summary>
-        public string BaseDirectoryPath { get; } = BaseDirectoryPath;
-        
         public ProjectLanguage ProjectLanguage { get; init; } = ProjectLanguage.CSharp;
         
         public required TargetFrameworks TargetFrameworks { get; init; }
@@ -228,4 +253,20 @@ namespace Incrementalist.Tests.Helpers;
             ProjectLanguage.FSharp => ".fsproj",
             _ => throw new ArgumentOutOfRangeException(nameof(ProjectLanguage), ProjectLanguage, null)
         };
+        
+        public string FileName => $"{NameWithoutExtension}{FileExtension}";
+        
+        public string AbsoluteFilePath => Path.Combine(BaseDirectoryPath, FileName);
+        
+        public string SolutionRelativePath(string solutionPath) 
+        {
+            var solutionDirectory = Path.GetDirectoryName(solutionPath)!;
+            var relativePath = Path.GetRelativePath(solutionDirectory, AbsoluteFilePath);
+            return relativePath;
+        }
+        
+        public string Serialize()
+        {
+            return ProjectModelSerializer.Serialize(this);
+        }
     }
