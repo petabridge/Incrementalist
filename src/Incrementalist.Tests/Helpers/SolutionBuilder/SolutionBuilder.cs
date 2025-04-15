@@ -12,10 +12,10 @@ public sealed class SolutionBuilder
     private readonly string _baseDirectory;
     private readonly string _name;
     
-    private readonly Dictionary<ProjectId, ProjectModel> _projects = new();
-    private readonly HashSet<SolutionFolder> _folders = [];
+    private readonly HashSet<ProjectModel> _projects = [];
+    private readonly HashSet<IMsBuildSerializable> _items = [];
 
-    public SolutionBuilder(string name, string baseDirectory)
+    public SolutionBuilder(string name, string baseDirectory = "")
     {
         _baseDirectory = baseDirectory;
         _name = name;
@@ -26,17 +26,33 @@ public sealed class SolutionBuilder
         var folderBuilder = new SolutionFolderBuilder(folderName, this);
         builder(folderBuilder);
         var folder = folderBuilder.Build();
-        _folders.Add(folder);
+        _items.Add(folder);
+        return this;
+    }
+
+    public SolutionBuilder AddProject(string projectName,
+        Action<IReadOnlyCollection<ProjectModel>, ProjectBuilder> builder)
+    {
+        var projectId = ProjectId.CreateNewId();
+        
+        // each project gets its own directory
+        var projectRelativePath = Path.Combine(_baseDirectory, projectName);
+        var projectModel = new ProjectBuilder(projectId, projectRelativePath, projectName);
+        builder(_projects, projectModel);
+        var project = projectModel.Build();
+        
+        _items.Add(project);
+        _projects.Add(project);
         return this;
     }
     
     public SolutionModel Build()
     {
-        var flatProjects = _projects.ToImmutableDictionary();
+        var flatProjects = _projects.ToImmutableHashSet();
         
         return new SolutionModel(_name, _baseDirectory)
         {
-            FileStructure = _folders.ToImmutableHashSet<IMsBuildSerializable>(),
+            FileStructure = _items.ToImmutableHashSet(),
             FlatProjects = flatProjects
         };
     }
@@ -55,7 +71,7 @@ public sealed class SolutionBuilder
             _builder = solutionBuilder;
         }
         
-        public SolutionFolderBuilder AddProject(string projectName, Action<IReadOnlyDictionary<ProjectId, ProjectModel>, ProjectBuilder> builder)
+        public SolutionFolderBuilder AddProject(string projectName, Action<IReadOnlyCollection<ProjectModel>, ProjectBuilder> builder)
         {
             var projectId = ProjectId.CreateNewId();
             
@@ -66,7 +82,7 @@ public sealed class SolutionBuilder
             var project = projectModel.Build();
             
             _items.Add(project);
-            _builder._projects[projectId] = project;
+            _builder._projects.Add(project);
             return this;
         }
         
@@ -100,7 +116,7 @@ public sealed record SolutionModel(string Name, string BaseDirectory) : IMsBuild
     /// <summary>
     /// Flat set of all projects
     /// </summary>
-    public ImmutableDictionary<ProjectId, ProjectModel> FlatProjects { get; init; } = ImmutableDictionary<ProjectId, ProjectModel>.Empty;
+    public ImmutableHashSet<ProjectModel> FlatProjects { get; init; } = ImmutableHashSet<ProjectModel>.Empty;
     
     /// <summary>
     /// The set of all folders, files, and projects organized by folder

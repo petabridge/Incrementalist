@@ -76,7 +76,7 @@ namespace Incrementalist.Tests.Helpers;
         
         private readonly HashSet<IProjectModelProperty> _projectProperties = [];
         private readonly HashSet<ProjectImport> _projectImports = [];
-        private readonly Dictionary<ProjectId, string> _projectReferences = new();
+        private readonly HashSet<ProjectModel> _projectReferences = [];
         private readonly List<SampleFile> _includedFiles = [];
         
         private ProjectLanguage _language = ProjectLanguage.CSharp;
@@ -150,9 +150,9 @@ namespace Incrementalist.Tests.Helpers;
             return this;
         }
         
-        public ProjectBuilder WithProjectReference(ProjectId projectId, string relativePath)
+        public ProjectBuilder WithProjectReference(ProjectModel otherProject)
         {
-            _projectReferences[projectId] = relativePath;
+            _projectReferences.Add(otherProject);
             return this;
         }
         
@@ -187,6 +187,27 @@ namespace Incrementalist.Tests.Helpers;
 
     public static class ProjectModelSerializer
     {
+        /// <summary>
+        /// B depends on A
+        /// </summary>
+        public static string ComputeProjectReferencePath(string projectB, string projectA)
+        {
+            // Use a dummy absolute base. Its value is arbitrary as long as it's the same for both.
+            var dummyBase = Path.Join("c", "dummyroot");
+            
+            // Convert the paths to absolute paths using the dummy base
+            var aAbsolute = Path.Combine(dummyBase, projectA);
+            var bAbsolute = Path.Combine(dummyBase, projectB);
+            
+            // Get the directory of B.csproj (our base for the relative calculation)
+            var bDirectory = Path.GetDirectoryName(bAbsolute)!;
+
+            // Compute the relative path from B's directory to A.csproj
+            var relativePathFromBToA = Path.GetRelativePath(bDirectory, aAbsolute);
+            
+            return relativePathFromBToA;
+        }
+        
         public static string Serialize(ProjectModel projectModel)
         {
             var sb = new StringBuilder();
@@ -209,7 +230,8 @@ namespace Incrementalist.Tests.Helpers;
                 sb.AppendLine($"  <ItemGroup>");
                 foreach (var projectReference in projectModel.ProjectReferences)
                 {
-                    sb.AppendLine($"  <ProjectReference Include=\"{projectReference.Value}\" />");
+                    var computeRelativePath = ComputeProjectReferencePath(projectModel.RelativePathFromRepository, projectReference.CompletePath);
+                    sb.AppendLine($"  <ProjectReference Include=\"{computeRelativePath}\" />");
                 }
                 sb.AppendLine($"  </ItemGroup>");
                 sb.AppendLine($"</Project>");
@@ -243,7 +265,7 @@ namespace Incrementalist.Tests.Helpers;
         /// <summary>
         /// All dependencies of this project - expressed as a dictionary of projectId -> relative path
         /// </summary>
-        public required IReadOnlyDictionary<ProjectId, string> ProjectReferences { get; init; }
+        public required IReadOnlyCollection<ProjectModel> ProjectReferences { get; init; }
         
         public required IReadOnlyCollection<SampleFile> IncludedFiles { get; init; }
         
