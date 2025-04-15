@@ -1,13 +1,98 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Tests.Helpers;
 
-public class SolutionBuilder
+public sealed class SolutionBuilder
 {
+    private readonly string _baseDirectory;
+    private readonly string _name;
     
+    private readonly Dictionary<ProjectId, ProjectModel> _projects = new();
+    private readonly HashSet<SolutionFolder> _folders = [];
+
+    public SolutionBuilder(string name, string baseDirectory)
+    {
+        _baseDirectory = baseDirectory;
+        _name = name;
+    }
+    
+    public SolutionBuilder AddFolder(string folderName, Action<SolutionFolderBuilder> builder)   
+    {
+        var folderBuilder = new SolutionFolderBuilder(folderName, this);
+        builder(folderBuilder);
+        var folder = folderBuilder.Build();
+        _folders.Add(folder);
+        return this;
+    }
+    
+    public SolutionModel Build()
+    {
+        var flatProjects = _projects.ToImmutableDictionary();
+        
+        return new SolutionModel(_name, _baseDirectory)
+        {
+            FileStructure = _folders.ToImmutableHashSet<IMsBuildSerializable>(),
+            FlatProjects = flatProjects
+        };
+    }
+    
+    public sealed class SolutionFolderBuilder
+    {
+        private readonly string _name;
+        private readonly SolutionBuilder _builder;
+        private readonly List<IMsBuildSerializable> _items = [];
+        
+        public string CompleteRelativePath => Path.Combine(_builder._baseDirectory, _name);
+
+        public SolutionFolderBuilder(string name, SolutionBuilder solutionBuilder)
+        {
+            _name = name;
+            _builder = solutionBuilder;
+        }
+        
+        public SolutionFolderBuilder AddProject(string projectName, Action<IReadOnlyDictionary<ProjectId, ProjectModel>, ProjectBuilder> builder)
+        {
+            var projectId = ProjectId.CreateNewId();
+            
+            // each project gets its own directory
+            var projectRelativePath = Path.Combine(CompleteRelativePath, projectName);
+            var projectModel = new ProjectBuilder(projectId, projectRelativePath, projectName);
+            builder(_builder._projects, projectModel);
+            var project = projectModel.Build();
+            
+            _items.Add(project);
+            _builder._projects[projectId] = project;
+            return this;
+        }
+        
+        public SolutionFolderBuilder AddFile(string fileName)
+        {
+            var file = new SampleFile(fileName, CompleteRelativePath);
+            _items.Add(file);
+            return this;
+        }
+        
+        public SolutionFolderBuilder AddFolder(string folderName, Action<SolutionFolderBuilder> builder)
+        {
+            var newName = Path.Combine(_name, folderName);
+            
+            var folderBuilder = new SolutionFolderBuilder(newName, _builder);
+            builder(folderBuilder);
+            var folder = folderBuilder.Build();
+            _items.Add(folder);
+            return this;
+        }
+        
+        public SolutionFolder Build()
+        {
+            return new SolutionFolder(_name, _items.ToImmutableList());
+        }
+    }
 }
 
 public sealed record SolutionModel(string Name, string BaseDirectory) : IMsBuildSerializable
@@ -57,7 +142,6 @@ public static class SolutionSerializer
         return sb.ToString();
     }
 }
-
 
 public sealed record SolutionFolder(string Name, ImmutableList<IMsBuildSerializable> Items) : IMsBuildSerializable
 {
