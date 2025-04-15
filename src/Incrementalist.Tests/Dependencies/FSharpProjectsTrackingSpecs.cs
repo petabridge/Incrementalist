@@ -25,7 +25,7 @@ namespace Incrementalist.Tests.Dependencies
 
         public void Dispose()
         {
-            Repository?.Dispose();
+            Repository.Dispose();
         }
         
         [Fact]

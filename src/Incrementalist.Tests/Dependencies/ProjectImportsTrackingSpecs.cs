@@ -65,7 +65,7 @@ namespace Incrementalist.Tests.Dependencies
                 .WriteFile(sample.ImportedPropsFile.Name, sample.ImportedPropsFile.Content + " ")
                 .Commit("Updated imported file with a space");
 
-            var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), new CancellationToken(), Repository.BasePath, "master");
+            var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), CancellationToken.None, Repository.BasePath, "master");
             var solutionFiles = new Dictionary<string, SlnFile>()
             {
                 [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())

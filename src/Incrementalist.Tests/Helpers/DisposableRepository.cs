@@ -110,7 +110,7 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         /// <param name="sampleFile">File info source</param>
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
-        public DisposableRepository WriteFile(ProjectSampleGenerator.SampleFile sampleFile) =>
+        public DisposableRepository WriteFile(SampleFile sampleFile) =>
             WriteFile(sampleFile.Name, sampleFile.Content);
         
         /// <summary>
