@@ -40,9 +40,9 @@ public sealed record RelativePath : IHavePathType
     
     public PathType PathType => PathType.RelativePath;
     
-    public AbsolutePath ComputeAbsolutePath(string basePath)
+    public AbsolutePath ComputeAbsolutePath(AbsolutePath basePath)
     {
-        var absolutePath = System.IO.Path.Combine(basePath, Path);
+        var absolutePath = System.IO.Path.Combine(basePath.Path, Path);
         return new AbsolutePath(absolutePath);
     }
 
@@ -62,9 +62,9 @@ public sealed record AbsolutePath : IHavePathType
     
     public PathType PathType => PathType.RelativePath;
     
-    public RelativePath ComputeRelativePath(string basePath)
+    public RelativePath ComputeRelativePath(AbsolutePath basePath)
     {
-        var relativePath = System.IO.Path.GetRelativePath(basePath, Path);
+        var relativePath = System.IO.Path.GetRelativePath(basePath.Path, Path);
         return new RelativePath(relativePath);
     }
     

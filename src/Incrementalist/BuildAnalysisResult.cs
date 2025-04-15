@@ -23,7 +23,7 @@ namespace Incrementalist
     /// </summary>
     public sealed class IncrementalBuildResult : BuildAnalysisResult 
     {
-        public IncrementalBuildResult(IReadOnlyList<string> affectedProjects)
+        public IncrementalBuildResult(IReadOnlyList<AbsolutePath> affectedProjects)
         {
             AffectedProjects = affectedProjects ?? throw new ArgumentNullException(nameof(affectedProjects));
         }
@@ -31,7 +31,7 @@ namespace Incrementalist
         /// <summary>
         /// The list of projects that need to be built.
         /// </summary>
-        public IReadOnlyList<string> AffectedProjects { get; }
+        public IReadOnlyList<AbsolutePath> AffectedProjects { get; }
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ namespace Incrementalist
     /// </summary>
     public sealed class FullSolutionBuildResult : BuildAnalysisResult 
     {
-        public FullSolutionBuildResult(string solutionPath)
+        public FullSolutionBuildResult(AbsolutePath solutionPath)
         {
             SolutionPath = solutionPath ?? throw new ArgumentNullException(nameof(solutionPath));
         }
@@ -47,6 +47,6 @@ namespace Incrementalist
         /// <summary>
         /// The path to the solution file that needs to be built.
         /// </summary>
-        public string SolutionPath { get; }
+        public AbsolutePath SolutionPath { get; }
     }
 } 

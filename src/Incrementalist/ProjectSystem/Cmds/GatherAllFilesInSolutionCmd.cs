@@ -18,9 +18,9 @@ namespace Incrementalist.ProjectSystem.Cmds
     /// </summary>
     public sealed class GatherAllFilesInSolutionCmd : BuildCommandBase<Solution, Dictionary<AbsolutePath, SlnFile>>
     {
-        private readonly string _workingDirectory;
+        private readonly AbsolutePath _workingDirectory;
 
-        public GatherAllFilesInSolutionCmd(ILogger logger, CancellationToken cancellationToken, string workingDirectory)
+        public GatherAllFilesInSolutionCmd(ILogger logger, CancellationToken cancellationToken, AbsolutePath workingDirectory)
             : base("GatherAllSlnFiles", logger, cancellationToken)
         {
             _workingDirectory = workingDirectory;

@@ -15,12 +15,12 @@ public static class GlobFilter
     /// <param name="skipGlobs">Filter out any projects that match these glob patterns.</param>
     /// <param name="targetGlobs">Only include projects that match these glob patterns.</param>
     /// <returns>The final set of filtered project paths.</returns>
-    public static IReadOnlyList<string> FilterProjects(IReadOnlyList<string> originalProjects, string[] skipGlobs, string[] targetGlobs)
+    public static IReadOnlyList<RelativePath> FilterProjects(IReadOnlyList<RelativePath> originalProjects, string[] skipGlobs, string[] targetGlobs)
     {
         if (skipGlobs.Length == 0 && targetGlobs.Length == 0)
             return originalProjects;
 
-        IEnumerable<string> currentProjects = originalProjects;
+        IEnumerable<RelativePath> currentProjects = originalProjects;
 
         // 1. Apply targetGlobs (inclusion filter)
         if (targetGlobs.Length > 0)
@@ -28,7 +28,7 @@ public static class GlobFilter
             var targetMatcher = new Matcher(StringComparison.OrdinalIgnoreCase); // Use case-insensitive matching for file paths
             targetMatcher.AddIncludePatterns(targetGlobs);
             // Keep only projects that match at least one target pattern
-            currentProjects = currentProjects.Where(p => targetMatcher.Match(p).HasMatches);
+            currentProjects = currentProjects.Where(p => targetMatcher.Match(p.Path).HasMatches);
         }
 
         // 2. Apply skipGlobs (exclusion filter)
@@ -37,7 +37,7 @@ public static class GlobFilter
             var skipMatcher = new Matcher(StringComparison.OrdinalIgnoreCase);
             skipMatcher.AddIncludePatterns(skipGlobs); // Add skip patterns to identify matches for exclusion
             // Keep only projects that *do not* match any skip pattern
-            currentProjects = currentProjects.Where(p => !skipMatcher.Match(p).HasMatches);
+            currentProjects = currentProjects.Where(p => !skipMatcher.Match(p.Path).HasMatches);
         }
 
         // Return the result as a List (which implements IReadOnlyList)

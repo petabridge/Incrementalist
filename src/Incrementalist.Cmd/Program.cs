@@ -233,14 +233,14 @@ namespace Incrementalist.Cmd
             else
             {
                 string buildType;
-                IReadOnlyList<string> projectsToRebuild;
+                IReadOnlyList<AbsolutePath> projectsToRebuild;
 
                 switch (buildResult)
                 {
                     case FullSolutionBuildResult _:
                         buildType = "Full solution build";
                         projectsToRebuild = msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                            .Select(p => p.FilePath!).ToList();
+                            .Select(p => new AbsolutePath(p.FilePath!)).ToList();
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";
@@ -288,13 +288,20 @@ namespace Incrementalist.Cmd
                 var projectsToRebuild = original switch
                 {
                     FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                        .Select(p => p.FilePath!).ToList(),
+                        .Select(p => new AbsolutePath(p.FilePath!)).ToList(),
                     IncrementalBuildResult incremental => incremental.AffectedProjects,
                     _ => []
                 };
                 
                 // Need to process our globs
-                var filteredProjects = GlobFilter.FilterProjects(projectsToRebuild, skipGlobs, targetGlobs);
+                
+                // globbing is designed to work with relative paths
+                var relativePaths = projectsToRebuild.Select(c => 
+                    c.ComputeRelativePath(settings.WorkingDirectory)).ToList();
+                
+                // we glob and then convert back into absolute paths
+                var filteredProjects = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs)
+                    .Select(c => c.ComputeAbsolutePath(settings.WorkingDirectory)).ToList();
 
                 if (filteredProjects.Count != projectsToRebuild.Count)
                 {

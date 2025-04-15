@@ -24,10 +24,9 @@ namespace Incrementalist.ProjectSystem.Cmds
         FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile>, Dictionary<AbsolutePath, SlnFile>>
     {
         private readonly string _targetGitBranch;
-        private readonly string _workingDirectory;
+        private readonly AbsolutePath _workingDirectory;
 
-        public FilterAffectedProjectFilesCmd(ILogger logger, CancellationToken cancellationToken,
-            string workingDirectory, string targetGitBranch)
+        public FilterAffectedProjectFilesCmd(ILogger logger, CancellationToken cancellationToken, AbsolutePath workingDirectory, string targetGitBranch)
             : base("FilterSlnFilesByGitDiff", logger, cancellationToken)
         {
             _workingDirectory = workingDirectory;

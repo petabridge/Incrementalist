@@ -115,7 +115,7 @@ namespace Incrementalist
         /// <param name="solution">The solution being analyzed.</param>
         /// <param name="affectedProjects">The list of affected project paths.</param>
         /// <returns>A FullSolutionBuildResult if all projects are affected, otherwise an IncrementalBuildResult.</returns>
-        public static BuildAnalysisResult CreateBuildResult(Solution solution, IReadOnlyList<string> affectedProjects)
+        public static BuildAnalysisResult CreateBuildResult(Solution solution, IReadOnlyList<AbsolutePath> affectedProjects)
         {
             ArgumentNullException.ThrowIfNull(solution);
             ArgumentNullException.ThrowIfNull(affectedProjects);
@@ -126,7 +126,7 @@ namespace Incrementalist
             // If all projects are affected, return a full solution build result
             if (affectedProjects.Count == totalProjects)
             {
-                return new FullSolutionBuildResult(solution.FilePath);
+                return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath));
             }
 
             return new IncrementalBuildResult(affectedProjects);

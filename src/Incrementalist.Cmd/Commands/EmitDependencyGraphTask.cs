@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,12 +45,14 @@ namespace Incrementalist.Cmd.Commands
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
 
-            Logger.LogInformation("Opening solution {Solution}...", Settings.SolutionFile);
+            var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Name);
+            Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
             var progress = new Progress<ProjectLoadProgress>(x =>
             {
                 Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
             });
-            var solution = await Workspace.OpenSolutionAsync(Settings.SolutionFile, progress, _cts.Token);
+            
+            var solution = await Workspace.OpenSolutionAsync(solutionFilePath, progress, _cts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
@@ -67,7 +70,7 @@ namespace Incrementalist.Cmd.Commands
             if (affectedFiles.Count == 0)
             {
                 Logger.LogInformation("No files were affected by the changes");
-                return new IncrementalBuildResult(Array.Empty<string>());
+                return new IncrementalBuildResult(Array.Empty<AbsolutePath>());
             }
 
             // Log the breakdown of modified files by type
@@ -90,7 +93,7 @@ namespace Incrementalist.Cmd.Commands
             if (detector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath!);
+                return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
             }
 
             // Get the list of affected projects
@@ -102,7 +105,7 @@ namespace Incrementalist.Cmd.Commands
             if (affectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return new FullSolutionBuildResult(solution.FilePath!);
+                return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
             }
             
             /* INCREMENTAL BUILDS */
@@ -148,9 +151,14 @@ namespace Incrementalist.Cmd.Commands
                     // TODO: topological sorting of the projects?
                     return ComputeResult(computedFilePaths);
                     
-                    string? GetProjectFilePath(ProjectId project)
+                    AbsolutePath? GetProjectFilePath(ProjectId project)
                     {
-                        return solution.GetProject(project)?.FilePath;
+                        var rawPath = solution.GetProject(project)?.FilePath;
+                        if (rawPath == null)
+                            return null;
+                        
+                        var projectFilePath = new AbsolutePath(rawPath);
+                        return projectFilePath;
                     }
                 }
 
@@ -177,18 +185,18 @@ namespace Incrementalist.Cmd.Commands
                 
                 return ComputeResult(projectsToRebuild);
 
-                BuildAnalysisResult ComputeResult(IReadOnlyList<string> projectFilePaths)
+                BuildAnalysisResult ComputeResult(IReadOnlyList<AbsolutePath> projectFilePaths)
                 {
                     if(projectFilePaths.Count == 0)
                     {
                         Logger.LogInformation("No projects need to be rebuilt");
-                        return new IncrementalBuildResult(Array.Empty<string>());
+                        return new IncrementalBuildResult(Array.Empty<AbsolutePath>());
                     }
 
                     if (projectFilePaths.Count == solution.Projects.Count())
                     {
                         Logger.LogInformation("All projects are affected. Full solution build required");
-                        return new FullSolutionBuildResult(solution.FilePath!);
+                        return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
                     }
 
                     Logger.LogInformation("Incremental build possible. {RebuildCount} projects [{Projects}] need to be rebuilt", 

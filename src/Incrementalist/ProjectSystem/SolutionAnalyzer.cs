@@ -44,7 +44,7 @@ namespace Incrementalist.ProjectSystem
         /// <param name="sln">The Solution file.</param>
         /// <param name="workingFolder"></param>
         /// <returns>A flattened list of all files inside the solution.</returns>
-        public static Dictionary<AbsolutePath, SlnFile> AllSolutionFiles(Solution sln, string workingFolder)
+        public static Dictionary<AbsolutePath, SlnFile> AllSolutionFiles(Solution sln, AbsolutePath workingFolder)
         {
             // throw if the solution's file path is null
             ArgumentNullException.ThrowIfNull(sln.FilePath, nameof(sln.FilePath));
