@@ -56,7 +56,7 @@ namespace Incrementalist.Tests.Caching
             var solution = CreateEmptySolution();
             var cache = new DependencyCache(
                 Version: "0.9",
-                SolutionPath: new RelativePath(solution.FilePath!),
+                SolutionPath: new RelativePath("test.sln"),
                 Checksum: "test-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
@@ -104,7 +104,7 @@ namespace Incrementalist.Tests.Caching
             var solution = await _workspace.OpenSolutionAsync(solutionPath);
             var cache = new DependencyCache(
                 Version: IncrementalistFileConstants.CurrentVersion,
-                SolutionPath: new RelativePath(solution.FilePath!),
+                SolutionPath: new RelativePath("test.sln"),
                 Checksum: "different-checksum",
                 Projects: ImmutableDictionary<ProjectId, ProjectNode>.Empty);
 
