@@ -11,11 +11,12 @@ public static class GlobFilter
     /// After Incrementalist has done its processing, we do some post-processing here to further narrow down
     /// the range of projects to be processed based on glob patterns.
     /// </summary>
+    /// <param name="repositoryBase">The absolute path of the repository root</param>
     /// <param name="originalProjects">The projects determined to need coverage from Incrementalist</param>
     /// <param name="skipGlobs">Filter out any projects that match these glob patterns.</param>
     /// <param name="targetGlobs">Only include projects that match these glob patterns.</param>
     /// <returns>The final set of filtered project paths.</returns>
-    public static IReadOnlyList<string> FilterProjects(IReadOnlyList<string> originalProjects, string[] skipGlobs, string[] targetGlobs)
+    public static IReadOnlyList<string> FilterProjects(string repositoryBase, IReadOnlyList<string> originalProjects, string[] skipGlobs, string[] targetGlobs)
     {
         if (skipGlobs.Length == 0 && targetGlobs.Length == 0)
             return originalProjects;
