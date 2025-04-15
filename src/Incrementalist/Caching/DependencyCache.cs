@@ -54,7 +54,8 @@ namespace Incrementalist.Caching
             Converters =
             {
                 new ProjectIdJsonConverter(),
-                new SolutionIdJsonConverter()
+                new SolutionIdJsonConverter(),
+                new RelativePathConverter()
             }
         };
 
