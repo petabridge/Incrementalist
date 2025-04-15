@@ -32,7 +32,7 @@ public class ProjectBuilderSpecs
         var expectedProjectPath = Path.Combine(projectPath, $"{projectName}.csproj");
 
         Assert.Equal(projectId, project.ProjectId);
-        Assert.Equal(expectedProjectPath, project.AbsoluteFilePath);
+        Assert.Equal(expectedProjectPath, project.CompletePath);
         Assert.Contains(targetFrameworks, serialized);
         Assert.Contains(outputType, serialized);
     }
@@ -68,7 +68,7 @@ public class ProjectBuilderSpecs
         var expectedProjectPath = Path.Combine(projectPath, $"{projectName}{expectedFileExtension}");
         
         Assert.Equal(projectId, project.ProjectId);
-        Assert.Equal(expectedProjectPath, project.AbsoluteFilePath);
+        Assert.Equal(expectedProjectPath, project.CompletePath);
         Assert.Contains(targetFrameworks, serialized);
         Assert.Contains(outputTypeSerialized, serialized);
     }

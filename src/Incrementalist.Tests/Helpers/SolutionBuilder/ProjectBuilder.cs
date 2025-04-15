@@ -33,7 +33,7 @@ namespace Incrementalist.Tests.Helpers;
     {
         string Serialize();
     }
-    
+
     public sealed record TargetFrameworks(ImmutableList<TargetFramework> Frameworks) : IMsBuildSerializable
     {
 
@@ -219,7 +219,7 @@ namespace Incrementalist.Tests.Helpers;
         }
     }
     
-    public sealed record ProjectModel(ProjectId ProjectId, string BaseDirectoryPath, string NameWithoutExtension) : IMsBuildSerializable
+    public sealed record ProjectModel(ProjectId ProjectId, string RelativePathFromRepository, string NameWithoutExtension) : IMsBuildSerializable
     {
         public ProjectLanguage ProjectLanguage { get; init; } = ProjectLanguage.CSharp;
         
@@ -256,14 +256,7 @@ namespace Incrementalist.Tests.Helpers;
         
         public string FileName => $"{NameWithoutExtension}{FileExtension}";
         
-        public string AbsoluteFilePath => Path.Combine(BaseDirectoryPath, FileName);
-        
-        public string SolutionRelativePath(string solutionPath) 
-        {
-            var solutionDirectory = Path.GetDirectoryName(solutionPath)!;
-            var relativePath = Path.GetRelativePath(solutionDirectory, AbsoluteFilePath);
-            return relativePath;
-        }
+        public string CompletePath => Path.Combine(RelativePathFromRepository, FileName);
         
         public string Serialize()
         {
