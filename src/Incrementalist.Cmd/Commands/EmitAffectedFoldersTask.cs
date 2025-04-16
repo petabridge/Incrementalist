@@ -23,7 +23,7 @@ namespace Incrementalist.Cmd.Commands
         public EmitAffectedFoldersTask(BuildSettings settings, ILogger logger)
         {
             Settings = settings;
-            Logger = logger;
+            Logger = new WrappedLogger(logger, nameof(EmitAffectedFoldersTask));
             _cts = new CancellationTokenSource();
         }
 

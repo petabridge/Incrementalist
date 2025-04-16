@@ -30,7 +30,7 @@ namespace Incrementalist.Cmd.Commands
         {
             Settings = settings;
             Workspace = workspace;
-            Logger = logger;
+            Logger = new WrappedLogger(logger, nameof(EmitDependencyGraphTask));
             _cts = new CancellationTokenSource();
         }
 

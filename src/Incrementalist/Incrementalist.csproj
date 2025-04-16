@@ -9,4 +9,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     <PackageReference Include="Microsoft.Extensions.Logging"/>
   </ItemGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="Incrementalist.Cmd" />
+  </ItemGroup>
 </Project>

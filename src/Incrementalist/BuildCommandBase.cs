@@ -19,7 +19,7 @@ namespace Incrementalist
         protected BuildCommandBase(string name, ILogger logger, CancellationToken cancellationToken)
         {
             Name = name;
-            Logger = logger;
+            Logger = new WrappedLogger(logger, name);
             CancellationToken = cancellationToken;
         }
 
@@ -31,7 +31,7 @@ namespace Incrementalist
 
         public async Task<TOut> Process(Task<TIn> previousTask)
         {
-            Logger.LogDebug("[{StageName}] - Entered Task", Name);
+            Logger.LogDebug("Entered Task");
 
             if (CancellationToken.IsCancellationRequested)
             {
@@ -45,12 +45,12 @@ namespace Incrementalist
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "[{StageName}] - Catastrophic task failure.", Name);
+                Logger.LogError(ex, "Catastrophic task failure.");
                 throw;
             }
             finally
             {
-                Logger.LogDebug("[{StageName}] - Exited Task", Name);
+                Logger.LogDebug("Exited Task");
             }
         }
 
