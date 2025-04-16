@@ -523,6 +523,8 @@ function Test-GlobTargeting {
             Write-Host "Expected output:`n$expectedProjectFullPath`nActual output:`n$($actualProjects -join "`n")" -ForegroundColor Yellow
             throw "Glob targeting verification failed. Output file content did not match expected project."
         }
+        
+        return 0 # Explicitly return success code
     }
 }
 
