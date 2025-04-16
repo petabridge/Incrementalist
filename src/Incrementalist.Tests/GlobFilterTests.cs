@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Incrementalist.Cmd;
 using Xunit;
 
@@ -74,6 +75,12 @@ public class GlobFilterTests
             [InlineData(new[] { "SRC/**" }, 2)] // Case-insensitive check
             public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs, int expectedCount)
             {
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    // skip
+                    return;
+                }
+                
                 // Arrange
                 var skipGlobs = Array.Empty<string>();
 
