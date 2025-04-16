@@ -109,6 +109,7 @@ public class GlobFilterTests
         var result = GlobFilter.FilterProjects(TestProjects, skipGlobs, targetGlobs);
 
         // Assert
-        Assert.Equivalent(expectedProjects, result);
+        var expectedRelativePaths = expectedProjects.Select(p => new RelativePath(p)).ToList();
+        Assert.Equivalent(expectedRelativePaths, result);
     }
 } 
