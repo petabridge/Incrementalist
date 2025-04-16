@@ -353,7 +353,7 @@ function Test-FoldersOnly {
     
     $folderTestOutput = Join-Path $TestResultsDir "incrementalist-affected-folders.txt"
     Invoke-IncrementalistTest -TestName "Folders-only check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-l", "--no-cache", "-f" , $folderTestOutput)
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-l", "-f" , $folderTestOutput)
     }
 }
 
@@ -362,7 +362,7 @@ function Test-SolutionCheck {
     
     $solutionTestOutput = Join-Path $TestResultsDir "incrementalist-affected-files.txt"
     Invoke-IncrementalistTest -TestName "Solution check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $solutionTestOutput)
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $solutionTestOutput)
     }
 }
 
@@ -370,7 +370,7 @@ function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--no-cache", "--", "build", "-c", "Release", "--nologo")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -378,7 +378,7 @@ function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--parallel", "--no-cache", "--", "build", "-c", "Release", "--nologo")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--parallel", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -386,32 +386,8 @@ function Test-ErrorHandling {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Error handling (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--fail-on-no-projects", "--no-cache", "--", "invalid-command")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--fail-on-no-projects", "--", "invalid-command")
     } -ExpectFailure $true
-}
-
-function Test-CacheCreation {
-    param($ProjectPath, $Configuration, $TestResultsDir)
-    
-    $solutionPath = Join-Path $PSScriptRoot "..\Incrementalist.sln"
-    Remove-IncrementalistCache -SolutionPath $solutionPath
-    
-    $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-creation.txt"
-    Invoke-IncrementalistTest -TestName "Cache creation" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        # Run without --no-cache to create the cache
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $cacheTestOutput)
-    }
-}
-
-function Test-CacheReuse {
-    param($ProjectPath, $Configuration, $TestResultsDir)
-    
-    $cacheTestOutput = Join-Path $TestResultsDir "incrementalist-cache-reuse.txt"
-    Invoke-IncrementalistTest -TestName "Cache reuse" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        # Run again without --no-cache to reuse the existing cache
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $cacheTestOutput)
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $cacheTestOutput)
-    }
 }
 
 function Test-ComplexCommandArguments {
@@ -428,7 +404,6 @@ function Test-ComplexCommandArguments {
         $incrementalistArgs = @(
             "-b", "dev",
             "-r",
-            "--no-cache",
             "--",  # Separator for dotnet command arguments
             "test",
             "--logger", "console;verbosity=detailed",
@@ -459,7 +434,7 @@ function Test-SimilarDotnetArguments {
     }
 
     Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-c", "-r", "--no-cache")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-c", "-r")
     }
 
     # Cleanup
@@ -477,7 +452,7 @@ function Test-GlobTargeting {
     Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # First, run a baseline to check if any changes are detected
         Write-Host "Running baseline to check for changes..."
-        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $baselineOutput)
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $baselineOutput)
         if ($exitCodeBaseline -ne 0) { throw "Incrementalist baseline command failed with exit code $exitCodeBaseline" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue)
@@ -510,8 +485,8 @@ function Test-GlobTargeting {
         }
 
         # Run Incrementalist with target glob
-        #dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" --no-cache -f $targetGlobOutput
-        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--target-glob", "**/Incrementalist.csproj", "--no-cache", "-f", $targetGlobOutput)
+        #dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" -f $targetGlobOutput
+        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--target-glob", "**/Incrementalist.csproj", "-f", $targetGlobOutput)
         if ($exitCodeTarget -ne 0) { throw "Incrementalist command failed with exit code $exitCodeTarget" }
 
         # Verification logic
@@ -537,7 +512,7 @@ function Test-GlobSkipping {
     Invoke-IncrementalistTest -TestName "Glob skipping" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # 1. Run without skip to get baseline affected projects
         Write-Host "Running baseline to determine affected projects..."
-        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--no-cache", "-f", $baselineOutput)
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $baselineOutput)
         if ($exitCodeBaseline -ne 0) { throw "Incrementalist command (baseline) failed with exit code $exitCodeBaseline" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
@@ -574,7 +549,7 @@ function Test-GlobSkipping {
 
         # 2. Run with skip glob
         Write-Host "Running with skip glob..."
-        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--skip-glob", "**/*.Tests.csproj", "--no-cache", "-f", $skipGlobOutput)
+        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--skip-glob", "**/*.Tests.csproj", "-f", $skipGlobOutput)
         if ($exitCodeSkip -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $exitCodeSkip" }
         $skippedProjects = (Get-Content $skipGlobOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Skipped projects count: $($skippedProjects.Count)"
@@ -727,10 +702,6 @@ foreach ($project in $incrementalistProjects) {
     Test-ErrorHandling -ProjectPath $project.FullName -Configuration $Configuration
     Test-ComplexCommandArguments -ProjectPath $project.FullName -Configuration $Configuration
     Test-SimilarDotnetArguments -ProjectPath $project.FullName -Configuration $Configuration
-    
-    # Run cache-specific tests
-    Test-CacheCreation -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
-    Test-CacheReuse -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
     
     # Run glob tests
     Test-GlobTargeting -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
