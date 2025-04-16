@@ -62,17 +62,17 @@ You can specify the build configuration:
 
 The integration suite includes the following tests:
 
-1. **Folders-only check**
-   - Tests the folder-level change detection
+1. **List affected folders**
+   - Tests the folder-level change detection using the `list-affected-folders` verb
    - Verifies correct output to `incrementalist-affected-folders.txt`
 
-2. **Solution check**
+2. **Default project list**
    - Tests solution-wide change analysis
    - Validates affected files detection
    - Outputs results to `incrementalist-affected-files.txt`
 
 3. **Command execution**
-   - Validates command execution on affected projects
+   - Validates command execution on affected projects using the `run` verb
    - Tests basic command routing and execution
 
 4. **Parallel execution**
@@ -82,6 +82,10 @@ The integration suite includes the following tests:
 5. **Error handling**
    - Verifies proper error handling behavior
    - Tests failure scenarios and exit codes
+
+6. **Configuration generation**
+   - Tests configuration file creation using the `create-config` verb
+   - Verifies settings are properly saved
 
 ### Test Output
 

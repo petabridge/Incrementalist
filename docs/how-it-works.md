@@ -40,14 +40,16 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A[Incrementalist Command] --> B{Analysis Type}
-    B -->|Project List| C[List Affected Projects]
-    B -->|Folder List| D[List Affected Folders]
-    B -->|Run Command| E[Execute dotnet Commands]
+    A[Incrementalist Command] --> B{Command Verb}
+    B -->|Default| C[List Affected Projects]
+    B -->|list-affected-folders| D[List Affected Folders]
+    B -->|run| E[Execute dotnet Commands]
+    B -->|create-config| F[Create Config File]
     
-    C --> F[Save to File]
-    D --> F
-    E --> G[Build/Test Projects]
+    C --> G[Save to File]
+    D --> G
+    E --> H[Build/Test Projects]
+    F --> I[Save Configuration]
     
     style A fill:#f96,stroke:#333,stroke-width:4px
 ```
@@ -68,24 +70,25 @@ flowchart TD
 
 Incrementalist can produce two types of outputs:
 
-1. **Project Lists** (default):
+1. **Project Lists** (with the `run` verb):
    ```
    D:\src\Project1\Project1.csproj,D:\src\Project2\Project2.csproj
    ```
 
-2. **Folder Lists** (with `-l` option):
+2. **Folder Lists** (with the `list-affected-folders` verb):
    ```
    D:\src\Project1,D:\src\Project2\SubFolder
    ```
 
 ## Command Execution
 
-When running commands against affected projects, Incrementalist:
+When running commands against affected projects using the `run` verb, Incrementalist:
 
 1. Analyzes your changes to determine affected projects
 2. Executes specified `dotnet` commands against each project
 3. Can run commands in parallel for faster processing
 4. Provides configurable error handling
+5. Supports dry run mode (`--dry`) to preview commands without executing them
 
 ## Integration
 
