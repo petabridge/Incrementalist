@@ -1,3 +1,11 @@
+#### 1.0.0-rc3 April 16 2025 ####
+
+Bug fixes and improvements:
+
+* Resolved: [Not properly detecting changes to "solution-wide" files](https://github.com/petabridge/Incrementalist/issues/388)
+* Resolved: [Dependency graph calculation is not correct](https://github.com/petabridge/Incrementalist/issues/389)
+* Resolved: [Globbing does not work with absolute paths](https://github.com/petabridge/Incrementalist/issues/386)
+
 #### 1.0.0-rc2 Apr 13 2025 ####
 
 Bug fixes and improvements:

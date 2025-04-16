@@ -2,20 +2,12 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>1.0.0-rc2</VersionPrefix>
+    <VersionPrefix>1.0.0-rc3</VersionPrefix>
     <PackageReleaseNotes>Bug fixes and improvements:
 
-* Fixed issues with command-line parsing and configuration
-* Resolved globbing functionality for `dotnet` commands
-* Enhanced documentation with more examples
-
-All changes:
-
-* [Fix globbing for `dotnet` commands](https://github.com/petabridge/Incrementalist/pull/384)
-* [Resolve `--create-config` issues](https://github.com/petabridge/Incrementalist/pull/382)
-* [Resolve Option 'c, config' is defined multiple times](https://github.com/petabridge/Incrementalist/pull/379)
-* [Add globbing examples to config docs](https://github.com/petabridge/Incrementalist/pull/376)
-* [README: expand examples of configuration file support](https://github.com/petabridge/Incrementalist/pull/375)</PackageReleaseNotes>
+* Resolved: [Not properly detecting changes to "solution-wide" files](https://github.com/petabridge/Incrementalist/issues/388)
+* Resolved: [Dependency graph calculation is not correct](https://github.com/petabridge/Incrementalist/issues/389)
+* Resolved: [Globbing does not work with absolute paths](https://github.com/petabridge/Incrementalist/issues/386)</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
     <PackageProjectUrl>
