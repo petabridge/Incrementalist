@@ -48,13 +48,13 @@ namespace Incrementalist.Cmd.Commands
             }
         }
 
-        private async Task<int> RunSolutionBuild(string solutionPath)
+        private async Task<int> RunSolutionBuild(AbsolutePath solutionPath)
         {
             _logger.LogInformation("Running '{0}' against solution {1}", string.Join(" ", _dotnetArgs), solutionPath);
             return await RunCommand(solutionPath);
         }
 
-        private async Task<int> RunIncrementalBuild(IEnumerable<string> affectedProjects)
+        private async Task<int> RunIncrementalBuild(IEnumerable<AbsolutePath> affectedProjects)
         {
             var projects = affectedProjects.ToList();
             if (!projects.Any())
@@ -65,7 +65,7 @@ namespace Incrementalist.Cmd.Commands
 
             _logger.LogInformation("Running '{0}' against {1} affected projects", string.Join(" ", _dotnetArgs), projects.Count);
             
-            var failedProjects = new List<string>();
+            var failedProjects = new List<AbsolutePath>();
             
             if (_runInParallel)
             {
@@ -103,7 +103,7 @@ namespace Incrementalist.Cmd.Commands
             return 0;
         }
 
-        private async Task<int> RunCommand(string target)
+        private async Task<int> RunCommand(AbsolutePath target)
         {
             var process = new Process
             {
@@ -114,7 +114,7 @@ namespace Incrementalist.Cmd.Commands
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
-                    WorkingDirectory = _settings.WorkingDirectory
+                    WorkingDirectory = _settings.WorkingDirectory.Path
                 }
             };
 
@@ -125,12 +125,12 @@ namespace Incrementalist.Cmd.Commands
             }
 
             // Add target project/solution if not already specified
-            if (!_dotnetArgs.Any(x => x == "--project" || x == "-p"))
+            if (!_dotnetArgs.Any(x => x is "--project" or "-p"))
             {
-                process.StartInfo.ArgumentList.Add(target);
+                process.StartInfo.ArgumentList.Add(target.Path);
             }
 
-            _logger.LogInformation("Executing 'dotnet {0}' for {1}", 
+            _logger.LogInformation("Executing 'dotnet {ArgsList}' for {Target}", 
                 string.Join(" ", process.StartInfo.ArgumentList), target);
 
             // Redirect to console streams directly
@@ -155,7 +155,7 @@ namespace Incrementalist.Cmd.Commands
                 
                 if (process.ExitCode != 0)
                 {
-                    _logger.LogError("Command 'dotnet {0}' failed for {1} with exit code {2}", 
+                    _logger.LogError("Command 'dotnet {ArgsList}' failed for {Target} with exit code {ExitCode}", 
                         string.Join(" ", process.StartInfo.ArgumentList), target, process.ExitCode);
                 }
                 
@@ -163,7 +163,7 @@ namespace Incrementalist.Cmd.Commands
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute command 'dotnet {0}' for {1}", 
+                _logger.LogError(ex, "Failed to execute command 'dotnet {ArgsList}' for {Target}", 
                     string.Join(" ", process.StartInfo.ArgumentList), target);
                 return 1;
             }

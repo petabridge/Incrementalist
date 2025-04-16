@@ -36,9 +36,9 @@ namespace Incrementalist.Tests.Caching
         public async Task CalculateChecksum_WithSameFiles_ReturnsSameChecksum()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
@@ -49,9 +49,9 @@ namespace Incrementalist.Tests.Caching
 
             // Act
             var checksum1 = await ChecksumCalculator.CalculateChecksumAsync(
-                solutionPath, new[] { project1Path, project2Path });
+                solutionPath, [project1Path, project2Path]);
             var checksum2 = await ChecksumCalculator.CalculateChecksumAsync(
-                solutionPath, new[] { project1Path, project2Path });
+                solutionPath, [project1Path, project2Path]);
 
             // Assert
             Assert.Equal(checksum1, checksum2);
@@ -61,9 +61,9 @@ namespace Incrementalist.Tests.Caching
         public async Task CalculateChecksum_WithModifiedFile_ReturnsDifferentChecksum()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
@@ -73,14 +73,14 @@ namespace Incrementalist.Tests.Caching
             await File.WriteAllTextAsync(project2Path, "<Project />");
 
             var checksum1 = await ChecksumCalculator.CalculateChecksumAsync(
-                solutionPath, new[] { project1Path, project2Path });
+                solutionPath, [project1Path, project2Path]);
 
             // Modify a file
             await File.WriteAllTextAsync(project1Path, "<Project><Modified /></Project>");
 
             // Act
             var checksum2 = await ChecksumCalculator.CalculateChecksumAsync(
-                solutionPath, new[] { project1Path, project2Path });
+                solutionPath, [project1Path, project2Path]);
 
             // Assert
             Assert.NotEqual(checksum1, checksum2);
@@ -90,9 +90,9 @@ namespace Incrementalist.Tests.Caching
         public async Task CalculateChecksum_WithDifferentOrder_ReturnsSameChecksum()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
             Directory.CreateDirectory(Path.GetDirectoryName(project2Path)!);
@@ -103,9 +103,9 @@ namespace Incrementalist.Tests.Caching
 
             // Act
             var checksum1 = await ChecksumCalculator.CalculateChecksumAsync(
-                solutionPath, new[] { project1Path, project2Path });
+                solutionPath, [project1Path, project2Path]);
             var checksum2 = await ChecksumCalculator.CalculateChecksumAsync(
-                solutionPath, new[] { project2Path, project1Path });
+                solutionPath, [project2Path, project1Path]);
 
             // Assert
             Assert.Equal(checksum1, checksum2);
@@ -115,9 +115,9 @@ namespace Incrementalist.Tests.Caching
         public async Task CalculateChecksum_WithMissingFile_ThrowsFileNotFoundException()
         {
             // Arrange
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
-            var project1Path = Path.Combine(_repository.BasePath, "src", "Project1", "Project1.csproj");
-            var project2Path = Path.Combine(_repository.BasePath, "src", "Project2", "Project2.csproj");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
+            var project1Path = Path.Combine(_repository.BasePath.Path, "src", "Project1", "Project1.csproj");
+            var project2Path = Path.Combine(_repository.BasePath.Path, "src", "Project2", "Project2.csproj");
 
             // Create directories for both projects
             Directory.CreateDirectory(Path.GetDirectoryName(project1Path)!);
@@ -131,7 +131,7 @@ namespace Incrementalist.Tests.Caching
             await Assert.ThrowsAsync<FileNotFoundException>(() =>
                 ChecksumCalculator.CalculateChecksumAsync(
                     solutionPath,
-                    new[] { project1Path, project2Path }));
+                    [project1Path, project2Path]));
         }
 
         [Theory]

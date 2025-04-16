@@ -23,7 +23,7 @@ namespace Incrementalist.Cmd.Commands
         public EmitAffectedFoldersTask(BuildSettings settings, ILogger logger)
         {
             Settings = settings;
-            Logger = logger;
+            Logger = new WrappedLogger(logger, nameof(EmitAffectedFoldersTask));
             _cts = new CancellationTokenSource();
         }
 
@@ -31,7 +31,7 @@ namespace Incrementalist.Cmd.Commands
 
         public ILogger Logger { get; }
 
-        public async Task<Dictionary<string, ICollection<string>>> Run()
+        public async Task<Dictionary<AbsolutePath, ICollection<AbsolutePath>>> Run()
         {
             // load the git repository
             var (repo, foundRepo) = GitRunner.FindRepository(Settings.WorkingDirectory);
@@ -39,14 +39,14 @@ namespace Incrementalist.Cmd.Commands
             if (!foundRepo || repo == null)
             {
                 Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", Settings.WorkingDirectory);
-                return new Dictionary<string, ICollection<string>>();
+                return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repo, Settings.TargetBranch))
             {
                 Logger.LogError("Current git repository doesn't have any branch named [{BranchName}]. Shutting down.", Settings.TargetBranch);
-                return new Dictionary<string, ICollection<string>>();
+                return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             }
 
             // start the cancellation timer.

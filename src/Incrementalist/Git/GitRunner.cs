@@ -18,7 +18,7 @@ namespace Incrementalist.Git
         ///     Find the repository and the full path of the base directory.
         /// </summary>
         /// <param name="targetDirectory">
-        ///     Optional. The directory to search inside of. Defaults to
+        ///     Optional. The directory to search inside. Defaults to
         ///     <see cref="Directory.GetCurrentDirectory" /> otherwise.
         /// </param>
         /// <returns>
@@ -32,6 +32,11 @@ namespace Incrementalist.Git
                 return (null, false);
 
             return (new Repository(repoPath), true);
+        }
+
+        public static (Repository? repo, bool foundRepo) FindRepository(AbsolutePath targetDirectory)
+        {
+            return FindRepository(targetDirectory.Path);
         }
     }
 }

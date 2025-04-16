@@ -34,7 +34,7 @@ namespace Incrementalist.Tests.Git
 
             // note: due to what I believe is native interop here, the Repository.Info.WorkingDirectory
             // string appears to have an extra null terminator at the end
-            Assert.Contains(Repository.BasePath.Trim(), results.repo!.Info.WorkingDirectory);
+            Assert.Contains(Repository.BasePath.Path.Trim(), results.repo!.Info.WorkingDirectory);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Incrementalist.Caching
     /// </summary>
     public sealed record DependencyCache(
         string Version,
-        string SolutionPath,
+        RelativePath SolutionPath,
         string Checksum,
         ImmutableDictionary<ProjectId, ProjectNode> Projects);
 
@@ -33,7 +33,7 @@ namespace Incrementalist.Caching
     /// </summary>
     public sealed record ProjectNode(
         ProjectId Id,
-        string Path,
+        RelativePath Path,
         ImmutableList<ProjectId> Dependencies);
 
     // [JsonSourceGenerationOptions(WriteIndented = true)]
@@ -54,37 +54,35 @@ namespace Incrementalist.Caching
             Converters =
             {
                 new ProjectIdJsonConverter(),
-                new SolutionIdJsonConverter()
+                new SolutionIdJsonConverter(),
+                new RelativePathConverter()
             }
         };
 
-        public static string GetCachePath(string solutionDir) =>
-            Path.Combine(solutionDir, IncrementalistFileConstants.IncrementalistDirectory,
-                IncrementalistFileConstants.CacheFileName);
+        public static AbsolutePath GetCachePath(AbsolutePath solutionDir) =>
+            new(Path.Combine(solutionDir.Path, IncrementalistFileConstants.IncrementalistDirectory,
+                IncrementalistFileConstants.CacheFileName));
 
-        public static async Task<DependencyCache?> LoadAsync(string path)
+        public static async Task<DependencyCache?> LoadAsync(AbsolutePath path)
         {
-            if (!File.Exists(path))
+            if (!File.Exists(path.Path))
                 return null;
 
-            var json = await File.ReadAllTextAsync(path);
+            var json = await File.ReadAllTextAsync(path.Path);
             return JsonSerializer.Deserialize<DependencyCache>(json, SerializerOptions);
         }
 
-        public static async Task SaveAsync(string path, DependencyCache cache)
+        public static async Task SaveAsync(AbsolutePath path, DependencyCache cache)
         {
             ArgumentNullException.ThrowIfNull(cache);
             ArgumentNullException.ThrowIfNull(path);
 
-            if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentException("Path cannot be empty or whitespace.", nameof(path));
-
-            var dir = Path.GetDirectoryName(path);
+            var dir = Path.GetDirectoryName(path.Path);
 
             if (dir is not null && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(cache, SerializerOptions));
+            await File.WriteAllTextAsync(path.Path, JsonSerializer.Serialize(cache, SerializerOptions));
         }
     }
 
@@ -104,7 +102,7 @@ namespace Incrementalist.Caching
         /// <returns>True if the cache is valid and can be used, false if it needs to be regenerated</returns>
         public static async Task<bool> IsCacheValidAsync(
             DependencyCache? cache,
-            string baseRepositoryPath,
+            AbsolutePath baseRepositoryPath,
             Solution solution,
             ILogger? logger = null,
             CancellationToken cancellationToken = default)
@@ -130,7 +128,7 @@ namespace Incrementalist.Caching
             }
             
             // get absolute paths of both solutions relative to the current working directory
-            var liveSolutionPath = Path.GetRelativePath(baseRepositoryPath, solution.FilePath!);
+            var liveSolutionPath = GetRelativePath(baseRepositoryPath.Path, solution.FilePath!);
 
             // Solution path mismatch
             if (cache.SolutionPath != liveSolutionPath)
@@ -174,7 +172,7 @@ namespace Incrementalist.Caching
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A new DependencyCache instance</returns>
         public static async Task<DependencyCache> CreateFromSolutionAsync(
-            string repositoryRoot,
+            AbsolutePath repositoryRoot,
             Solution solution,
             CancellationToken cancellationToken = default)
         {
@@ -221,9 +219,9 @@ namespace Incrementalist.Caching
 
             // add a local function to compute a relative file path from the repository root
             // use System.IO Path tools for this, not string manipulation
-            string GetPathRelativeToRepositoryRoot(string filePath)
+            RelativePath GetPathRelativeToRepositoryRoot(string filePath)
             {
-                return GetRelativePath(repositoryRoot, filePath);
+                return GetRelativePath(repositoryRoot.Path, filePath);
             }
         }
 
@@ -232,7 +230,7 @@ namespace Incrementalist.Caching
         /// </summary>
         /// <param name="repositoryRoot">The root of the repo</param>
         /// <param name="fullPath">The absolute path of an object elsewhere in this repository</param>
-        public static string GetRelativePath(string repositoryRoot, string fullPath) =>
-            Path.GetRelativePath(repositoryRoot, fullPath);
+        public static RelativePath GetRelativePath(string repositoryRoot, string fullPath) =>
+            new(Path.GetRelativePath(repositoryRoot, fullPath));
     }
 }

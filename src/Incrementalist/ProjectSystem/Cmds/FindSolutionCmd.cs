@@ -16,13 +16,13 @@ namespace Incrementalist.ProjectSystem.Cmds
     /// <summary>
     ///     Build task for finding a solution in the folder if none was specified on the CLI.
     /// </summary>
-    public sealed class FindSolutionCmd : BuildCommandBase<object, IEnumerable<string>>
+    public sealed class FindSolutionCmd : BuildCommandBase<object, IEnumerable<RelativePath>>
     {
-        private readonly string _folderPath;
+        private readonly AbsolutePath _folderPath;
         private readonly string? _searchFilter;
         private readonly SearchOption? _searchOption;
 
-        public FindSolutionCmd(ILogger logger, string folderPath, CancellationToken token,
+        public FindSolutionCmd(ILogger logger, AbsolutePath folderPath, CancellationToken token,
             string? searchFilter = null, SearchOption? searchOption = null) : base("FindVsSolution", logger, token)
         {
             _folderPath = folderPath;
@@ -30,7 +30,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             _searchOption = searchOption;
         }
 
-        protected override async Task<IEnumerable<string>> ProcessImpl(Task<object> previousTask)
+        protected override async Task<IEnumerable<RelativePath>> ProcessImpl(Task<object> previousTask)
         {
             // previous task should be a no-op
             await previousTask;

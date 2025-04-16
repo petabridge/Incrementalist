@@ -20,8 +20,8 @@ namespace Incrementalist.ProjectSystem.Cmds
     ///     and emits a topologically sorted set of project file names to be used during testing.
     /// </summary>
     public sealed class
-        ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<string, SlnFile>,
-        Dictionary<string, ICollection<string>>>
+        ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile>,
+        Dictionary<AbsolutePath, ICollection<AbsolutePath>>>
     {
         private readonly Solution _solution;
 
@@ -31,14 +31,18 @@ namespace Incrementalist.ProjectSystem.Cmds
             _solution = solution;
         }
 
-        protected override async Task<Dictionary<string, ICollection<string>>> ProcessImpl(
-            Task<Dictionary<string, SlnFile>> previousTask)
+        protected override async Task<Dictionary<AbsolutePath, ICollection<AbsolutePath>>> ProcessImpl(
+            Task<Dictionary<AbsolutePath, SlnFile>> previousTask)
         {
             var affectedSlnFiles = await previousTask;
 
             // bail out early if we don't have any affected projects
             if (affectedSlnFiles.Count == 0)
-                return new Dictionary<string, ICollection<string>>();
+            {
+                Logger.LogDebug("No affected projects found. Skipping dependency graph computation.");
+                return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
+            }
+                
 
             /*
              * Special case: in instances where the project files themselves are modified,
@@ -51,19 +55,23 @@ namespace Incrementalist.ProjectSystem.Cmds
             {
                 foreach (var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
                     additionalProjectIds.AddRange(_solution.Projects
-                        .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key)).Select(x => x.Id));
+                        .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key.Path)).Select(x => x.Id));
             }
+            
+            if(additionalProjectIds.Count > 0)
+                Logger.LogDebug("Found {Count} additional project IDs in affected files.", additionalProjectIds.Count);
 
             var ds = _solution.GetProjectDependencyGraph();
 
             // Special case: if the solution itself is modified, return all projects
-            if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(_solution.FilePath))
+            if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(new AbsolutePath(_solution.FilePath)))
             {
-                return new Dictionary<string, ICollection<string>>
+                Logger.LogDebug("Solution file modified. Returning all projects.");
+                return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>
                 {
                     {
-                        _solution.FilePath,
-                        _solution.Projects.Where(c => c.FilePath != null).Select(x => x.FilePath).ToList()!
+                        new AbsolutePath(_solution.FilePath),
+                        _solution.Projects.Where(c => c.FilePath != null).Select(x => new AbsolutePath(x.FilePath!)).ToList()!
                     }
                 };
             }
@@ -72,13 +80,16 @@ namespace Incrementalist.ProjectSystem.Cmds
                 .Where(c => c.Value.ProjectId != null)
                 .Select(x => x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
+            
+            Logger.LogDebug("Evaluating {Count} unique project IDs.", uniqueProjectIds.Count);
+            
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
 
             var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs));
 
             // idempotently filter out duplicates - same projectID can show up multiple times for a multi-target build
-            var finalResultSet = new Dictionary<string, ICollection<string>>();
+            var finalResultSet = new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             foreach (var r in independentGraphs)
             {
                 var projectPath = GetProjectFilePath(r.Key);
@@ -112,13 +123,13 @@ namespace Incrementalist.ProjectSystem.Cmds
                     .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
             }
 
-            ICollection<string> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
+            ICollection<AbsolutePath> PrepareProjectPaths(ProjectId root, IEnumerable<ProjectId> graph)
             {
                 var rootProject = _solution.GetProject(root);
                 if (rootProject?.FilePath == null)
-                    return Array.Empty<string>();
+                    return Array.Empty<AbsolutePath>();
                 
-                var results = new HashSet<string> { rootProject.FilePath };
+                var results = new HashSet<AbsolutePath> { new AbsolutePath(rootProject.FilePath) };
                 foreach (var p in graph)
                 {
                     var projectFilePath = GetProjectFilePath(p);
@@ -129,9 +140,13 @@ namespace Incrementalist.ProjectSystem.Cmds
                 return results;
             }
 
-            string? GetProjectFilePath(ProjectId project)
+            AbsolutePath? GetProjectFilePath(ProjectId project)
             {
-                return _solution.GetProject(project)?.FilePath;
+                var path = _solution.GetProject(project)?.FilePath;
+                if (path == null)
+                    return null;
+                var projectFilePath = new AbsolutePath(path);
+                return projectFilePath;
             }
         }
     }

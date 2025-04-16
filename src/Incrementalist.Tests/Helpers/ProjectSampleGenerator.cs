@@ -2,12 +2,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Tests.Helpers
 {
+
+    
     /// <summary>
     /// ProjectSampleGenerator
     /// </summary>
@@ -151,32 +155,6 @@ namespace Incrementalist.Tests.Helpers
             /// CSharp project file info. Name of the project is used in solution's content
             /// </summary>
             public SampleFile CSharpProjectFile { get; }
-        }
-        
-        /// <summary>
-        /// Generated sample file info
-        /// </summary>
-        public class SampleFile
-        {
-            public SampleFile(string name, string content)
-            {
-                Name = name;
-                Content = content;
-            }
-
-            /// <summary>
-            /// Name of the file (might be used by another generated files)
-            /// </summary>
-            public string Name { get; }
-            /// <summary>
-            /// File content
-            /// </summary>
-            public string Content { get; }
-
-            /// <summary>
-            /// Gets full file path
-            /// </summary>
-            public string GetFullPath(string basePath) => Path.Combine(basePath, Name);
         }
     }
 }

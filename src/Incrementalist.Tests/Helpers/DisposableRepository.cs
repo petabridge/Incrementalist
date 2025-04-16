@@ -11,8 +11,33 @@ using LibGit2Sharp;
 
 namespace Incrementalist.Tests.Helpers
 {
-    public class DisposableRepository : IDisposable
+    public sealed class DisposableRepository : IDisposable
     {
+        public const string GitIgnoreContent = """
+                                               # Build results
+                                               [Dd]ebug/
+                                               [Dd]ebugPublic/
+                                               [Rr]elease/
+                                               [Rr]eleases/
+                                               x64/
+                                               x86/
+                                               [Ww][Ii][Nn]32/
+                                               [Aa][Rr][Mm]/
+                                               [Aa][Rr][Mm]64/
+                                               bld/
+                                               [Bb]in/
+                                               [Oo]bj/
+                                               [Ll]og/
+                                               [Ll]ogs/
+
+                                               # Visual Studio 2015/2017 cache/options directory
+                                               .vs/
+                                               # Uncomment if you have tasks that create the project's static files in wwwroot
+                                               #wwwroot/
+                                               """;
+        
+        public const string GitIgnoreFileName = ".gitignore";
+        
         /// <summary>
         ///     Since it might take a few tries to delete the Git repository.
         /// </summary>
@@ -22,13 +47,13 @@ namespace Incrementalist.Tests.Helpers
         {
         }
 
-        public DisposableRepository(string basePath)
+        public DisposableRepository(AbsolutePath basePath)
         {
             BasePath = basePath;
             Init();
         }
 
-        public string BasePath { get; }
+        public AbsolutePath BasePath { get; }
 
         // Gets created via CTOR method call, so can't be null unless catastrophic failure
         public Repository Repository { get; private set; } = null!;
@@ -39,7 +64,7 @@ namespace Incrementalist.Tests.Helpers
             for (var attempt = 1; attempt <= MaxDeleteAttempts; attempt++)
                 try
                 {
-                    Directory.Delete(BasePath, true);
+                    Directory.Delete(BasePath.Path, true);
                     return;
                 }
                 catch (Exception)
@@ -52,18 +77,20 @@ namespace Incrementalist.Tests.Helpers
         ///     Needed to create repositories in random, temporary directories.
         /// </summary>
         /// <returns>The path to a temporary, random directory.</returns>
-        public static string CreateTempDirectory()
+        public static AbsolutePath CreateTempDirectory()
         {
             var dirPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(dirPath);
-            return dirPath;
+            return new AbsolutePath(dirPath);
         }
 
         private void Init()
         {
-            var repoPath = Repository.Init(BasePath);
+            var repoPath = Repository.Init(BasePath.Path);
             Repository = new Repository(repoPath);
             var sig = CreateSignature();
+            // add a .gitignore file to the repository immediately
+            WriteFile(GitIgnoreFileName, GitIgnoreContent);
             Repository.Commit("First", sig, sig);
             //Repository.CreateBranch("master"); // setup the master branch initially
         }
@@ -99,9 +126,78 @@ namespace Incrementalist.Tests.Helpers
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
         public DisposableRepository WriteFile(string fileName, string fileText)
         {
-            var filePath = Path.Combine(BasePath, fileName);
+            var filePath = Path.Combine(BasePath.Path, fileName);
             File.WriteAllText(filePath, fileText);
             LibGit2Sharp.Commands.Stage(Repository, filePath);
+            return this;
+        }
+
+        public DisposableRepository WriteSolution(TestSolutionModel testSolutionModel)
+        {
+            // need to traverse the solution and write the entire graph
+            // of projects to disk
+            
+            // write the solution first
+            var solutionText = testSolutionModel.Serialize();
+            WriteFile(testSolutionModel.FileName.Name, solutionText);
+
+            foreach (var c in testSolutionModel.FileStructure)
+            {
+                switch (c)
+                {
+                    case SolutionFolder dir:
+                        ProcessFolder(dir);
+                        break;
+                    case ProjectModel project:
+                        ProcessProject(project);
+                        break;
+                    case SampleFile sampleFile:
+                        WriteFile(sampleFile.Name, sampleFile.Content);
+                        break;
+                }
+            }
+
+            return this;
+
+            void ProcessProject(ProjectModel project)
+            {
+                var serializedProject = project.Serialize();
+                CreateDirectory(project.RelativePathFromRepository);
+                WriteFile(project.CompletePath, serializedProject);
+                
+                foreach (var file in project.IncludedFiles)
+                {
+                    var fullPath = Path.Combine(project.RelativePathFromRepository, file.Name);
+                    WriteFile(fullPath, file.Content);
+                }
+            }
+
+            void ProcessFolder(SolutionFolder folder)
+            {
+                CreateDirectory(folder.Name);
+                foreach (var item in folder.Items)
+                {
+                    switch (item)
+                    {
+                        case SolutionFolder subDir:
+                            ProcessFolder(subDir);
+                            break;
+                        case ProjectModel project:
+                            ProcessProject(project);
+                            break;
+                        case SampleFile sampleFile:
+                            var path = Path.Combine(folder.Name, sampleFile.Name);
+                            WriteFile(path, sampleFile.Content);
+                            break;
+                    }
+                }
+            }
+        }
+
+        public DisposableRepository CreateDirectory(string directoryName)
+        {
+            var dirPath = Path.Combine(BasePath.Path, directoryName);
+            Directory.CreateDirectory(dirPath);
             return this;
         }
 
@@ -110,7 +206,7 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         /// <param name="sampleFile">File info source</param>
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
-        public DisposableRepository WriteFile(ProjectSampleGenerator.SampleFile sampleFile) =>
+        public DisposableRepository WriteFile(SampleFile sampleFile) =>
             WriteFile(sampleFile.Name, sampleFile.Content);
         
         /// <summary>
@@ -120,9 +216,18 @@ namespace Incrementalist.Tests.Helpers
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
         public DisposableRepository DeleteFile(string fileName)
         {
-            var filePath = Path.Combine(BasePath, fileName);
+            var filePath = Path.Combine(BasePath.Path, fileName);
             File.Delete(fileName);
             LibGit2Sharp.Commands.Remove(Repository, filePath);
+            return this;
+        }
+
+        public DisposableRepository AddOrModifyProjectFile(ProjectModel project, SampleFile sampleFile)
+        {
+            var filePath = Path.Combine(project.RelativePathFromRepository, sampleFile.Name);
+            
+            // this will overwrite the file if it already exists
+            WriteFile(filePath, sampleFile.Content);
             return this;
         }
 

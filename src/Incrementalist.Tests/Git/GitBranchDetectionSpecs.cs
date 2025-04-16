@@ -20,7 +20,7 @@ namespace Incrementalist.Tests.Git
 
         public void Dispose()
         {
-            Repository?.Dispose();
+            Repository.Dispose();
         }
 
         public DisposableRepository Repository { get; }

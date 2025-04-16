@@ -5,7 +5,10 @@ param(
 
     [Parameter()]
     [ValidateSet("Project", "Tool")]
-    [string]$ExecutionMode = "Tool"
+    [string]$ExecutionMode = "Tool",
+
+    [Parameter(Mandatory=$false)]
+    [bool]$VerboseLogging = $false
 )
 
 # Source helper scripts
@@ -204,6 +207,10 @@ function Run-Incrementalist {
              # Run using dotnet run --project approach
             $cmd = "dotnet"
             $argList = @("run", "--project", $ProjectPath, "-c", $Configuration, "--no-build", "--")
+             if($VerboseLogging)
+             {
+                 $argList += "--verbose"
+             }
             $argList += $IncrementalistArgs
 
             # Execute the command
@@ -227,7 +234,12 @@ function Run-Incrementalist {
             }
             
             $cmd = "dotnet"
-            $argList = @("incrementalist") + $IncrementalistArgs
+            $argList = @("incrementalist")
+            if($VerboseLogging)
+            {
+                $argList += "--verbose"
+            }
+            $argList += $IncrementalistArgs
             Write-Host "Executing: $($cmd) $($argList -join ' ')" -ForegroundColor Magenta
             $process = Start-Process -FilePath $cmd -ArgumentList $argList -NoNewWindow -PassThru -Wait
 
@@ -511,6 +523,8 @@ function Test-GlobTargeting {
             Write-Host "Expected output:`n$expectedProjectFullPath`nActual output:`n$($actualProjects -join "`n")" -ForegroundColor Yellow
             throw "Glob targeting verification failed. Output file content did not match expected project."
         }
+        
+        return 0 # Explicitly return success code
     }
 }
 

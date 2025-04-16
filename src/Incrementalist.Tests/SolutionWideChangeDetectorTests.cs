@@ -34,12 +34,12 @@ namespace Incrementalist.Tests
             _repository.WriteFile(sample.ImportedPropsFile);
             
             // Create a solution file
-            var solutionPath = Path.Combine(_repository.BasePath, "test.sln");
+            var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
             File.WriteAllText(solutionPath, ""); // Empty solution file is sufficient for our tests
             
             // Create some solution-wide files
-            File.WriteAllText(Path.Combine(_repository.BasePath, "Directory.Build.props"), "<Project />");
-            File.WriteAllText(Path.Combine(_repository.BasePath, "Directory.Packages.props"), "<Project />");
+            File.WriteAllText(Path.Combine(_repository.BasePath.Path, "Directory.Build.props"), "<Project />");
+            File.WriteAllText(Path.Combine(_repository.BasePath.Path, "Directory.Packages.props"), "<Project />");
             
             // Load the solution
             var workspace = new AdhocWorkspace();
@@ -51,6 +51,11 @@ namespace Incrementalist.Tests
             _solution = workspace.AddSolution(solutionInfo);
             _detector = new SolutionWideChangeDetector(_solution);
         }
+        
+        private AbsolutePath GetAbsolutePath(string fileName) 
+        {
+            return new AbsolutePath(Path.Combine(_repository.BasePath.Path, fileName));
+        }
 
         [Theory]
         [InlineData("Directory.Build.props")]
@@ -60,7 +65,7 @@ namespace Incrementalist.Tests
         [InlineData("some/path/Directory.Build.props")]
         public void DirectMatch_SolutionWideFiles_ReturnsTrue(string fileName)
         {
-            var changes = new[] { fileName };
+            var changes = new[] {GetAbsolutePath(fileName) };
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -69,7 +74,7 @@ namespace Incrementalist.Tests
         [InlineData("some/path/MySolution.sln")]
         public void SolutionFile_ReturnsTrue(string fileName)
         {
-            var changes = new[] { fileName };
+            var changes = new[] { GetAbsolutePath(fileName) };
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -79,7 +84,7 @@ namespace Incrementalist.Tests
         [InlineData("README.md")]
         public void NonSolutionWideFiles_ReturnsFalse(string fileName)
         {
-            var changes = new[] { fileName };
+            var changes = new[] { GetAbsolutePath(fileName) };
             Assert.False(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -91,7 +96,8 @@ namespace Incrementalist.Tests
                 "src/Project1/Class1.cs",
                 "Directory.Build.props",
                 "src/Project2/Class2.cs"
-            };
+            }.Select(GetAbsolutePath);
+            
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -107,7 +113,7 @@ namespace Incrementalist.Tests
         [InlineData("DiReCtOrY.bUiLd.PrOpS")]
         public void FileNameMatching_IsCaseInsensitive(string fileName)
         {
-            var changes = new[] { fileName };
+            var changes = new[] { GetAbsolutePath(fileName) };
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -115,13 +121,13 @@ namespace Incrementalist.Tests
         [InlineData("test.SLN")]
         public void ExtensionMatching_IsCaseInsensitive(string fileName)
         {
-            var changes = new[] { fileName };
+            var changes = new[] { GetAbsolutePath(fileName) };
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
         public void Dispose()
         {
-            _repository?.Dispose();
+            _repository.Dispose();
         }
     }
 } 

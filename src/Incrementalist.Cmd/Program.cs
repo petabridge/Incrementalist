@@ -106,8 +106,10 @@ namespace Incrementalist.Cmd
 
             try
             {
-                var pwd = options.WorkingDirectory ?? Directory.GetCurrentDirectory();
-                var insideRepo = Repository.IsValid(pwd);
+                var pwd = new AbsolutePath(
+                    Path.GetFullPath(options.WorkingDirectory ?? Directory.GetCurrentDirectory()));
+
+                var insideRepo = Repository.IsValid(pwd.Path);
                 if (!insideRepo)
                 {
                     logger.LogError("Current path {WorkingDirectory} is not located inside any known Git repository.",
@@ -116,15 +118,15 @@ namespace Incrementalist.Cmd
                 }
 
                 // can't be null or Repository.IsValid(pwd) would have failed
-                var repoFolder = Repository.Discover(pwd)!;
-                var workingFolder = Directory.GetParent(repoFolder)!.Parent!;
+                var repoFolder = Repository.Discover(pwd.Path)!;
+                var workingFolder = new AbsolutePath(Directory.GetParent(repoFolder)!.Parent!.FullName);
 
-                var (repo, foundRepo) = GitRunner.FindRepository(workingFolder.FullName);
+                var (repo, foundRepo) = GitRunner.FindRepository(workingFolder);
 
                 if (!foundRepo || repo == null)
                 {
                     logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.",
-                        workingFolder.FullName);
+                        workingFolder);
                     return -3;
                 }
 
@@ -166,14 +168,18 @@ namespace Incrementalist.Cmd
             }
         }
 
-        private static async Task AnalyzeFolderDiff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        private static async Task AnalyzeFolderDiff(SlnOptions options, AbsolutePath workingFolder, ILogger logger)
         {
             /*
              * options.SolutionFilePath can be null here, but it won't affect this task
              */
 
-            var settings = new BuildSettings(options.GitBranch!, options.SolutionFilePath ?? string.Empty,
-                workingFolder.FullName,
+            var normalized = options.SolutionFilePath != null
+                ? workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)))
+                : RelativePath.Empty;
+
+            var settings = new BuildSettings(options.GitBranch!, normalized,
+                workingFolder,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache
@@ -186,20 +192,26 @@ namespace Incrementalist.Cmd
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
-        private static async Task AnalyzeSolutionDIff(SlnOptions options, DirectoryInfo workingFolder, ILogger logger)
+        private static async Task AnalyzeSolutionDIff(SlnOptions options, AbsolutePath workingFolder, ILogger logger)
         {
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
 
             var msBuild = MSBuildWorkspace.Create();
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
-                await ProcessSln(options, options.SolutionFilePath, workingFolder, msBuild, logger);
+            {
+                var normalizedPath =
+                    workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)));
+
+                await ProcessSln(options, normalizedPath, workingFolder, msBuild, logger);
+            }
+
             else
-                foreach (var sln in SolutionFinder.GetSolutions(workingFolder.FullName))
+                foreach (var sln in SolutionFinder.GetSolutions(workingFolder))
                     await ProcessSln(options, sln, workingFolder, msBuild, logger);
         }
 
-        private static async Task ProcessSln(SlnOptions options, string sln, DirectoryInfo workingFolder,
+        private static async Task ProcessSln(SlnOptions options, RelativePath sln, AbsolutePath workingFolder,
             MSBuildWorkspace msBuild, ILogger logger)
         {
             var stopwatch = new Stopwatch();
@@ -207,7 +219,7 @@ namespace Incrementalist.Cmd
 
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
-            var settings = new BuildSettings(options.GitBranch!, sln, workingFolder.FullName,
+            var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
                 NoCache = options.NoCache
@@ -232,14 +244,14 @@ namespace Incrementalist.Cmd
             else
             {
                 string buildType;
-                IReadOnlyList<string> projectsToRebuild;
+                IReadOnlyList<AbsolutePath> projectsToRebuild;
 
                 switch (buildResult)
                 {
                     case FullSolutionBuildResult _:
                         buildType = "Full solution build";
                         projectsToRebuild = msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                            .Select(p => p.FilePath!).ToList();
+                            .Select(p => new AbsolutePath(p.FilePath!)).ToList();
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";
@@ -254,13 +266,14 @@ namespace Incrementalist.Cmd
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
                     return;
                 }
-                
+
                 var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
                 {
-                    logger.LogInformation("{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
+                    logger.LogInformation(
+                        "{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
                         buildType,
                         projectsToRebuild.Count,
                         options.OutputFile);
@@ -280,27 +293,35 @@ namespace Incrementalist.Cmd
             {
                 var skipGlobs = options.SkipGlobs?.ToArray() ?? [];
                 var targetGlobs = options.TargetGlobs?.ToArray() ?? [];
-                
-                if(targetGlobs.Length == 0 && skipGlobs.Length == 0)
+
+                if (targetGlobs.Length == 0 && skipGlobs.Length == 0)
                     return original;
 
                 var projectsToRebuild = original switch
                 {
                     FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                        .Select(p => p.FilePath!).ToList(),
+                        .Select(p => new AbsolutePath(p.FilePath!)).ToList(),
                     IncrementalBuildResult incremental => incremental.AffectedProjects,
                     _ => []
                 };
-                
+
                 // Need to process our globs
-                var filteredProjects = GlobFilter.FilterProjects(projectsToRebuild, skipGlobs, targetGlobs);
+
+                // globbing is designed to work with relative paths
+                var relativePaths = projectsToRebuild.Select(c =>
+                    settings.WorkingDirectory.ComputeRelativePathToMe(c)).ToList();
+
+                // we glob and then convert back into absolute paths
+                var filteredProjects = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs)
+                    .Select(c => c.ComputeAbsolutePath(settings.WorkingDirectory)).ToList();
 
                 if (filteredProjects.Count != projectsToRebuild.Count)
                 {
                     // had at least 1 hit on a filter
-                    logger.LogInformation("Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
+                    logger.LogInformation(
+                        "Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
                         projectsToRebuild.Count, filteredProjects.Count);
-                    
+
                     return new IncrementalBuildResult(filteredProjects);
                 }
 
@@ -321,7 +342,8 @@ namespace Incrementalist.Cmd
             // Check to see if we're planning on writing out to the file system or not.
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
-                logger.LogInformation("Detected {AffectedFiles} affected {FileSysType} - writing out to {OutputFile}", affectedFilesCount,
+                logger.LogInformation("Detected {AffectedFiles} affected {FileSysType} - writing out to {OutputFile}",
+                    affectedFilesCount,
                     options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
