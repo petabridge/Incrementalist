@@ -13,4 +13,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Incrementalist.Cmd" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Caching\" />
+  </ItemGroup>
 </Project>

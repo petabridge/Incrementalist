@@ -50,9 +50,6 @@ namespace Incrementalist.Cmd.Config
             merged.FailOnNoProjects = config.FailOnNoProjects.GetValueOrDefault(false);
             merged.SkipGlobs = options.SkipGlobs ?? config.SkipGlob;
             merged.TargetGlobs = options.TargetGlobs ?? config.TargetGlob;
-            
-            // Caching is disabled until we redesign it: https://github.com/petabridge/Incrementalist/issues/350
-            merged.NoCache = true; //config.NoCache.GetValueOrDefault(false);
 
             // Merge int properties (CLI takes precedence)
             merged.TimeoutMinutes = config.TimeoutMinutes.GetValueOrDefault(2);
@@ -63,7 +60,6 @@ namespace Incrementalist.Cmd.Config
             if (!options.ContinueOnError) merged.ContinueOnError = false;
             if (options.RunInParallel) merged.RunInParallel = true;
             if (options.FailOnNoProjects) merged.FailOnNoProjects = true;
-            if (options.NoCache) merged.NoCache = true;
             if (options.TimeoutMinutes != 2) merged.TimeoutMinutes = options.TimeoutMinutes;
             
             // Bugfix for https://github.com/petabridge/Incrementalist/issues/381 and

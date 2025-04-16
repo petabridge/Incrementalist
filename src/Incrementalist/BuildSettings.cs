@@ -50,10 +50,5 @@ namespace Incrementalist
         ///     prior to cancelling it.
         /// </summary>
         public TimeSpan TimeoutDuration { get; }
-
-        /// <summary>
-        ///     When true, ignores any existing cache file and performs a full Roslyn analysis.
-        /// </summary>
-        public bool NoCache { get; } = true;
     }
 }
