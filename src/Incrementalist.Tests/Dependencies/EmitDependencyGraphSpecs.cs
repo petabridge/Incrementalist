@@ -80,7 +80,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     [InlineData(ProjectBTests, new[] { ProjectBTests })]
     [InlineData(ProjectB, new[] { ProjectB, ProjectBTests })]
     [InlineData(ProjectA, new[] { ProjectA, ProjectB, ProjectBTests })]
-    public async Task ShouldDetectProjectCChanges(string projectToModify, string[] affectedProjects)
+    public async Task ShouldDetectProjectChanges(string projectToModify, string[] affectedProjects)
     {
         // arrange
         var newFile = new SampleFile("NewFile.cs", CsharpSamples.FooClass);
@@ -104,6 +104,32 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var actualAffectedProjects = ((IncrementalBuildResult)result).AffectedProjects
             .Select(c => Path.GetFileNameWithoutExtension(c.Path)).ToList();
         Assert.Equivalent(affectedProjects, actualAffectedProjects);
+    }
+
+    [Theory]
+    [InlineData("src/Directory.Build.props", SolutionFileSamples.DirectoryBuildProps)]
+    [InlineData("Directory.Build.props", SolutionFileSamples.DirectoryBuildProps)]
+    [InlineData("Directory.Packages.props", SolutionFileSamples.DirectoryPackagesProps)]
+    public async Task ShouldDetectSolutionWideChanges(string fileName, string fileContent)
+    {
+        // arrange
+        var newFile = new SampleFile(fileName, fileContent);
+        Repository
+            .WriteFile(newFile)
+            .Commit("Added new file"); // should create the diffs
+
+        // validate that we can detect the changes
+        var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
+        Assert.NotEmpty(diffs);
+
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger);
+
+        // act
+        var result = await cmd.Run();
+
+        // assert
+        Assert.NotNull(result);
+        Assert.IsType<FullSolutionBuildResult>(result);
     }
 
     public Task InitializeAsync()
