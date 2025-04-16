@@ -109,7 +109,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     [Theory]
     [InlineData("src/Directory.Build.props", SolutionFileSamples.DirectoryBuildProps)]
     [InlineData("Directory.Build.props", SolutionFileSamples.DirectoryBuildProps)]
-    [InlineData("global.json", SolutionFileSamples.GlobalJson)]
+    [InlineData("Directory.Packages.props", SolutionFileSamples.DirectoryPackagesProps)]
     public async Task ShouldDetectSolutionWideChanges(string fileName, string fileContent)
     {
         // arrange
