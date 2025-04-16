@@ -12,8 +12,13 @@ public class SlnOptionsParsingSpecs
     /// Reproduction spec for https://github.com/petabridge/Incrementalist/issues/378 
     /// </summary>
     [Theory]
-    [InlineData("--config -r -- build -c Release")]
-    [InlineData("-c -r -- build -c Release")]
+    [InlineData("run --config -- build -c Release")]
+    [InlineData("run --dry --b dev -- build -c Release")]
+    [InlineData("run -c -- build -c Release")]
+    [InlineData(@"run --config -b dev -f C:\user\output.txt -- build -c Release")]
+    [InlineData(@"create-config --config C:\user\config.json -b dev --skip-glob **/*.Tests.csproj **/tests/*.csproj")]
+    [InlineData(@"create-config")]
+    [InlineData("list-affected-folders")]
     public void ShouldSeparateDotnetArgsFromSlnOptions(string cliArg)
     {
         var args = CommandLineParser

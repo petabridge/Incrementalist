@@ -35,7 +35,12 @@ public static class SlnOptionsParser
                 {
                     options = creatConfigOptions;
                     return 0;
-                }, _ => 1);
+                }, errors =>
+                {
+                    foreach(var e in errors)
+                        Console.WriteLine(e);
+                    return 1;
+                });
 
             result = options;
 
