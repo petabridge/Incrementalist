@@ -36,6 +36,8 @@ public sealed record RelativePath : IHavePathType
         Path = path;
     }
     
+    public static RelativePath Empty => new(".");
+    
     public string Path { get; init; }
     
     public PathType PathType => PathType.RelativePath;

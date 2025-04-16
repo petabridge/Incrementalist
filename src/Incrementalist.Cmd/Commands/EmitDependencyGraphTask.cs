@@ -45,7 +45,7 @@ namespace Incrementalist.Cmd.Commands
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
 
-            var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Name);
+            var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path);
             Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
             var progress = new Progress<ProjectLoadProgress>(x =>
             {

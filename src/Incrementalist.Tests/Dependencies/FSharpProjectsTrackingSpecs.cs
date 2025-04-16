@@ -48,7 +48,7 @@ namespace Incrementalist.Tests.Dependencies
                 .Commit("Updated both project files");
             
             var logger = new TestOutputLogger(_outputHelper);
-            var settings = new BuildSettings("master", new FileName("FSharpSolution.sln"), Repository.BasePath);
+            var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath);
             var emitTask = new EmitDependencyGraphTask(settings, _workspace, logger);
             var buildResult = await emitTask.Run();
 

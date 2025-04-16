@@ -17,7 +17,7 @@ namespace Incrementalist
     {
         public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
 
-        public BuildSettings(string targetBranch, FileName solutionFile, AbsolutePath workingDirectory,
+        public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory,
             TimeSpan? timeoutDuration = null)
         {
             TargetBranch = targetBranch;
@@ -37,9 +37,9 @@ namespace Incrementalist
         ///     The current solution file for us to analyze inside this repository.
         /// </summary>
         /// <remarks>
-        /// Expected to be in the root fo the <see cref="WorkingDirectory"/>
+        /// Relative to the root of <see cref="WorkingDirectory"/>
         /// </remarks>
-        public FileName SolutionFile { get; }
+        public RelativePath SolutionFile { get; }
 
         /// <summary>
         ///     The folder Incrementalist will be working from.
