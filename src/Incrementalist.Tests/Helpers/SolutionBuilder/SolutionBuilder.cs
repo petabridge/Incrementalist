@@ -162,7 +162,19 @@ public static class SolutionSerializer
     public static string Serialize(TestSolutionModel testSolution)
     {
         var solutionModel = new SolutionModel();
-        foreach(var item in testSolution.FileStructure)
+        foreach(var item in testSolution.FlatProjects)
+        {
+            AddItemToSolution(item);
+        }
+        
+        return testSolution.FileFormat switch
+        {
+            SolutionFormat.Sln => SerializeSlnAsync(solutionModel).Result,
+            SolutionFormat.Slnx => SerializeSlnxAsync(solutionModel).Result,
+            _ => throw new ArgumentOutOfRangeException(nameof(testSolution.FileFormat))
+        };
+
+        void AddItemToSolution(IMsBuildSerializable item)
         {
             switch (item)
             {
@@ -173,20 +185,17 @@ public static class SolutionSerializer
                         ProjectLanguage.FSharp => "F#",
                         _ => throw new ArgumentOutOfRangeException(nameof(projectModel.ProjectType))
                     };
-                    solutionModel.AddProject(projectModel.RelativePathFromRepository, projectType);
+                    solutionModel.AddProject(projectModel.CompletePath, projectType);
                     break;
                 case SolutionFolder folder:
                     solutionModel.AddFolder("/" + folder.Name + "/");
+                    foreach (var subItem in folder.Items)
+                    {
+                        AddItemToSolution(subItem);
+                    }
                     break;
             }
         }
-        
-        return testSolution.FileFormat switch
-        {
-            SolutionFormat.Sln => SerializeSlnAsync(solutionModel).Result,
-            SolutionFormat.Slnx => SerializeSlnxAsync(solutionModel).Result,
-            _ => throw new ArgumentOutOfRangeException(nameof(testSolution.FileFormat))
-        };
     }
 
     public static async Task<string> SerializeSlnAsync(SolutionModel testSolution)

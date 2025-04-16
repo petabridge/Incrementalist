@@ -234,8 +234,10 @@ namespace Incrementalist.Tests.Helpers;
                     sb.AppendLine($"  <ProjectReference Include=\"{computeRelativePath}\" />");
                 }
                 sb.AppendLine($"  </ItemGroup>");
-                sb.AppendLine($"</Project>");
+               
             }
+            
+            sb.AppendLine($"</Project>");
             
             return sb.ToString();
         }
