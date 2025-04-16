@@ -9,6 +9,8 @@ namespace Incrementalist.Cmd;
 /// </summary>
 public static class SlnOptionsParser
 {
+    public const int NON_ERROR_IMMEDIATE_EXIT_CODE = 1000;
+    
     public static int TryParseSlnOptions(string[] args, out SlnOptions? result)
     {
         try
@@ -37,14 +39,26 @@ public static class SlnOptionsParser
                     return 0;
                 }, errors =>
                 {
-                    foreach(var e in errors)
-                        Console.WriteLine(e);
-                    return 1;
+                    var errorCode = NON_ERROR_IMMEDIATE_EXIT_CODE;
+                    foreach(var error in errors)
+                        switch (error.Tag)
+                        {
+                            case ErrorType.HelpRequestedError:
+                            case ErrorType.VersionRequestedError:
+                            case ErrorType.HelpVerbRequestedError:
+                                break;
+                            default:
+                                errorCode = 1;
+                                break;
+                        }
+                            
+                    // error was inconsequential - like --help
+                    return errorCode;
                 });
 
             result = options;
 
-            if (r != 0)
+            if (r != 0 && r != NON_ERROR_IMMEDIATE_EXIT_CODE)
                 DebugDump(null);
 
             return r;
