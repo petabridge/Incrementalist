@@ -80,12 +80,12 @@ public class ProjectBuilderSpecs
         // arrange
         var guidA = new Guid("00000000-0000-0000-0000-000000000001");
         var projectIdA = ProjectId.CreateFromSerialized(guidA);
-        var projectPathA = @"/src/MyProjectA/";
+        var projectPathA = @"src/MyProjectA/";
         var projectNameA = "MyProjectA";
         
         var guidB = new Guid("00000000-0000-0000-0000-000000000002");
         var projectIdB = ProjectId.CreateFromSerialized(guidB);
-        var projectPathB = @"/src/MyProjectB/";
+        var projectPathB = @"src/MyProjectB/";
         var projectNameB = "MyProjectB";
         
         // act

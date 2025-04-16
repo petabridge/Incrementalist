@@ -230,7 +230,7 @@ namespace Incrementalist.Tests.Helpers;
                 sb.AppendLine($"  <ItemGroup>");
                 foreach (var projectReference in projectModel.ProjectReferences)
                 {
-                    var computeRelativePath = ComputeProjectReferencePath(projectModel.RelativePathFromRepository, projectReference.CompletePath);
+                    var computeRelativePath = ComputeProjectReferencePath(projectModel.CompletePath, projectReference.CompletePath);
                     sb.AppendLine($"  <ProjectReference Include=\"{computeRelativePath}\" />");
                 }
                 sb.AppendLine($"  </ItemGroup>");
