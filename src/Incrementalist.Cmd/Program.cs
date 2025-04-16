@@ -182,7 +182,7 @@ namespace Incrementalist.Cmd
                 workingFolder,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
-                NoCache = options.NoCache
+                //NoCache = options.NoCache
             };
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
             var affectedFiles = (await emitTask.Run());
@@ -222,7 +222,7 @@ namespace Incrementalist.Cmd
             var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
                 TimeSpan.FromMinutes(options.TimeoutMinutes))
             {
-                NoCache = options.NoCache
+                //NoCache = options.NoCache
             };
 
             logger.LogInformation("Beginning dependency analysis...");
