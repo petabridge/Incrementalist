@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Incrementalist;
 
@@ -56,8 +57,15 @@ public sealed record AbsolutePath : IHavePathType
     public AbsolutePath(string path)
     {
         // Linux paths can't work with IsFullyQualified
-        if(!System.IO.Path.IsPathRooted(path))
-            throw new ArgumentException($"Path [{path}] is not absolute", nameof(path));
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+            if (!System.IO.Path.IsPathRooted(path))
+            {
+                throw new ArgumentException($"Path [{path}] is not absolute", nameof(path));
+            }
+        }
+        else
+            if(System.IO.Path.IsPathFullyQualified(path))
+                throw new ArgumentException($"Path [{path}] is not relative", nameof(path));
         Path = path;
     }
 

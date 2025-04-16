@@ -299,7 +299,7 @@ namespace Incrementalist.Cmd
 
                 var projectsToRebuild = original switch
                 {
-                    FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
+                    FullSolutionBuildResult => msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
                         .Select(p => new AbsolutePath(p.FilePath!)).ToList(),
                     IncrementalBuildResult incremental => incremental.AffectedProjects,
                     _ => []
