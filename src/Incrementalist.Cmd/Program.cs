@@ -309,7 +309,7 @@ namespace Incrementalist.Cmd
 
                 // globbing is designed to work with relative paths
                 var relativePaths = projectsToRebuild.Select(c =>
-                    c.ComputeRelativePathToMe(settings.WorkingDirectory)).ToList();
+                    settings.WorkingDirectory.ComputeRelativePathToMe(c)).ToList();
 
                 // we glob and then convert back into absolute paths
                 var filteredProjects = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs)
