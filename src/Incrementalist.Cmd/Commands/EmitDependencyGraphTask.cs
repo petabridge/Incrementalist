@@ -96,13 +96,13 @@ namespace Incrementalist.Cmd.Commands
                 return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
             }
 
-            // Get the list of affected projects
-            var affectedProjects = affectedFiles.Where(x => x.Value.FileType == FileType.Project)
+            // Get the list of affected project files directly
+            var directlyAffectedProjects = affectedFiles.Where(x => x.Value.FileType == FileType.Project)
                                               .Select(x => x.Key)
                                               .ToList();
 
             // If all projects are affected, return a full solution build
-            if (affectedProjects.Count == solution.Projects.Count())
+            if (directlyAffectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
                 return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));

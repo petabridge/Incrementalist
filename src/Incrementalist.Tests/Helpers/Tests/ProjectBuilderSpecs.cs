@@ -72,4 +72,40 @@ public class ProjectBuilderSpecs
         Assert.Contains(targetFrameworks, serialized);
         Assert.Contains(outputTypeSerialized, serialized);
     }
+
+    [Fact]
+    public void ShouldBuildProjectWithDependencies()
+    {
+        // need to create two projects, A and B - B depends on A
+        // arrange
+        var guidA = new Guid("00000000-0000-0000-0000-000000000001");
+        var projectIdA = ProjectId.CreateFromSerialized(guidA);
+        var projectPathA = @"/src/MyProjectA/";
+        var projectNameA = "MyProjectA";
+        
+        var guidB = new Guid("00000000-0000-0000-0000-000000000002");
+        var projectIdB = ProjectId.CreateFromSerialized(guidB);
+        var projectPathB = @"/src/MyProjectB/";
+        var projectNameB = "MyProjectB";
+        
+        // act
+        var projectBuilderA = new ProjectBuilder(projectIdA, projectPathA, projectNameA);
+        var projectA = projectBuilderA
+            .WithProjectType(OutputType.Library)
+            .WithLanguage(ProjectLanguage.CSharp)
+            .Build();
+        
+        var projectBuilderB = new ProjectBuilder(projectIdB, projectPathB, projectNameB);
+        var projectB = projectBuilderB
+            .WithProjectType(OutputType.Library)
+            .WithLanguage(ProjectLanguage.CSharp)
+            .WithProjectReference(projectA)
+            .Build();
+        
+        var serializedB = projectB.Serialize();
+        
+        // assert
+        // Need to validate that there is a ProjectReference that uses the path "../MyProjectA/MyProjectA.csproj"
+        Assert.Contains("ProjectReference Include=\"..\\MyProjectA\\MyProjectA.csproj\"", serializedB);
+    }
 }

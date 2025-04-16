@@ -36,7 +36,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     }
 
     private BuildSettings GetBuildSettings() =>
-        new BuildSettings(PrimaryBranch, _generatedTestSolution.FileName, Repository.BasePath);
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FileName, Repository.BasePath){ NoCache = true };
 
     public const string ProjectBTests = "ProjectB.Tests";
     public const string ProjectB = "ProjectB";

@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 namespace Incrementalist.ProjectSystem.Cmds
 {
     /// <summary>
-    ///     Filter the previously discovered <see cref="SlnFile" />s by whether or not
+    ///     Filter the previously discovered <see cref="SlnFile" />s by whether
     ///     they were touched via the GitDiff.
     /// </summary>
     public sealed class

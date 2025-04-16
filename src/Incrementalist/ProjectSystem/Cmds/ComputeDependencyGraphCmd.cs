@@ -38,7 +38,11 @@ namespace Incrementalist.ProjectSystem.Cmds
 
             // bail out early if we don't have any affected projects
             if (affectedSlnFiles.Count == 0)
+            {
+                Logger.LogDebug("No affected projects found. Skipping dependency graph computation.");
                 return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
+            }
+                
 
             /*
              * Special case: in instances where the project files themselves are modified,
@@ -53,12 +57,16 @@ namespace Incrementalist.ProjectSystem.Cmds
                     additionalProjectIds.AddRange(_solution.Projects
                         .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key.Path)).Select(x => x.Id));
             }
+            
+            if(additionalProjectIds.Count > 0)
+                Logger.LogDebug("Found {Count} additional project IDs in affected files.", additionalProjectIds.Count);
 
             var ds = _solution.GetProjectDependencyGraph();
 
             // Special case: if the solution itself is modified, return all projects
             if (_solution.FilePath != null && affectedSlnFiles.ContainsKey(new AbsolutePath(_solution.FilePath)))
             {
+                Logger.LogDebug("Solution file modified. Returning all projects.");
                 return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>
                 {
                     {
@@ -72,6 +80,9 @@ namespace Incrementalist.ProjectSystem.Cmds
                 .Where(c => c.Value.ProjectId != null)
                 .Select(x => x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
+            
+            Logger.LogDebug("Evaluating {Count} unique project IDs.", uniqueProjectIds.Count);
+            
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
 
