@@ -180,10 +180,7 @@ namespace Incrementalist.Cmd
 
             var settings = new BuildSettings(options.GitBranch!, normalized,
                 workingFolder,
-                TimeSpan.FromMinutes(options.TimeoutMinutes))
-            {
-                NoCache = options.NoCache
-            };
+                TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
             var affectedFiles = (await emitTask.Run());
 
@@ -220,10 +217,7 @@ namespace Incrementalist.Cmd
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
             var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
-                TimeSpan.FromMinutes(options.TimeoutMinutes))
-            {
-                NoCache = options.NoCache
-            };
+                TimeSpan.FromMinutes(options.TimeoutMinutes));
 
             logger.LogInformation("Beginning dependency analysis...");
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);

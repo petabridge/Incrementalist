@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Incrementalist.Caching
+namespace Incrementalist
 {
     /// <summary>
     /// Constants used for Incrementalist file system operations
@@ -15,11 +15,7 @@ namespace Incrementalist.Caching
         /// The directory where Incrementalist stores its cache and other files
         /// </summary>
         public const string IncrementalistDirectory = ".incrementalist";
-
-        /// <summary>
-        /// The filename for the dependency graph cache
-        /// </summary>
-        public const string CacheFileName = "incrementalist.graphcache.json";
+        
 
         public const string CurrentVersion = "1.0-beta2";
     }

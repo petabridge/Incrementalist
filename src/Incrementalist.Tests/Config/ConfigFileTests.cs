@@ -147,7 +147,6 @@ namespace Incrementalist.Tests.Config
             Assert.True(options.ContinueOnError);
             Assert.False(options.RunInParallel);
             Assert.False(options.FailOnNoProjects);
-            Assert.False(options.NoCache);
         }
         
         [Fact]

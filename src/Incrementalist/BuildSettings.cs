@@ -24,7 +24,6 @@ namespace Incrementalist
             SolutionFile = solutionFile;
             WorkingDirectory = workingDirectory;
             TimeoutDuration = timeoutDuration ?? DefaultTimeout;
-            NoCache = false; // Default to using cache
         }
 
         /// <summary>
@@ -51,10 +50,5 @@ namespace Incrementalist
         ///     prior to cancelling it.
         /// </summary>
         public TimeSpan TimeoutDuration { get; }
-
-        /// <summary>
-        ///     When true, ignores any existing cache file and performs a full Roslyn analysis.
-        /// </summary>
-        public bool NoCache { get; set; }
     }
 }

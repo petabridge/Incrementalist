@@ -10,7 +10,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Incrementalist.Caching;
 using Incrementalist.Cmd.Config;
 using Microsoft.Extensions.Logging;
 
@@ -51,7 +50,6 @@ namespace Incrementalist.Cmd.Commands
                     ContinueOnError = _options.ContinueOnError,
                     RunInParallel = _options.RunInParallel,
                     FailOnNoProjects = _options.FailOnNoProjects,
-                    NoCache = _options.NoCache,
                     SkipGlob = _options.SkipGlobs?.ToArray(),
                     TargetGlob = _options.TargetGlobs?.ToArray(),
                 };

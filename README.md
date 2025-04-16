@@ -192,9 +192,6 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
   --parallel            Optional. (Default: false) Execute commands in parallel.
 
   --fail-on-no-projects Optional. (Default: false) Fail if no projects are affected.
-
-  --no-cache            Optional. (Default: false) Ignore any existing cache file
-                        and perform a full Roslyn analysis.
                         
   -c, --config          Optional. Path to the configuration file. Defaults to 
                         .incrementalist/incrementalist.json in the current directory.
@@ -252,7 +249,6 @@ incrementalist -b dev --target-glob "src/**/*.csproj" --skip-glob "**/*.Tests.cs
 
 - 🔍 [How It Works](docs/how-it-works.md) - Technical details and architecture
 - 🏗️ [Building from Source](docs/building.md) - Build instructions and development setup
-- ⚡ [Dependency Graph Caching](docs/caching.md) - Cache system explanation and best practices
 - ⚙️ [Configuration Files](docs/config.md) - Using JSON configuration files
 
 ## 📜 License

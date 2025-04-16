@@ -49,9 +49,6 @@ namespace Incrementalist.Cmd
         [Option("fail-on-no-projects", HelpText = "When running commands, fail if no projects are affected.", Default = false)]
         public bool FailOnNoProjects { get; set; }
 
-        [Option("no-cache", HelpText = "Ignore any existing cache file and perform a full Roslyn analysis.", Default = false)]
-        public bool NoCache { get; set; }
-
         [Option('c', "config", HelpText = "Path to the configuration file. Defaults to .incrementalist/incrementalist.json in the current directory.", Required = false)]
         public string? ConfigFile { get; set; }
 

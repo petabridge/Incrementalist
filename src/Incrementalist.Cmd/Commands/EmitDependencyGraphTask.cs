@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
-using Incrementalist.Caching;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
@@ -49,19 +48,21 @@ namespace Incrementalist.Cmd.Commands
             Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
             var progress = new Progress<ProjectLoadProgress>(x =>
             {
-                Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
+                Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath,
+                    x.ElapsedTime);
             });
-            
+
             var solution = await Workspace.OpenSolutionAsync(solutionFilePath, progress, _cts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
-            var filterFilesCmd = new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
+            var filterFilesCmd =
+                new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
 
             // Get all files and filter affected ones
             var allFiles = await getFilesCmd.Process(Task.FromResult(solution));
             Logger.LogInformation("Found {Count} files in solution", allFiles.Count);
-            
+
             Logger.LogInformation("Analyzing Git changes...");
             var affectedFiles = await filterFilesCmd.Process(Task.FromResult(allFiles));
             Logger.LogInformation("Found {Count} affected files", affectedFiles.Count);
@@ -79,14 +80,16 @@ namespace Incrementalist.Cmd.Commands
             var modifiedSolutionFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Solution);
             var modifiedScriptFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Script);
             var modifiedOtherFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Other);
-            Logger.LogInformation("Modified files breakdown: {SourceFiles} source files, {ProjectFiles} project files, {SolutionFiles} solution files, {ScriptFiles} script files, {OtherFiles} other files",
-                modifiedSourceFiles, modifiedProjectFiles, modifiedSolutionFiles, modifiedScriptFiles, modifiedOtherFiles);
+            Logger.LogInformation(
+                "Modified files breakdown: {SourceFiles} source files, {ProjectFiles} project files, {SolutionFiles} solution files, {ScriptFiles} script files, {OtherFiles} other files",
+                modifiedSourceFiles, modifiedProjectFiles, modifiedSolutionFiles, modifiedScriptFiles,
+                modifiedOtherFiles);
 
             // Check if any of the affected files require a solution-wide build
             Logger.LogInformation("Analyzing solution-wide impact...");
             var projectFiles = allFiles.Where(x => x.Value.FileType == FileType.Project)
-                                     .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
-                                     .ToList();
+                .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
+                .ToList();
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
             var importDetector = new SolutionWideChangeDetector(projectImports);
 
@@ -98,8 +101,8 @@ namespace Incrementalist.Cmd.Commands
 
             // Get the list of affected project files directly
             var directlyAffectedProjects = affectedFiles.Where(x => x.Value.FileType == FileType.Project)
-                                              .Select(x => x.Key)
-                                              .ToList();
+                .Select(x => x.Key)
+                .ToList();
 
             // If all projects are affected, return a full solution build
             if (directlyAffectedProjects.Count == solution.Projects.Count())
@@ -107,102 +110,38 @@ namespace Incrementalist.Cmd.Commands
                 Logger.LogInformation("All projects are affected. Full solution build required");
                 return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
             }
-            
+
             /* INCREMENTAL BUILDS */
-            // Try to use cache if enabled
-            if (!Settings.NoCache)
-            {
-                Logger.LogInformation("Checking dependency cache...");
-                var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
-                var existingCache = await DependencyCacheIO.LoadAsync(cachePath);
-                
-                if(existingCache == null)
-                {
-                    Logger.LogInformation("No cache found. Full solution analysis required.");
-                    goto FullAnalysis;
-                }
-
-                if (await DependencyCacheHelper.IsCacheValidAsync(existingCache, Settings.WorkingDirectory, solution, Logger, _cts.Token))
-                {
-                    Logger.LogInformation("Using cached dependency information");
-                    
-                    var allProjectIdsFromAffectedFiles = affectedFiles.Values
-                        .Where(x => x.ProjectId != null)
-                        .Select(x => x.ProjectId!)
-                        .Distinct()
-                        .ToList();
-                    
-                    // given the list of affected projects, we now need to compute the dependency graphs
-                    // via the cache
-                    var hashSet = new HashSet<ProjectId>(allProjectIdsFromAffectedFiles);
-                    foreach(var cachedProject in existingCache.Projects.Values)
-                    {
-                        // if the cachedProject depends on any of the affected projects, add it to the list
-                        if(cachedProject.Dependencies.Any(hashSet.Contains))
-                        {
-                            hashSet.Add(cachedProject.Id);
-                        }
-                    }
-                    
-                    // transform projectIds into project file paths - which is what the dotnet command needs to execute
-                    var computedFilePaths = hashSet.Select(GetProjectFilePath).Where(x => x != null)
-                        .Select(c => c!).ToList();
-                    
-                    // TODO: topological sorting of the projects?
-                    return ComputeResult(computedFilePaths);
-                    
-                    AbsolutePath? GetProjectFilePath(ProjectId project)
-                    {
-                        var rawPath = solution.GetProject(project)?.FilePath;
-                        if (rawPath == null)
-                            return null;
-                        
-                        var projectFilePath = new AbsolutePath(rawPath);
-                        return projectFilePath;
-                    }
-                }
-
-                // Invalid cache, perform full analysis
-                Logger.LogInformation("Cache signature is old. Full solution analysis required.");
-            }
 
             // For incremental builds, compute the dependency graph
-            FullAnalysis:
-                var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
-                var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
+            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+            var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
 
-                // Convert the dependency graph to a list of affected projects
-                var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
-                
-                // need to write a new cache
-                if (!Settings.NoCache)
+            // Convert the dependency graph to a list of affected projects
+            var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
+
+            // need to write a new cache
+            return ComputeResult(projectsToRebuild);
+
+            BuildAnalysisResult ComputeResult(IReadOnlyList<AbsolutePath> projectFilePaths)
+            {
+                if (projectFilePaths.Count == 0)
                 {
-                    var cachePath = DependencyCacheIO.GetCachePath(Settings.WorkingDirectory);
-                    Logger.LogInformation("Writing new cache to {CachePath}", cachePath);
-                    var cache = await DependencyCacheHelper.CreateFromSolutionAsync(Settings.WorkingDirectory, solution);
-                    await DependencyCacheIO.SaveAsync(DependencyCacheIO.GetCachePath(Settings.WorkingDirectory), cache);
+                    Logger.LogInformation("No projects need to be rebuilt");
+                    return new IncrementalBuildResult(Array.Empty<AbsolutePath>());
                 }
-                
-                return ComputeResult(projectsToRebuild);
 
-                BuildAnalysisResult ComputeResult(IReadOnlyList<AbsolutePath> projectFilePaths)
+                if (projectFilePaths.Count == solution.Projects.Count())
                 {
-                    if(projectFilePaths.Count == 0)
-                    {
-                        Logger.LogInformation("No projects need to be rebuilt");
-                        return new IncrementalBuildResult(Array.Empty<AbsolutePath>());
-                    }
-
-                    if (projectFilePaths.Count == solution.Projects.Count())
-                    {
-                        Logger.LogInformation("All projects are affected. Full solution build required");
-                        return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
-                    }
-
-                    Logger.LogInformation("Incremental build possible. {RebuildCount} projects [{Projects}] need to be rebuilt", 
-                        projectFilePaths.Count, string.Join(", ", projectFilePaths));
-                    return new IncrementalBuildResult(projectFilePaths);
+                    Logger.LogInformation("All projects are affected. Full solution build required");
+                    return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
                 }
+
+                Logger.LogInformation(
+                    "Incremental build possible. {RebuildCount} projects [{Projects}] need to be rebuilt",
+                    projectFilePaths.Count, string.Join(", ", projectFilePaths));
+                return new IncrementalBuildResult(projectFilePaths);
+            }
         }
     }
 }
