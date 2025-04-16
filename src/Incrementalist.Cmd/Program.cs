@@ -175,7 +175,7 @@ namespace Incrementalist.Cmd
              */
 
             var normalized = options.SolutionFilePath != null
-                ? workingFolder.ComputeRelativePath(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)))
+                ? workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)))
                 : RelativePath.Empty;
 
             var settings = new BuildSettings(options.GitBranch!, normalized,
@@ -201,7 +201,7 @@ namespace Incrementalist.Cmd
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
                 var normalizedPath =
-                    workingFolder.ComputeRelativePath(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)));
+                    workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)));
 
                 await ProcessSln(options, normalizedPath, workingFolder, msBuild, logger);
             }
@@ -309,7 +309,7 @@ namespace Incrementalist.Cmd
 
                 // globbing is designed to work with relative paths
                 var relativePaths = projectsToRebuild.Select(c =>
-                    c.ComputeRelativePath(settings.WorkingDirectory)).ToList();
+                    c.ComputeRelativePathToMe(settings.WorkingDirectory)).ToList();
 
                 // we glob and then convert back into absolute paths
                 var filteredProjects = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs)

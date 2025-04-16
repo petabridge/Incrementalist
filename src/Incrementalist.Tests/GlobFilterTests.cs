@@ -12,7 +12,7 @@ public class GlobFilterTests
     {
         public class LinuxPaths
         {
-            public static readonly AbsolutePath BasePath = new AbsolutePath("/usr/a/repositories/");
+            public static readonly AbsolutePath BasePath = new AbsolutePath("/usr/a/repositories/Akka.Management");
             
             public static readonly IReadOnlyList<AbsolutePath> LinuxTestProjects = new List<string>
             {
@@ -25,21 +25,22 @@ public class GlobFilterTests
             }.Select(c => new AbsolutePath(c)).ToList().AsReadOnly();
             
             [Theory]
-            [InlineData(new[] { "src/**" }, 2)] // Match src projects
+            [InlineData(new[] { "src/**/*.csproj" }, 2)] // Match src projects
+            [InlineData(new[] { "src/**/*" }, 2)] // Match src projects
             [InlineData(new[] { "**/ProjectA*" }, 2)] // Match ProjectA and ProjectA.Tests
             [InlineData(new[] { "**/*.csproj" }, 5)] // Match all csproj
             [InlineData(new[] { "**/*.fsproj" }, 1)] // Match the fsproj
             [InlineData(new[] { "nonexistent/**" }, 0)] // Match none
-            [InlineData(new[] { "src/ProjectA/ProjectA.csproj" }, 1)] // Exact match
+            [InlineData(new[] { "**/src/ProjectA/ProjectA.csproj" }, 1)] // Exact match
             [InlineData(new[] { "**/ProjectA*", "**/ProjectB*" }, 4)] // Multiple patterns
-            [InlineData(new[] { "SRC/**" }, 2)] // Case-insensitive check
+            [InlineData(new[] { "SRC/**/*.csproj" }, 2)] // Case-insensitive check
             public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs, int expectedCount)
             {
                 // Arrange
                 var skipGlobs = Array.Empty<string>();
 
                 // Act
-                var relativePaths = LinuxTestProjects.Select(p => BasePath.ComputeRelativePath(p)).ToList();
+                var relativePaths = LinuxTestProjects.Select(p => BasePath.ComputeRelativePathToMe(p)).ToList();
                 var result = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs);
 
                 // Assert
@@ -49,7 +50,7 @@ public class GlobFilterTests
 
         public class WindowsPaths
         {
-            public static readonly AbsolutePath BasePath = new AbsolutePath(@"C:\repositories\");
+            public static readonly AbsolutePath BasePath = new AbsolutePath(@"C:\repositories\Akka.Management");
             
             public static readonly IReadOnlyList<AbsolutePath> WindowsTestProjects = new List<string>
             {
@@ -62,7 +63,8 @@ public class GlobFilterTests
             }.Select(c => new AbsolutePath(c)).ToList().AsReadOnly();
             
             [Theory]
-            [InlineData(new[] { "src/**" }, 2)] // Match src projects
+            [InlineData(new[] { "src/**/*.csproj" }, 2)] // Match src projects
+            [InlineData(new[] { "src/**/*" }, 2)] // Match src projects
             [InlineData(new[] { "**/ProjectA*" }, 2)] // Match ProjectA and ProjectA.Tests
             [InlineData(new[] { "**/*.csproj" }, 5)] // Match all csproj
             [InlineData(new[] { "**/*.fsproj" }, 1)] // Match the fsproj
@@ -76,7 +78,7 @@ public class GlobFilterTests
                 var skipGlobs = Array.Empty<string>();
 
                 // Act
-                var relativePaths = WindowsTestProjects.Select(p => BasePath.ComputeRelativePath(p)).ToList();
+                var relativePaths = WindowsTestProjects.Select(p => BasePath.ComputeRelativePathToMe(p)).ToList();
                 var result = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs);
 
                 // Assert
@@ -127,14 +129,15 @@ public class GlobFilterTests
         }
 
         [Theory]
-        [InlineData(new[] { "src/**" }, 2)] // Match src projects
+        [InlineData(new[] { "src/**/*.csproj" }, 2)] // Match src projects
+        [InlineData(new[] { "src/**/*" }, 2)] // Match src projects
         [InlineData(new[] { "**/ProjectA*" }, 2)] // Match ProjectA and ProjectA.Tests
         [InlineData(new[] { "**/*.csproj" }, 5)] // Match all csproj
         [InlineData(new[] { "**/*.fsproj" }, 1)] // Match the fsproj
         [InlineData(new[] { "nonexistent/**" }, 0)] // Match none
         [InlineData(new[] { "src/ProjectA/ProjectA.csproj" }, 1)] // Exact match
         [InlineData(new[] { "**/ProjectA*", "**/ProjectB*" }, 4)] // Multiple patterns
-        [InlineData(new[] { "SRC/**" }, 2)] // Case-insensitive check
+        [InlineData(new[] { "SRC/**/*.csproj" }, 2)] // Case-insensitive check
         public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs, int expectedCount)
         {
             // Arrange

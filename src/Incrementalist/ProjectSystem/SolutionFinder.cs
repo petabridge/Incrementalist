@@ -33,12 +33,12 @@ namespace Incrementalist.ProjectSystem
                 var slnFiles = Directory.EnumerateFileSystemEntries(folderPath.Path, "*.sln", finalSearchOption);
                 var slnxFiles = Directory.EnumerateFileSystemEntries(folderPath.Path, "*.slnx", finalSearchOption);
                 return slnFiles.Concat(slnxFiles).OrderBy(Path.GetFileName)
-                    .Select(c => folderPath.ComputeRelativePath(new AbsolutePath(c)));
+                    .Select(c => folderPath.ComputeRelativePathToMe(new AbsolutePath(c)));
             }
             
             // Use the provided search filter
             return Directory.EnumerateFileSystemEntries(folderPath.Path, searchFilter, finalSearchOption)
-                .OrderBy(Path.GetFileName).Select(c => folderPath.ComputeRelativePath(new AbsolutePath(c)));
+                .OrderBy(Path.GetFileName).Select(c => folderPath.ComputeRelativePathToMe(new AbsolutePath(c)));
         }
     }
 }

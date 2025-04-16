@@ -65,7 +65,7 @@ public sealed record AbsolutePath : IHavePathType
     
     public PathType PathType => PathType.RelativePath;
     
-    public RelativePath ComputeRelativePath(AbsolutePath basePath)
+    public RelativePath ComputeRelativePathToMe(AbsolutePath basePath)
     {
         var relativePath = System.IO.Path.GetRelativePath(Path, basePath.Path);
         return new RelativePath(relativePath);
