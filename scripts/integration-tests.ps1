@@ -434,7 +434,7 @@ function Test-SimilarDotnetArguments {
     }
 
     Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "-c", "-r")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "-c")
     }
 
     # Cleanup
