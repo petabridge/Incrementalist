@@ -208,6 +208,14 @@ namespace Incrementalist.Tests.Helpers;
             return relativePathFromBToA;
         }
         
+        /// <summary>
+        /// MSBuild uses backslashes for paths, even on Unix systems.
+        /// </summary>
+        public static string NormalizePathSeparators(string path)
+        {
+            return path.Replace('/', '\\');
+        }
+        
         public static string Serialize(ProjectModel projectModel)
         {
             var sb = new StringBuilder();
@@ -222,7 +230,7 @@ namespace Incrementalist.Tests.Helpers;
             
             foreach (var projectImport in projectModel.ProjectImports)
             {
-                sb.AppendLine($"  <Import Project=\"{projectImport.RelativePath}\" />");
+                sb.AppendLine($"  <Import Project=\"{NormalizePathSeparators(projectImport.RelativePath)}\" />");
             }
 
             if (projectModel.ProjectReferences.Count > 0)
@@ -230,7 +238,7 @@ namespace Incrementalist.Tests.Helpers;
                 sb.AppendLine($"  <ItemGroup>");
                 foreach (var projectReference in projectModel.ProjectReferences)
                 {
-                    var computeRelativePath = ComputeProjectReferencePath(projectModel.CompletePath, projectReference.CompletePath);
+                    var computeRelativePath = NormalizePathSeparators(ComputeProjectReferencePath(projectModel.CompletePath, projectReference.CompletePath));
                     sb.AppendLine($"  <ProjectReference Include=\"{computeRelativePath}\" />");
                 }
                 sb.AppendLine($"  </ItemGroup>");

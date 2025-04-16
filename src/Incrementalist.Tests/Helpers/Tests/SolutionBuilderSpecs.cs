@@ -47,7 +47,7 @@ public class SolutionBuilderSpecs
             Path.Join("src", "ProjectA" , "ProjectA.csproj"),
             Path.Join("src", "ProjectB" , "ProjectB.csproj"),
             Path.Join( "BuildProject" , "BuildProject.csproj"),
-        };
+        }.Select(ProjectModelSerializer.NormalizePathSeparators).ToArray();
         
         Assert.Contains(expectedProjectNames[0], serializedSolution);
         Assert.Contains(expectedProjectNames[1], serializedSolution);
