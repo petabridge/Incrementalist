@@ -90,6 +90,8 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         // assert
         Assert.NotNull(result);
         Assert.IsType<IncrementalBuildResult>(result);
+        var affectedProjects = ((IncrementalBuildResult) result).AffectedProjects;
+        Assert.Contains(affectedProjects, p => p.Path.Contains("ProjectB.Tests"));
     }
     
     public Task InitializeAsync()
