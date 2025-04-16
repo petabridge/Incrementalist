@@ -27,12 +27,19 @@ namespace Incrementalist.Tests
         {
             Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null!));
         }
+        
+        private AbsolutePath MakeAbsolutePath(string path)
+        {
+            return new AbsolutePath(Path.Combine(Directory.GetCurrentDirectory(), path));
+        }
+
+        private static readonly string[] sourceArray = new[] { "Project1.csproj", "Project2.csproj" };
 
         [Fact]
         public void CreateBuildResult_AllProjectsAffected_ReturnsFullSolutionBuildResult()
         {
             // Arrange
-            var solutionPath = new AbsolutePath("test.sln");
+            var solutionPath = MakeAbsolutePath("test.sln");
             var workspace = new AdhocWorkspace();
             var solutionInfo = SolutionInfo.Create(
                 SolutionId.CreateNewId(),
@@ -54,8 +61,7 @@ namespace Incrementalist.Tests
                 solution = solution.AddProject(projectInfo);
             }
 
-            var affectedProjects = new[] { "Project1.csproj", "Project2.csproj" }
-                .Select(c => Path.Combine(Directory.GetCurrentDirectory(), c)).Select(c => new AbsolutePath(c))
+            var affectedProjects = sourceArray.Select(MakeAbsolutePath)
                 .ToList();
 
             // Act
@@ -71,12 +77,12 @@ namespace Incrementalist.Tests
         public void CreateBuildResult_SomeProjectsAffected_ReturnsIncrementalBuildResult()
         {
             // Arrange
-            var solutionPath = "test.sln";
+            var solutionPath = MakeAbsolutePath("test.sln");
             var workspace = new AdhocWorkspace();
             var solutionInfo = SolutionInfo.Create(
                 SolutionId.CreateNewId(),
                 VersionStamp.Create(),
-                solutionPath);
+                solutionPath.Path);
             
             var solution = workspace.AddSolution(solutionInfo);
 
@@ -93,7 +99,7 @@ namespace Incrementalist.Tests
                 solution = solution.AddProject(projectInfo);
             }
 
-            var affectedProjects = new[] { "Project1.csproj", "Project2.csproj" }.Select(c => new AbsolutePath(c))
+            var affectedProjects = new[] { "Project1.csproj", "Project2.csproj" }.Select(MakeAbsolutePath)
                 .ToList(); // Only 2 of 3 projects affected
 
             // Act
