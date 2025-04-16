@@ -36,11 +36,12 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     }
 
     private BuildSettings GetBuildSettings() =>
-        new BuildSettings(PrimaryBranch, _generatedTestSolution.FileName, Repository.BasePath){ NoCache = true };
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FileName, Repository.BasePath) { NoCache = true };
 
     public const string ProjectBTests = "ProjectB.Tests";
     public const string ProjectB = "ProjectB";
     public const string ProjectA = "ProjectA";
+    public const string ProjectC = "ProjectC";
 
     private static TestSolutionModel CreateSolution()
     {
@@ -56,6 +57,10 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
                     var projectA = otherProjects.First(p => p.NameWithoutExtension == ProjectA);
                     p2Builder.WithProjectReference(projectA);
                 });
+
+                // a third project, C, with no references to anyone else
+                f1Builder.AddProject(ProjectC,
+                    (_, p1Builder) => { p1Builder.WithFile("HelloWorld.cs", CsharpSamples.HelloClass); });
             })
             .AddFolder("test", f2Builder =>
             {
@@ -72,9 +77,9 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData(ProjectBTests, new[]{ ProjectBTests })]
-    [InlineData(ProjectB, new[]{ ProjectB, ProjectBTests })]
-    [InlineData(ProjectA, new[]{ ProjectA, ProjectB, ProjectBTests })]
+    [InlineData(ProjectBTests, new[] { ProjectBTests })]
+    [InlineData(ProjectB, new[] { ProjectB, ProjectBTests })]
+    [InlineData(ProjectA, new[] { ProjectA, ProjectB, ProjectBTests })]
     public async Task ShouldDetectProjectCChanges(string projectToModify, string[] affectedProjects)
     {
         // arrange
