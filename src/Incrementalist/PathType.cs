@@ -55,7 +55,8 @@ public sealed record AbsolutePath : IHavePathType
 {
     public AbsolutePath(string path)
     {
-        if(!System.IO.Path.IsPathFullyQualified(path))
+        // Linux paths can't work with IsFullyQualified
+        if(!System.IO.Path.IsPathRooted(path))
             throw new ArgumentException($"Path [{path}] is not absolute", nameof(path));
         Path = path;
     }
