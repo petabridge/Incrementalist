@@ -105,16 +105,16 @@ namespace Incrementalist.Tests.Helpers
             return this;
         }
 
-        public DisposableRepository WriteSolution(SolutionModel solutionModel)
+        public DisposableRepository WriteSolution(TestSolutionModel testSolutionModel)
         {
             // need to traverse the solution and write the entire graph
             // of projects to disk
             
             // write the solution first
-            var solutionText = solutionModel.Serialize();
-            WriteFile(solutionModel.FileName.Name, solutionText);
+            var solutionText = testSolutionModel.Serialize();
+            WriteFile(testSolutionModel.FileName.Name, solutionText);
 
-            foreach (var c in solutionModel.FileStructure)
+            foreach (var c in testSolutionModel.FileStructure)
             {
                 switch (c)
                 {

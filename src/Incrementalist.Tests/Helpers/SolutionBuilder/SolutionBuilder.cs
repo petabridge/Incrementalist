@@ -3,25 +3,36 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.VisualStudio.SolutionPersistence.Model;
+using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
 namespace Incrementalist.Tests.Helpers;
 
-public sealed class SolutionBuilder
+public enum SolutionFormat
+{
+    Slnx,
+    Sln
+}
+
+public sealed class TestSolutionBuilder
 {
     private readonly RelativePath _baseDirectory;
     private readonly string _name;
     
     private readonly HashSet<ProjectModel> _projects = [];
     private readonly HashSet<IMsBuildSerializable> _items = [];
+    private SolutionFormat _solutionFormat = SolutionFormat.Sln;
 
-    public SolutionBuilder(string name, string baseDirectory = "")
+    public TestSolutionBuilder(string name, string baseDirectory = "")
     {
         _baseDirectory = new RelativePath(baseDirectory);
         _name = name;
     }
     
-    public SolutionBuilder AddFolder(string folderName, Action<SolutionFolderBuilder> builder)   
+    public TestSolutionBuilder AddFolder(string folderName, Action<SolutionFolderBuilder> builder)   
     {
         var folderBuilder = new SolutionFolderBuilder(folderName, this);
         builder(folderBuilder);
@@ -30,7 +41,7 @@ public sealed class SolutionBuilder
         return this;
     }
 
-    public SolutionBuilder AddProject(string projectName,
+    public TestSolutionBuilder AddProject(string projectName,
         Action<IReadOnlyCollection<ProjectModel>, ProjectBuilder> builder)
     {
         var projectId = ProjectId.CreateNewId();
@@ -46,29 +57,36 @@ public sealed class SolutionBuilder
         return this;
     }
     
-    public SolutionModel Build()
+    public TestSolutionBuilder WithSolutionFormat(SolutionFormat solutionFormat)
+    {
+        _solutionFormat = solutionFormat;
+        return this;
+    }
+    
+    public TestSolutionModel Build()
     {
         var flatProjects = _projects.ToImmutableHashSet();
         
-        return new SolutionModel(_name, _baseDirectory)
+        return new TestSolutionModel(_name, _baseDirectory)
         {
             FileStructure = _items.ToImmutableHashSet(),
-            FlatProjects = flatProjects
+            FlatProjects = flatProjects,
+            FileFormat = _solutionFormat
         };
     }
     
     public sealed class SolutionFolderBuilder
     {
         private readonly string _name;
-        private readonly SolutionBuilder _builder;
+        private readonly TestSolutionBuilder _builder;
         private readonly List<IMsBuildSerializable> _items = [];
         
         public string CompleteRelativePath => Path.Combine(_builder._baseDirectory.Path, _name);
 
-        public SolutionFolderBuilder(string name, SolutionBuilder solutionBuilder)
+        public SolutionFolderBuilder(string name, TestSolutionBuilder testSolutionBuilder)
         {
             _name = name;
-            _builder = solutionBuilder;
+            _builder = testSolutionBuilder;
         }
         
         public SolutionFolderBuilder AddProject(string projectName, Action<IReadOnlyCollection<ProjectModel>, ProjectBuilder> builder)
@@ -111,7 +129,7 @@ public sealed class SolutionBuilder
     }
 }
 
-public sealed record SolutionModel(string Name, RelativePath BaseDirectory) : IMsBuildSerializable
+public sealed record TestSolutionModel(string Name, RelativePath BaseDirectory) : IMsBuildSerializable
 {
     /// <summary>
     /// Flat set of all projects
@@ -122,8 +140,15 @@ public sealed record SolutionModel(string Name, RelativePath BaseDirectory) : IM
     /// The set of all folders, files, and projects organized by folder
     /// </summary>
     public ImmutableHashSet<IMsBuildSerializable> FileStructure { get; init; } = ImmutableHashSet<IMsBuildSerializable>.Empty;
+
+    public SolutionFormat FileFormat { get; init; } = SolutionFormat.Sln;
     
-    public FileName FileName => new($"{Name}.slnx");
+    public FileName FileName => FileFormat switch
+    {
+        SolutionFormat.Sln => new FileName($"{Name}.sln"),
+        SolutionFormat.Slnx => new FileName($"{Name}.slnx"),
+        _ => throw new ArgumentOutOfRangeException(nameof(SolutionFormat))
+    };
     
     public RelativePath FilePath => new(Path.Combine(BaseDirectory.Path, FileName.Name));
     public string Serialize()
@@ -134,28 +159,71 @@ public sealed record SolutionModel(string Name, RelativePath BaseDirectory) : IM
 
 public static class SolutionSerializer
 {
-    public static string Serialize(SolutionModel solution)
+    public static string Serialize(TestSolutionModel testSolution)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine($"<Solution>");
-        foreach (var item in solution.FileStructure)
+        var solutionModel = new SolutionModel();
+        foreach(var item in testSolution.FileStructure)
         {
             switch (item)
             {
                 case ProjectModel projectModel:
-                    sb.AppendLine($"<Project Path=\"{projectModel.CompletePath}\" />");
+                    var projectType = projectModel.ProjectLanguage switch
+                    {
+                        ProjectLanguage.CSharp => "C#",
+                        ProjectLanguage.FSharp => "F#",
+                        _ => throw new ArgumentOutOfRangeException(nameof(projectModel.ProjectType))
+                    };
+                    solutionModel.AddProject(projectModel.RelativePathFromRepository, projectType);
                     break;
                 case SolutionFolder folder:
-                    sb.AppendLine(folder.Serialize());
-                    break;
-                case SampleFile sampleFile:
-                    sb.AppendLine($"<File Path=\"{sampleFile.Name}\" />");
+                    solutionModel.AddFolder("/" + folder.Name + "/");
                     break;
             }
         }
-        sb.AppendLine($"</Solution>");
+        
+        return testSolution.FileFormat switch
+        {
+            SolutionFormat.Sln => SerializeSlnAsync(solutionModel).Result,
+            SolutionFormat.Slnx => SerializeSlnxAsync(solutionModel).Result,
+            _ => throw new ArgumentOutOfRangeException(nameof(testSolution.FileFormat))
+        };
+    }
 
-        return sb.ToString();
+    public static async Task<string> SerializeSlnAsync(SolutionModel testSolution)
+    {
+        using var memoryStream = new MemoryStream();
+        await SolutionSerializers.SlnFileV12.SaveAsync(memoryStream, testSolution, CancellationToken.None);
+        
+        return Encoding.UTF8.GetString(memoryStream.ToArray());
+    }
+    
+    public static async Task<string> SerializeSlnxAsync(SolutionModel testSolution)
+    {
+        using var memoryStream = new MemoryStream();
+        await SolutionSerializers.SlnXml.SaveAsync(memoryStream, testSolution, CancellationToken.None);
+        
+        return Encoding.UTF8.GetString(memoryStream.ToArray());
+        
+        // var sb = new StringBuilder();
+        // sb.AppendLine($"<Solution>");
+        // foreach (var item in testSolution.FileStructure)
+        // {
+        //     switch (item)
+        //     {
+        //         case ProjectModel projectModel:
+        //             sb.AppendLine($"<Project Path=\"{projectModel.CompletePath}\" />");
+        //             break;
+        //         case SolutionFolder folder:
+        //             sb.AppendLine(folder.Serialize());
+        //             break;
+        //         case SampleFile sampleFile:
+        //             sb.AppendLine($"<File Path=\"{sampleFile.Name}\" />");
+        //             break;
+        //     }
+        // }
+        // sb.AppendLine($"</Solution>");
+        //
+        // return sb.ToString();
     }
 }
 

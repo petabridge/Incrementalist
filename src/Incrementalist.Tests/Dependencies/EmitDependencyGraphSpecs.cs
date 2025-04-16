@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.Cmd.Commands;
+using Incrementalist.Git;
 using Incrementalist.ProjectSystem.Cmds;
 using Incrementalist.Tests.Helpers;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -16,7 +17,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
 {
     private readonly ITestOutputHelper _outputHelper;
     private readonly MSBuildWorkspace _workspace;
-    private readonly SolutionModel _generatedSolution;
+    private readonly TestSolutionModel _generatedTestSolution;
     private readonly ILogger _logger;
     
     private const string PrimaryBranch = "dev";
@@ -29,16 +30,16 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         _outputHelper = outputHelper;
         _workspace = fixture.Workspace;
         Repository = new DisposableRepository();
-        _generatedSolution = CreateSolution();
+        _generatedTestSolution = CreateSolution();
         _logger = new TestOutputLogger(outputHelper);
     }
 
     private BuildSettings GetBuildSettings() =>
-        new BuildSettings(PrimaryBranch, _generatedSolution.FileName, Repository.BasePath);
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FileName, Repository.BasePath);
 
-    private static SolutionModel CreateSolution()
+    private static TestSolutionModel CreateSolution()
     {
-        var solutionBuilder = new SolutionBuilder("SampleSolution")
+        var solutionBuilder = new TestSolutionBuilder("SampleSolution")
             .AddFolder("src", f1Builder =>
             {
                 f1Builder.AddProject("ProjectA", (_, p1Builder) =>
@@ -72,8 +73,15 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     {
         // arrange
         var newFile = new SampleFile("NewFile.cs", CsharpSamples.FooClass);
-        var projectC = _generatedSolution.FlatProjects.Single(p => p.NameWithoutExtension == "ProjectB.Tests");
-        Repository.AddOrModifyProjectFile(projectC, newFile).Commit("Added new file"); // should create the diffs
+        var projectC = _generatedTestSolution.FlatProjects.Single(p => p.NameWithoutExtension == "ProjectB.Tests");
+        Repository
+            .AddOrModifyProjectFile(projectC, newFile)
+            .Commit("Added new file"); // should create the diffs
+        
+        // validate that we can detect the changes
+        var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
+        Assert.NotEmpty(diffs);
+        
         var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger);
         
         // act
@@ -89,9 +97,10 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         Repository
             .CreateBranch(PrimaryBranch)
             .CheckoutBranch(PrimaryBranch)
-            .WriteSolution(_generatedSolution)
+            .WriteSolution(_generatedTestSolution)
             .Commit("initial commit")
-            .CreateBranch(SecondaryBranch);
+            .CreateBranch(SecondaryBranch)
+            .CheckoutBranch(SecondaryBranch);
         return Task.CompletedTask;
     }
 

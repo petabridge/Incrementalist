@@ -83,7 +83,7 @@ namespace Incrementalist.Tests.Helpers;
         private OutputType _projectType = OutputType.Library;
         
         // provide a default framework
-        private TargetFrameworks _targetFrameworks = new(ImmutableList<TargetFramework>.Empty.Add(TargetFramework.Net8));
+        private TargetFrameworks _targetFrameworks = new(ImmutableList<TargetFramework>.Empty.Add(TargetFramework.Net9));
         
         private bool _isBuilt;
         

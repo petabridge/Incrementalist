@@ -13,7 +13,7 @@ public class SolutionBuilderSpecs
         var slnName = "TestSolution";
 
         // act
-        var solution = new SolutionBuilder(slnName)
+        var solution = new TestSolutionBuilder(slnName)
             .AddFolder("src", folderBuilder =>
             {
                 folderBuilder.AddProject("ProjectA",
