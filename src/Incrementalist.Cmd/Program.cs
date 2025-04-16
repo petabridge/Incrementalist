@@ -50,7 +50,7 @@ namespace Incrementalist.Cmd
         {
             SetTitle();
 
-            var result = TryParseSlnOptions(args, out var options);
+            var result = TryParseSlnOptions(args, out var cmdConfiguration);
 
             if (result != 0)
             {
@@ -60,22 +60,22 @@ namespace Incrementalist.Cmd
 
             // Load configuration file if applicable
             IncrementalistConfig? config = null;
-            if (IncrementalistConfig.TryLoad(options?.ConfigFile, out var loadedConfig))
+            if (IncrementalistConfig.TryLoad(cmdConfiguration?.ConfigFile, out var loadedConfig))
             {
                 config = loadedConfig;
             }
 
             // Options has to be populated by the CLI parser
-            Debug.Assert(options != null);
+            Debug.Assert(cmdConfiguration != null);
 
             // Merge CLI options with configuration file (CLI takes precedence)
             if (config != null)
             {
-                options = ConfigMerger.Merge(options, config);
+                cmdConfiguration = ConfigMerger.Merge(cmdConfiguration, config);
             }
 
             // Create a logger factory with the appropriate verbosity
-            var minLevel = options.Verbose ? LogLevel.Debug : LogLevel.Information;
+            var minLevel = cmdConfiguration.Verbose ? LogLevel.Debug : LogLevel.Information;
             var loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder
@@ -84,22 +84,23 @@ namespace Incrementalist.Cmd
             });
 
             // Check if we are creating a configuration file
-            if (options.CreateConfig)
+            
+            if (cmdConfiguration is CreateConfigOptions createConfigOptions)
             {
                 var createConfigTask =
-                    new CreateConfigFileTask(options, loggerFactory.CreateLogger<CreateConfigFileTask>());
+                    new CreateConfigFileTask(createConfigOptions, loggerFactory.CreateLogger<CreateConfigFileTask>());
                 var configResult = await createConfigTask.Run();
                 ResetTitle();
                 return configResult;
             }
 
-            var exitCode = await RunIncrementalist(options, loggerFactory);
+            var exitCode = await RunIncrementalist(cmdConfiguration, loggerFactory);
 
             ResetTitle();
             return exitCode;
         }
 
-        private static async Task<int> RunIncrementalist(SlnOptions options, ILoggerFactory loggerFactory)
+        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory)
         {
             // Create a logger from the factory
             ILogger logger = loggerFactory.CreateLogger<Program>();
@@ -107,7 +108,7 @@ namespace Incrementalist.Cmd
             try
             {
                 var pwd = new AbsolutePath(
-                    Path.GetFullPath(options.WorkingDirectory ?? Directory.GetCurrentDirectory()));
+                    Path.GetFullPath(cmdOptions.WorkingDirectory ?? Directory.GetCurrentDirectory()));
 
                 var insideRepo = Repository.IsValid(pwd.Path);
                 if (!insideRepo)
@@ -131,16 +132,16 @@ namespace Incrementalist.Cmd
                 }
 
                 // validate the target branch
-                if (!DiffHelper.HasBranch(repo, options.GitBranch!))
+                if (!DiffHelper.HasBranch(repo, cmdOptions.GitBranch!))
                 {
                     // workaround common CI server issues and check to see if this same branch is located
                     // under "origin/{branchname}"
-                    options.GitBranch = $"origin/{options.GitBranch}";
-                    if (!DiffHelper.HasBranch(repo, options.GitBranch))
+                    cmdOptions.GitBranch = $"origin/{cmdOptions.GitBranch}";
+                    if (!DiffHelper.HasBranch(repo, cmdOptions.GitBranch))
                     {
                         logger.LogError(
                             "Current git repository doesn't have any branch named [{Branch}]. Shutting down.",
-                            options.GitBranch);
+                            cmdOptions.GitBranch);
                         logger.LogInformation("Here are all of the currently known branches in this repository:");
                         foreach (var b in repo.Branches)
                         {
@@ -153,10 +154,18 @@ namespace Incrementalist.Cmd
 
                 if (!string.IsNullOrEmpty(repoFolder))
                 {
-                    if (options.ListFolders)
-                        await AnalyzeFolderDiff(options, workingFolder, logger);
-                    else
-                        await AnalyzeSolutionDIff(options, workingFolder, logger);
+                    switch (cmdOptions)
+                    {
+                        case ListFoldersOptions listFoldersOptions:
+                            await AnalyzeFolderDiff(listFoldersOptions, workingFolder, logger);
+                            break;
+                        case RunOptions runOptions:
+                            await AnalyzeSolutionDIff(runOptions, workingFolder, logger);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(cmdOptions),
+                                $"Unknown command line option type: {cmdOptions.GetType()}");
+                    }
                 }
 
                 return 0;
@@ -168,7 +177,7 @@ namespace Incrementalist.Cmd
             }
         }
 
-        private static async Task AnalyzeFolderDiff(SlnOptions options, AbsolutePath workingFolder, ILogger logger)
+        private static async Task AnalyzeFolderDiff(ListFoldersOptions options, AbsolutePath workingFolder, ILogger logger)
         {
             /*
              * options.SolutionFilePath can be null here, but it won't affect this task
@@ -189,7 +198,7 @@ namespace Incrementalist.Cmd
             HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
-        private static async Task AnalyzeSolutionDIff(SlnOptions options, AbsolutePath workingFolder, ILogger logger)
+        private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger)
         {
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
@@ -208,7 +217,7 @@ namespace Incrementalist.Cmd
                     await ProcessSln(options, sln, workingFolder, msBuild, logger);
         }
 
-        private static async Task ProcessSln(SlnOptions options, RelativePath sln, AbsolutePath workingFolder,
+        private static async Task ProcessSln(RunOptions options, RelativePath sln, AbsolutePath workingFolder,
             MSBuildWorkspace msBuild, ILogger logger)
         {
             var stopwatch = new Stopwatch();
@@ -226,7 +235,7 @@ namespace Incrementalist.Cmd
             var analysisTime = stopwatch.Elapsed;
             logger.LogInformation("Solution analysis completed in {Duration:g}", analysisTime);
 
-            if (options is { RunCommand: true, DotNetArgs.Length: > 0 })
+            if (options is { DryRun: false, DotNetArgs.Length: > 0 })
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs,
                     options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
@@ -260,6 +269,8 @@ namespace Incrementalist.Cmd
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
                     return;
                 }
+                
+                logger.LogInformation("Calculating dry run....");
 
                 var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
 
@@ -276,7 +287,7 @@ namespace Incrementalist.Cmd
                 else
                 {
                     logger.LogInformation("{BuildType} required:", buildType);
-                    logger.LogInformation(affectedFilesStr);
+                    logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}", projectsToRebuild.Count, affectedFilesStr);
                 }
             }
 
@@ -326,10 +337,12 @@ namespace Incrementalist.Cmd
         private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount,
             ILogger logger)
         {
+            var listingFolders = options is ListFoldersOptions;
+            
             if (affectedFilesCount == 0)
             {
                 logger.LogInformation("No changes detected by Incrementalist when analyzing {FileSysType}.",
-                    options.ListFolders ? "repository folders" : "solution");
+                    listingFolders ? "repository folders" : "solution");
                 return;
             }
 
@@ -338,7 +351,7 @@ namespace Incrementalist.Cmd
             {
                 logger.LogInformation("Detected {AffectedFiles} affected {FileSysType} - writing out to {OutputFile}",
                     affectedFilesCount,
-                    options.ListFolders ? "folders" : "projects in solution", options.OutputFile);
+                    listingFolders ? "folders" : "projects in solution", options.OutputFile);
                 File.WriteAllText(options.OutputFile, affectedFilesStr);
             }
             else

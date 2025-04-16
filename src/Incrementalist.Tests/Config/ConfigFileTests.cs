@@ -14,6 +14,7 @@ using Incrementalist.Cmd.Commands;
 using Incrementalist.Cmd.Config;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using RunOptions = Incrementalist.Cmd.RunOptions;
 
 namespace Incrementalist.Tests.Config
 {
@@ -100,19 +101,18 @@ namespace Incrementalist.Tests.Config
                 OutputFile = "output.txt"
             };
 
-            var options = new SlnOptions
+            var options = new RunOptions()
             {
                 // CLI options - should override config
                 GitBranch = "dev",
                 TimeoutMinutes = 3,
                 
                 // Run command options that don't come from config
-                RunCommand = true,
-                DotNetArgs = new[] { "build", "--configuration", "Release" }
+                DotNetArgs = ["build", "--configuration", "Release"]
             };
 
             // Act
-            var merged = ConfigMerger.Merge(options, config);
+            var merged = (RunOptions)ConfigMerger.Merge(options, config);
 
             // Assert - CLI options should override config
             Assert.Equal("dev", merged.GitBranch); // From CLI
@@ -125,7 +125,6 @@ namespace Incrementalist.Tests.Config
             Assert.True(merged.RunInParallel); // From config
             
             // Command-specific options should be preserved
-            Assert.True(merged.RunCommand);
             Assert.Equal(3, merged.DotNetArgs.Length);
         }
 
@@ -133,7 +132,7 @@ namespace Incrementalist.Tests.Config
         public void Default_Values_Applied_After_Merging()
         {
             // Arrange
-            var options = new SlnOptions();
+            var options = new ListFoldersOptions();
 
             // Act - Apply defaults to empty options
             var result = ConfigMerger.ApplyDefaults(options);
@@ -142,7 +141,6 @@ namespace Incrementalist.Tests.Config
             Assert.Same(options, result); // Should return the same instance
             Assert.Equal("dev", options.GitBranch);
             Assert.Equal(2, options.TimeoutMinutes);
-            Assert.False(options.ListFolders);
             Assert.False(options.Verbose);
             Assert.True(options.ContinueOnError);
             Assert.False(options.RunInParallel);
@@ -157,9 +155,8 @@ namespace Incrementalist.Tests.Config
             var skipGlobs = new[] { "**/obj/**", "**/bin/**" };
             var targetGlobs = new[] { "src/**/*.csproj", "tests/**/*.csproj" };
             
-            var options = new SlnOptions
+            var options = new CreateConfigOptions()
             {
-                CreateConfig = true,
                 ConfigFile = configPath, // Specify path for CreateConfigFileTask
                 SkipGlobs = skipGlobs,
                 TargetGlobs = targetGlobs

@@ -20,12 +20,22 @@ public static class SlnOptionsParser
 
             SlnOptions? options = null;
 
-            var r = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
-            {
-                options = r;
-                options.DotNetArgs = dotnetArgs;
-                return 0;
-            }, _ => 1);
+            var r = Parser.Default
+                .ParseArguments<RunOptions, ListFoldersOptions, CreateConfigOptions>(incrementalistArgs)
+                .MapResult((RunOptions runOptions) =>
+                {
+                    runOptions.DotNetArgs = dotnetArgs;
+                    options = runOptions;
+                    return 0;
+                }, (ListFoldersOptions listOptions) =>
+                {
+                    options = listOptions;
+                    return 0;
+                }, (CreateConfigOptions creatConfigOptions) =>
+                {
+                    options = creatConfigOptions;
+                    return 0;
+                }, _ => 1);
 
             result = options;
 
@@ -53,11 +63,13 @@ public static class SlnOptionsParser
                 var originalColor = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Error parsing command line arguments");
-                Console.WriteLine("Did you try to run `dotnet tool run incrementalist`? This has parsing issues: https://github.com/petabridge/Incrementalist/issues/378");
-                Console.WriteLine("Please run `dotnet incrementalist` directly instead if you're using local dotnet tools.");
+                Console.WriteLine(
+                    "Did you try to run `dotnet tool run incrementalist`? This has parsing issues: https://github.com/petabridge/Incrementalist/issues/378");
+                Console.WriteLine(
+                    "Please run `dotnet incrementalist` directly instead if you're using local dotnet tools.");
                 Console.ForegroundColor = originalColor;
             }
-                
+
 #if DEBUG
             Console.Write(Environment.NewLine);
             Console.WriteLine("Raw CLI string:");
