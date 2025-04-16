@@ -28,13 +28,8 @@ namespace Incrementalist.Cmd.Config
             if (config == null)
                 return options;
 
-            // Clone the current options
-            var merged = new SlnOptions
-            {
-                DotNetArgs = options.DotNetArgs,
-                RunCommand = options.RunCommand,
-                ConfigFile = options.ConfigFile
-            };
+            // PrepareForMerge the current options
+            var merged = options.PrepareForMerge();
 
             // Merge string properties (CLI takes precedence)
             merged.SolutionFilePath = options.SolutionFilePath ?? config.SolutionFilePath;
@@ -43,7 +38,6 @@ namespace Incrementalist.Cmd.Config
             merged.WorkingDirectory = options.WorkingDirectory ?? config.WorkingDirectory;
 
             // Merge bool properties (CLI takes precedence)
-            merged.ListFolders = config.ListFolders.GetValueOrDefault(false);
             merged.Verbose = config.Verbose.GetValueOrDefault(false);
             merged.ContinueOnError = config.ContinueOnError.GetValueOrDefault(true);
             merged.RunInParallel = config.RunInParallel.GetValueOrDefault(false);
@@ -55,7 +49,6 @@ namespace Incrementalist.Cmd.Config
             merged.TimeoutMinutes = config.TimeoutMinutes.GetValueOrDefault(2);
 
             // Override with any non-default CLI values
-            if (options.ListFolders) merged.ListFolders = true;
             if (options.Verbose) merged.Verbose = true;
             if (!options.ContinueOnError) merged.ContinueOnError = false;
             if (options.RunInParallel) merged.RunInParallel = true;
@@ -64,7 +57,6 @@ namespace Incrementalist.Cmd.Config
             
             // Bugfix for https://github.com/petabridge/Incrementalist/issues/381 and
             // https://github.com/petabridge/Incrementalist/issues/380
-            if(options.CreateConfig) merged.CreateConfig = true;
             if(options.ConfigFile != null) merged.ConfigFile = options.ConfigFile;
 
             return merged;

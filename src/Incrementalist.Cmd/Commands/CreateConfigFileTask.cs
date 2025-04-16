@@ -20,10 +20,10 @@ namespace Incrementalist.Cmd.Commands
     /// </summary>
     public sealed class CreateConfigFileTask
     {
-        private readonly SlnOptions _options;
+        private readonly CreateConfigOptions _options;
         private readonly ILogger _logger;
 
-        public CreateConfigFileTask(SlnOptions options, ILogger logger)
+        public CreateConfigFileTask(CreateConfigOptions options, ILogger logger)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -43,7 +43,6 @@ namespace Incrementalist.Cmd.Commands
                     GitBranch = _options.GitBranch,
                     SolutionFilePath = _options.SolutionFilePath,
                     OutputFile = _options.OutputFile,
-                    ListFolders = _options.ListFolders,
                     WorkingDirectory = _options.WorkingDirectory,
                     Verbose = _options.Verbose,
                     TimeoutMinutes = _options.TimeoutMinutes,

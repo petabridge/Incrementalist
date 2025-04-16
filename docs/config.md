@@ -4,7 +4,7 @@ Incrementalist now supports configuration files to store commonly used settings.
 
 ## Configuration File Format
 
-Incrementalist uses a JSON-based configuration file format. By default, Incrementalist looks for a file named `incrementalist.json` in the current directory, but you can specify a different file using the `-c` or `--config` command-line option.
+Incrementalist uses a JSON-based configuration file format. By default, Incrementalist looks for a file named `incrementalist.json` in the `.incrementalist` directory, but you can specify a different file using the `-c` or `--config` command-line option.
 
 ## Available Settings
 
@@ -15,14 +15,12 @@ The following settings can be specified in the configuration file:
 | `gitBranch` | string | The branch to compare against (e.g. "dev", "master") | `-b`, `--branch` |
 | `solutionFilePath` | string | Path to the solution file to analyze | `-s`, `--sln` |
 | `outputFile` | string | Path where affected projects will be written | `-f`, `--file` |
-| `listFolders` | boolean | List affected folders instead of projects | `-l`, `--folders-only` |
 | `workingDirectory` | string | Working directory for the analysis | `-d`, `--dir` |
 | `verbose` | boolean | Enable verbose logging | `--verbose` |
 | `timeoutMinutes` | number | Timeout for solution loading in minutes | `-t`, `--timeout` |
 | `continueOnError` | boolean | Continue when command execution fails | `--continue-on-error` |
 | `runInParallel` | boolean | Run commands in parallel | `--parallel` |
 | `failOnNoProjects` | boolean | Fail if no projects are affected | `--fail-on-no-projects` |
-| `noCache` | boolean | Ignore existing cache file | `--no-cache` |
 | `skip` | string array | Glob patterns to exclude projects from the final list | `--skip-glob` |
 | `target` | string array | Glob patterns to include only matching projects in the final list | `--target-glob` |
 
@@ -35,14 +33,12 @@ Here's an example configuration file with all available settings:
   "gitBranch": "master",
   "solutionFilePath": "MySolution.sln",
   "outputFile": "affected-projects.txt",
-  "listFolders": false,
   "workingDirectory": null,
   "verbose": false,
   "timeoutMinutes": 2,
   "continueOnError": true,
   "runInParallel": false,
   "failOnNoProjects": false,
-  "noCache": false,
   "skip": ["**/bin/**", "**/obj/**"],
   "target": ["src/**/*.csproj"]
 }
@@ -56,7 +52,7 @@ Command-line arguments take precedence over configuration file settings. For exa
 
 ### Basic Usage
 
-1. Create an `incrementalist.json` file in your project root:
+1. Create an `incrementalist.json` file in your `.incrementalist` directory:
 
 ```json
 {
@@ -69,33 +65,33 @@ Command-line arguments take precedence over configuration file settings. For exa
 2. Run Incrementalist without specifying these options on the command line:
 
 ```bash
-dotnet incrementalist --run -- build
+incrementalist run -- build
 ```
 
 ### Using a Different Configuration File
 
 ```bash
-dotnet incrementalist --config my-custom-config.json --run -- build
+incrementalist run -c my-custom-config.json -- build
 ```
 
 ### Overriding Configuration Values
 
 ```bash
-dotnet incrementalist --branch dev --verbose false --run -- build
+incrementalist run -b dev --verbose false -- build
 ```
 
 This will use the `dev` branch and disable verbose logging, overriding any values in the configuration file.
 
 ## Creating Configuration Files
 
-Incrementalist provides a convenient way to generate configuration files based on your current command-line options using the `--create-config` flag.
+Incrementalist provides a dedicated verb to generate configuration files based on your current command-line options: `create-config`.
 
 ### Using the Default Path
 
 By default, configuration files are created in the `.incrementalist` directory within your working directory:
 
 ```bash
-dotnet incrementalist -b master --verbose --parallel --create-config
+incrementalist create-config -b master --verbose --parallel
 ```
 
 This will create a file at `.incrementalist/incrementalist.json` containing all the specified options.
@@ -105,7 +101,7 @@ This will create a file at `.incrementalist/incrementalist.json` containing all 
 You can specify a custom file name and location using the `-c` or `--config` option:
 
 ```bash
-dotnet incrementalist -b master --verbose --parallel --create-config -c ./my-config.json
+incrementalist create-config -b master --verbose --parallel -c ./my-config.json
 ```
 
 This will create the configuration file at `./my-config.json` instead of the default location.
@@ -116,17 +112,17 @@ A typical workflow might be:
 
 1. Create a configuration file with your commonly used settings:
    ```bash
-   dotnet incrementalist -b main --verbose --parallel --create-config
+   incrementalist create-config -b main --verbose --parallel
    ```
 
 2. Use the configuration file for subsequent runs:
    ```bash
-   dotnet incrementalist -r -- build -c Release
+   incrementalist run -- build -c Release
    ```
 
 3. Override specific settings when needed:
    ```bash
-   dotnet incrementalist -b feature-branch -r -- test
+   incrementalist -b feature-branch run -- test
    ```
 
 This approach allows you to maintain consistent settings while still having the flexibility to override them when necessary. 

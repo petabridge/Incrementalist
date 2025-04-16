@@ -42,17 +42,20 @@ dotnet tool install Incrementalist.Cmd
 
 ### Running as a Global Tool
 
-When installed globally, run commands directly using the `incrementalist` command:
+When installed globally, run commands directly using the `incrementalist` command with one of the available verbs:
 
 ```shell
 # Get list of affected projects
-incrementalist -b dev -f ./affected-projects.txt
+incrementalist run --dry -b dev -f ./affected-projects.txt
+
+# List affected folders
+incrementalist list-affected-folders -b dev -f ./affected-folders.txt
 
 # Run tests for affected projects
-incrementalist -b dev -r -- test -c Release --no-build --nologo
+incrementalist run -b dev -- test -c Release
 
 # Run tests for affected projects those matching a glob
-incrementalist -b dev -r --target-glob "src/*.Tests.csproj" -- test -c Release
+incrementalist run -b dev --target-glob "src/*.Tests.csproj" -- test -c Release
 ```
 
 ### Running as a Local Tool
@@ -63,25 +66,25 @@ When using Incrementalist as a local tool, you need to use `dotnet tool run` wit
 # Get list of affected projects
 dotnet incrementalist -- -b dev -f ./affected-projects.txt
 
+# List affected folders
+dotnet incrementalist -- list-affected-folders -b dev -f ./affected-folders.txt
+
 # Build affected projects
-dotnet incrementalist -- -b dev -r -- build -c Release --nologo
+dotnet incrementalist -- run -b dev -- build -c Release --nologo
 
 # Run tests with coverage
-dotnet incrementalist -- -b dev -r -- test -c Release --no-build --logger:trx --collect:"XPlat Code Coverage" --results-directory ./testresults
+dotnet incrementalist -- run -b dev -- test -c Release --no-build --logger:trx --collect:"XPlat Code Coverage" --results-directory ./testresults
 
 # Run in parallel mode
-dotnet incrementalist -- -b dev -r --parallel -- build -c Release --nologo
+dotnet incrementalist -- run -b dev --parallel -- build -c Release --nologo
 
 # Save affected projects AND run commands
-dotnet incrementalist -- -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
+dotnet incrementalist -- -b dev -f ./affected-projects.txt run -- build -c Release --nologo
 ```
 
 > ![NOTE]
-> Don't call `dotnet tool run incrementalist` - this runs into some very annoying parse issues: https://github.com/petabridge/Incrementalist/issues/378
+> Don't call `dotnet tool run incrementalist` - this runs into some very annoying parse issues: https://github.com/petabridge/Incrementalist/issues/378 . Just call `dotnet incrementalist` instead.
 
-Note the command structure when using as a local tool:
-- First `--` after `dotnet tool run incrementalist` is for Incrementalist options
-- Second `--` (if using `-r`) is for the dotnet command to run on affected projects
 
 ## 📄 Configuration Files
 
@@ -89,10 +92,13 @@ Incrementalist supports JSON configuration files to store commonly used settings
 
 ```shell
 # Use default configuration file (.incrementalist/incrementalist.json)
-incrementalist -r -- build
+incrementalist run -- build
 
 # Specify a custom configuration file
-incrementalist -c my-config.json -r -- build
+incrementalist -c my-config.json run -- build
+
+# Create configuration file with current settings
+incrementalist create-config -b dev --verbose --parallel
 ```
 
 Create a configuration file in your repository:
@@ -112,52 +118,55 @@ Command-line arguments take precedence over configuration file settings. See [Co
 
 ```shell
 # Get list of affected projects and save to file
-incrementalist -b dev -f ./affected-projects.txt
+incrementalist run --dry -b dev -f ./affected-projects.txt
 
 # Specify solution explicitly
-incrementalist -s ./src/MySolution.sln -b dev -f ./affected-projects.txt
+incrementalist run --dry -s ./src/MySolution.sln -b dev -f ./affected-projects.txt
 
 # Get list of affected folders
-incrementalist -b dev -l -f ./affected-folders.txt
+incrementalist list-affected-folders -b dev -f ./affected-folders.txt
 
 # Build only affected projects
-incrementalist -b dev -r -- build -c Release --nologo
+incrementalist run -b dev -- build -c Release --nologo
 
 # Run tests for affected projects
-incrementalist -b dev -r -- test -c Release --no-build --nologo
+incrementalist run -b dev -- test -c Release --no-build --nologo
 
 # Only include test projects in the final list
-incrementalist -b dev --target-glob "**/*.Tests.csproj" -f ./affected-test-projects.txt
+incrementalist run -b dev --target-glob "**/*.Tests.csproj" -f ./affected-test-projects.txt
 
 # Exclude test projects from the final list
-incrementalist -b dev --skip-glob "**/*.Tests.csproj" -f ./affected-non-test-projects.txt
+incrementalist run -b dev --skip-glob "**/*.Tests.csproj" -f ./affected-non-test-projects.txt
 
 # Run tests with code coverage
-incrementalist -b dev -r -- test -c Release --no-build --nologo /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/
+incrementalist run -b dev -- test -c Release --no-build --nologo /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/
 
 # Save affected projects AND run commands
-incrementalist -b dev -f ./affected-projects.txt -r -- build -c Release --nologo
+incrementalist run -b dev -f ./affected-projects.txt -- build -c Release --nologo
 
 # Create configuration file with current settings (default path: .incrementalist/incrementalist.json)
-incrementalist -b dev --verbose --parallel --create-config
+incrementalist create-config -b dev --verbose --parallel
 
 # Create configuration file with current settings and custom file name
-incrementalist -b dev --verbose --parallel --create-config -c ./my-incrementalist-config.json
+incrementalist create-config -b dev --verbose --parallel -c ./my-incrementalist-config.json
 
 # Run incrementalist with a custom configuration file
-incrementalist -c ./my-incrementalist-config.json -r -- build -c Release
+incrementalist run -c ./my-incrementalist-config.json -- build -c Release
+
+# Perform a dry run without executing commands
+incrementalist run -b dev --dry -- build -c Release --nologo
 ```
 
 ## 📄 Output Files
 
 Incrementalist can generate two types of output files using `-f, --file`:
 
-1. **Project Lists** (default):
+1. **Project Lists** (with the `run` verb):
    ```
    D:\src\Project1\Project1.csproj,D:\src\Project2\Project2.csproj
    ```
 
-2. **Folder Lists** (with `-l, --folders-only`):
+2. **Folder Lists** (with the `list-affected-folders` verb):
    ```
    D:\src\Project1,D:\src\Project2\SubFolder
    ```
@@ -166,15 +175,17 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
 ## 🛠️ Command-Line Options
 
+Incrementalist now uses a verb-based command structure. Common options are available across all verbs, with some verb-specific options.
+
+### Common Options (available for all verbs)
+
 ```
   -s, --sln             Optional. Solution file to analyze. Uses first .sln in
                         current directory if not specified.
 
   -f, --file            Optional. Write output to the specified file.
 
-  -l, --folders-only    Optional. List affected folders instead of projects.
-
-  -b, --branch          Optional. (Default: dev) Git branch to compare against
+  -b, --branch          Optional. Git branch to compare against
                         (e.g., 'dev' or 'master').
 
   -d, --dir             Optional. Working directory. Defaults to current directory.
@@ -183,8 +194,8 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
   -t, --timeout         Optional. (Default: 2) Solution load timeout in minutes.
 
-  -r, --run             Optional. Run dotnet CLI command against affected projects.
-                        All arguments after -- are passed to dotnet.
+  -c, --config          Optional. Path to the configuration file. Defaults to 
+                        .incrementalist/incrementalist.json in the current directory.
 
   --continue-on-error   Optional. (Default: true) Continue executing commands even
                         if some fail.
@@ -193,9 +204,6 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
   --fail-on-no-projects Optional. (Default: false) Fail if no projects are affected.
                         
-  -c, --config          Optional. Path to the configuration file. Defaults to 
-                        .incrementalist/incrementalist.json in the current directory.
-
   --skip-glob           Optional. Glob pattern to exclude projects from the final
                         list. Applied after analyzing dependencies. Can be used
                         multiple times.
@@ -204,30 +212,59 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
                         the final list. Applied after analyzing dependencies. Can
                         be used multiple times.
 
-  --create-config       Optional. Create a new configuration file with current 
-                        options. See docs/config.md for details.
-
   --help                Display help screen.
 
   --version             Display version information.
 ```
 
+### Available Verbs
+
+#### `create-config`
+Creates a new configuration file with current options.
+
+```
+incrementalist create-config [options]
+```
+
+#### `list-affected-folders`
+List affected folders instead of .NET projects.
+
+```
+incrementalist list-affected-folders [options]
+```
+
+#### `run`
+Run a command against affected projects. Use the `--dry` option to test without executing.
+
+```
+incrementalist run [options] -- [dotnet command and arguments]
+```
+
+Additional options for `run`:
+```
+  --dry                 Optional. (Default: false) Performs a dry run without
+                        executing any commands. Useful for testing.
+```
+
 ## ⚡ Running Commands
 
-Execute dotnet CLI commands against affected projects:
+Execute dotnet CLI commands against affected projects using the `run` verb:
 
 ```shell
 # Build affected projects
-incrementalist -b dev -r -- build -c Release --nologo
+incrementalist run -b dev -- build -c Release --nologo
 
 # Run tests
-incrementalist -b dev -r -- test -c Release --no-build --nologo
+incrementalist run -b dev -- test -c Release --no-build --nologo
 
 # Run in parallel
-incrementalist -b dev -r --parallel -- build -c Release --nologo
+incrementalist run -b dev --parallel -- build -c Release --nologo
 
 # Stop on first error
-incrementalist -b dev -r --continue-on-error=false -- build -c Release --nologo
+incrementalist run -b dev --continue-on-error=false -- build -c Release --nologo
+
+# Perform a dry run (shows commands without executing them)
+incrementalist run -b dev --dry -- build -c Release --nologo
 ```
 
 ## 🌐 Filtering Projects with Glob Patterns
@@ -242,7 +279,7 @@ Both options can be specified multiple times on the command line.
 **Example:** Find all affected projects, but only run the build command on non-test projects within the `src` directory.
 
 ```shell
-incrementalist -b dev --target-glob "src/**/*.csproj" --skip-glob "**/*.Tests.csproj" -r -- build -c Release --nologo
+incrementalist run -b dev --target-glob "src/**/*.csproj" --skip-glob "**/*.Tests.csproj" -- build -c Release --nologo
 ```
 
 ## 📚 Documentation

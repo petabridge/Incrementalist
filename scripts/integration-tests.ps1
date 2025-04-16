@@ -353,7 +353,7 @@ function Test-FoldersOnly {
     
     $folderTestOutput = Join-Path $TestResultsDir "incrementalist-affected-folders.txt"
     Invoke-IncrementalistTest -TestName "Folders-only check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-l", "-f" , $folderTestOutput)
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("list-affected-folders", "-b", "dev", "-f" , $folderTestOutput)
     }
 }
 
@@ -362,7 +362,7 @@ function Test-SolutionCheck {
     
     $solutionTestOutput = Join-Path $TestResultsDir "incrementalist-affected-files.txt"
     Invoke-IncrementalistTest -TestName "Solution check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $solutionTestOutput)
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--dry", "-b", "dev", "-f", $solutionTestOutput)
     }
 }
 
@@ -370,7 +370,7 @@ function Test-CommandExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--", "build", "-c", "Release", "--nologo")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -378,7 +378,7 @@ function Test-ParallelExecution {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--parallel", "--", "build", "-c", "Release", "--nologo")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--parallel", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -386,7 +386,7 @@ function Test-ErrorHandling {
     param($ProjectPath, $Configuration)
     
     Invoke-IncrementalistTest -TestName "Error handling (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-r", "--fail-on-no-projects", "--", "invalid-command")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--fail-on-no-projects", "--", "invalid-command")
     } -ExpectFailure $true
 }
 
@@ -402,8 +402,8 @@ function Test-ComplexCommandArguments {
     Invoke-IncrementalistTest -TestName "Complex command arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
 
         $incrementalistArgs = @(
+            "run",
             "-b", "dev",
-            "-r",
             "--",  # Separator for dotnet command arguments
             "test",
             "--logger", "console;verbosity=detailed",
@@ -434,7 +434,7 @@ function Test-SimilarDotnetArguments {
     }
 
     Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-c", "-r")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "-c")
     }
 
     # Cleanup
@@ -452,7 +452,7 @@ function Test-GlobTargeting {
     Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # First, run a baseline to check if any changes are detected
         Write-Host "Running baseline to check for changes..."
-        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $baselineOutput)
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "-f", $baselineOutput)
         if ($exitCodeBaseline -ne 0) { throw "Incrementalist baseline command failed with exit code $exitCodeBaseline" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue)
@@ -486,7 +486,7 @@ function Test-GlobTargeting {
 
         # Run Incrementalist with target glob
         #dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" -f $targetGlobOutput
-        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--target-glob", "**/Incrementalist.csproj", "-f", $targetGlobOutput)
+        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--dry", "-b", "dev", "--target-glob", "**/Incrementalist.csproj", "-f", $targetGlobOutput)
         if ($exitCodeTarget -ne 0) { throw "Incrementalist command failed with exit code $exitCodeTarget" }
 
         # Verification logic
@@ -512,7 +512,7 @@ function Test-GlobSkipping {
     Invoke-IncrementalistTest -TestName "Glob skipping" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # 1. Run without skip to get baseline affected projects
         Write-Host "Running baseline to determine affected projects..."
-        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "-f", $baselineOutput)
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--dry", "-b", "dev", "-f", $baselineOutput)
         if ($exitCodeBaseline -ne 0) { throw "Incrementalist command (baseline) failed with exit code $exitCodeBaseline" }
         
         $baselineProjects = @(Get-Content $baselineOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
@@ -549,7 +549,7 @@ function Test-GlobSkipping {
 
         # 2. Run with skip glob
         Write-Host "Running with skip glob..."
-        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("-b", "dev", "--skip-glob", "**/*.Tests.csproj", "-f", $skipGlobOutput)
+        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--skip-glob", "**/*.Tests.csproj", "-f", $skipGlobOutput)
         if ($exitCodeSkip -ne 0) { throw "Incrementalist command (skip glob) failed with exit code $exitCodeSkip" }
         $skippedProjects = (Get-Content $skipGlobOutput -ErrorAction SilentlyContinue | ForEach-Object { (Resolve-Path $_).Path }) | Sort-Object
         Write-Host "Skipped projects count: $($skippedProjects.Count)"
@@ -592,7 +592,7 @@ function Test-CreateConfigCustomPath {
 
         # First invocation
         Write-Host "First invocation: Attempting create config at $customConfigPath"
-        $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $customConfigPath, "-b", $firstBaseBranch)
+        $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("create-config", "--config", $customConfigPath, "-b", $firstBaseBranch)
         if ($exitCode1 -ne 0) {
             throw "Incrementalist first command failed with exit code $exitCode1 when creating custom config."
         }
@@ -600,7 +600,7 @@ function Test-CreateConfigCustomPath {
         # Second invocation (overwrite)
         Write-Host "Second invocation: Attempting overwrite config at $customConfigPath"
         # Use different/additional params to ensure command runs
-        $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $customConfigPath, "-b", $secondBaseBranch, "--parallel")
+        $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("create-config", "--config", $customConfigPath, "-b", $secondBaseBranch, "--parallel")
         if ($exitCode2 -ne 0) {
             throw "Incrementalist second command failed with exit code $exitCode2 when overwriting custom config."
         }
@@ -638,14 +638,14 @@ function Test-CreateConfigOverwrite {
 
             # First invocation (create)
             Write-Host "First invocation: Attempting create config at $tempConfigPath"
-            $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $tempConfigPath, "-b", $firstBaseBranch)
+            $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("create-config", "--config", $tempConfigPath, "-b", $firstBaseBranch)
             if ($exitCode1 -ne 0) {
                 throw "Incrementalist first command failed with exit code $exitCode1 when creating config at $tempConfigPath."
             }
 
             # Second invocation (overwrite)
             Write-Host "Second invocation: Attempting overwrite config at $tempConfigPath"
-            $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("--create-config", "--config", $tempConfigPath, "-b", $secondBaseBranch, "--parallel")
+            $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("create-config", "--config", $tempConfigPath, "-b", $secondBaseBranch, "--parallel")
             if ($exitCode2 -ne 0) {
                 throw "Incrementalist second command failed with exit code $exitCode2 when overwriting config at $tempConfigPath."
             }

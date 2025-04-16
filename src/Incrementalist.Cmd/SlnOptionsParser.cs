@@ -9,6 +9,8 @@ namespace Incrementalist.Cmd;
 /// </summary>
 public static class SlnOptionsParser
 {
+    public const int NON_ERROR_IMMEDIATE_EXIT_CODE = 1000;
+    
     public static int TryParseSlnOptions(string[] args, out SlnOptions? result)
     {
         try
@@ -20,16 +22,43 @@ public static class SlnOptionsParser
 
             SlnOptions? options = null;
 
-            var r = Parser.Default.ParseArguments<SlnOptions>(incrementalistArgs).MapResult(r =>
-            {
-                options = r;
-                options.DotNetArgs = dotnetArgs;
-                return 0;
-            }, _ => 1);
+            var r = Parser.Default
+                .ParseArguments<RunOptions, ListFoldersOptions, CreateConfigOptions>(incrementalistArgs)
+                .MapResult((RunOptions runOptions) =>
+                {
+                    runOptions.DotNetArgs = dotnetArgs;
+                    options = runOptions;
+                    return 0;
+                }, (ListFoldersOptions listOptions) =>
+                {
+                    options = listOptions;
+                    return 0;
+                }, (CreateConfigOptions creatConfigOptions) =>
+                {
+                    options = creatConfigOptions;
+                    return 0;
+                }, errors =>
+                {
+                    var errorCode = NON_ERROR_IMMEDIATE_EXIT_CODE;
+                    foreach(var error in errors)
+                        switch (error.Tag)
+                        {
+                            case ErrorType.HelpRequestedError:
+                            case ErrorType.VersionRequestedError:
+                            case ErrorType.HelpVerbRequestedError:
+                                break;
+                            default:
+                                errorCode = 1;
+                                break;
+                        }
+                            
+                    // error was inconsequential - like --help
+                    return errorCode;
+                });
 
             result = options;
 
-            if (r != 0)
+            if (r != 0 && r != NON_ERROR_IMMEDIATE_EXIT_CODE)
                 DebugDump(null);
 
             return r;
@@ -53,11 +82,13 @@ public static class SlnOptionsParser
                 var originalColor = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Error parsing command line arguments");
-                Console.WriteLine("Did you try to run `dotnet tool run incrementalist`? This has parsing issues: https://github.com/petabridge/Incrementalist/issues/378");
-                Console.WriteLine("Please run `dotnet incrementalist` directly instead if you're using local dotnet tools.");
+                Console.WriteLine(
+                    "Did you try to run `dotnet tool run incrementalist`? This has parsing issues: https://github.com/petabridge/Incrementalist/issues/378");
+                Console.WriteLine(
+                    "Please run `dotnet incrementalist` directly instead if you're using local dotnet tools.");
                 Console.ForegroundColor = originalColor;
             }
-                
+
 #if DEBUG
             Console.Write(Environment.NewLine);
             Console.WriteLine("Raw CLI string:");
