@@ -88,9 +88,9 @@ namespace Incrementalist.Cmd.Commands
                                      .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
                                      .ToList();
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
-            var detector = new SolutionWideChangeDetector(projectImports);
+            var importDetector = new SolutionWideChangeDetector(projectImports);
 
-            if (detector.RequiresFullSolutionBuild(affectedFiles.Keys))
+            if (importDetector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
                 return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));

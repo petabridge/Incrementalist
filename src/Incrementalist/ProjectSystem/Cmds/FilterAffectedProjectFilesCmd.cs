@@ -76,6 +76,14 @@ namespace Incrementalist.ProjectSystem.Cmds
                         continue;
                     }
 
+                    // Need to see if this file is a solution-wide file
+                    if (SolutionWideChangeDetector.IsSolutionWideFile(file))
+                    {
+                        Logger.LogInformation("Adding solution-wide file {File} to the set of affected files.", file);
+                        newDict[file] = new SlnFile(FileType.Other, null);
+                        continue;
+                    }
+
                     if (TryFindSubFolder(projectFolders.Select(c => c.Key), new AbsolutePath(directoryName), out var projectFolder))
                     {
                         var affectedProjects = projectFolders[projectFolder];
