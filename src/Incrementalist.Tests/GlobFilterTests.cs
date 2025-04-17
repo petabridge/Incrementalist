@@ -188,6 +188,7 @@ public class GlobFilterTests
         [Theory]
         // Target 'src/**', then skip '*B*' -> Should only include ProjectA.csproj
         [InlineData(new[] { "src/**" }, new[] { "**/ProjectB*" }, new[] { "src/ProjectA/ProjectA.csproj" })]
+        [InlineData(new[] { "src/**/*.csproj" }, new[] { "**/ProjectB*" }, new[] { "src/ProjectA/ProjectA.csproj" })]
         // Target '**/*Tests*', then skip '*B*' -> Should only include ProjectA.Tests.csproj
         [InlineData(new[] { "**/*Tests*" }, new[] { "**/ProjectB*" },
             new[] { "tests/ProjectA.Tests/ProjectA.Tests.csproj" })]
