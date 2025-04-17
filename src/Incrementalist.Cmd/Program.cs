@@ -207,7 +207,7 @@ namespace Incrementalist.Cmd
 
             var affectedFilesStr = string.Join(",", affectedFiles.Keys);
 
-            HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
+            await HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
         private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger)
@@ -285,42 +285,42 @@ namespace Incrementalist.Cmd
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
 
                     // log an empty file anyway
-                    await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
+                    await WriteOutputFileAsync(options, logger, affectedFilesStr);
                     return;
                 }
 
                 logger.LogInformation("Calculating dry run....");
 
+                logger.LogInformation("{BuildType} required:", buildType);
+                logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}",
+                    projectsToRebuild.Count, affectedFilesStr);
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
                 {
-                    await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
-                }
-                else
-                {
-                    logger.LogInformation("{BuildType} required:", buildType);
-                    logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}",
-                        projectsToRebuild.Count, affectedFilesStr);
+                    await WriteOutputFileAsync(options, logger, affectedFilesStr);
                 }
             }
         }
 
-        private static async Task WriteOutputFileAsync(RunOptions options, ILogger logger, string buildType,
-            IReadOnlyList<AbsolutePath> projectsToRebuild, string affectedFilesStr)
+        private static async Task WriteOutputFileAsync(SlnOptions options, ILogger logger, string affectedFilesStr)
         {
             if (!string.IsNullOrEmpty(options.OutputFile))
             {
-                logger.LogInformation(
-                    "{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
-                    buildType,
-                    projectsToRebuild.Count,
-                    options.OutputFile);
+                // ensure directory, per https://github.com/petabridge/Incrementalist/issues/377
+                var path = Path.GetDirectoryName(options.OutputFile);
+                if (path != null && !Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                
+                logger.LogInformation("Writing to output file: {OutputFile}", options.OutputFile);
+               
                 await File.WriteAllTextAsync(options.OutputFile, affectedFilesStr);
             }
         }
 
-        private static void HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount,
+        private static async Task HandleAffectedFiles(SlnOptions options, string affectedFilesStr, int affectedFilesCount,
             ILogger logger)
         {
             var listingFolders = options is ListFoldersOptions;
@@ -338,7 +338,8 @@ namespace Incrementalist.Cmd
                 logger.LogInformation("Detected {AffectedFiles} affected {FileSysType} - writing out to {OutputFile}",
                     affectedFilesCount,
                     listingFolders ? "folders" : "projects in solution", options.OutputFile);
-                File.WriteAllText(options.OutputFile, affectedFilesStr);
+                
+                await WriteOutputFileAsync(options, logger, affectedFilesStr);
             }
             else
                 logger.LogInformation(affectedFilesStr);
