@@ -274,32 +274,46 @@ namespace Incrementalist.Cmd
                     default:
                         throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
                 }
+                
+                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
 
                 if (!projectsToRebuild.Any())
                 {
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
+                    
+                    // log an empty file anyway
+                    await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
                     return;
                 }
                 
                 logger.LogInformation("Calculating dry run....");
 
-                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
+                
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
                 {
-                    logger.LogInformation(
-                        "{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
-                        buildType,
-                        projectsToRebuild.Count,
-                        options.OutputFile);
-                    await File.WriteAllTextAsync(options.OutputFile, affectedFilesStr);
+                    await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
                 }
                 else
                 {
                     logger.LogInformation("{BuildType} required:", buildType);
                     logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}", projectsToRebuild.Count, affectedFilesStr);
                 }
+            }
+        }
+
+        private static async Task WriteOutputFileAsync(RunOptions options, ILogger logger, string buildType,
+            IReadOnlyList<AbsolutePath> projectsToRebuild, string affectedFilesStr)
+        {
+            if (!string.IsNullOrEmpty(options.OutputFile))
+            {
+                logger.LogInformation(
+                    "{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
+                    buildType,
+                    projectsToRebuild.Count,
+                    options.OutputFile);
+                await File.WriteAllTextAsync(options.OutputFile, affectedFilesStr);
             }
         }
 
