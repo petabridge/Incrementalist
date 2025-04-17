@@ -38,8 +38,47 @@ namespace Incrementalist.Cmd.Commands
         public MSBuildWorkspace Workspace { get; }
 
         public ILogger Logger { get; }
+        
+        // Post-process the build result
+        BuildAnalysisResult FilterBuildResult(BuildAnalysisResult original, IReadOnlyList<SlnFileWithPath> allProjects)
+        {
+            var skipGlobs = Settings.SkipGlobs;
+            var targetGlobs = Settings.TargetGlobs;
 
-        public async Task<BuildAnalysisResult> Run()
+            if (targetGlobs.Count == 0 && skipGlobs.Count == 0)
+                return original;
+
+            var projectsToRebuild = original switch
+            {
+                FullSolutionBuildResult full => allProjects.Select(c => c.Path).ToList(),
+                IncrementalBuildResult incremental => incremental.AffectedProjects,
+                _ => []
+            };
+
+            // Need to process our globs
+
+            // globbing is designed to work with relative paths
+            var relativePaths = projectsToRebuild.Select(c =>
+                Settings.WorkingDirectory.ComputeRelativePathToMe(c)).ToList();
+
+            // we glob and then convert back into absolute paths
+            var filteredProjects = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs)
+                .Select(c => c.ComputeAbsolutePath(Settings.WorkingDirectory)).ToList();
+
+            if (filteredProjects.Count != projectsToRebuild.Count)
+            {
+                // had at least 1 hit on a filter
+                Logger.LogInformation(
+                    "Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
+                    projectsToRebuild.Count, filteredProjects.Count);
+
+                return new IncrementalBuildResult(filteredProjects);
+            }
+
+            return original;
+        }
+
+        private async Task<(BuildAnalysisResult result, IReadOnlyList<SlnFileWithPath> allProjects)> RunInternal()
         {
             // start the cancellation timer.
             _cts.CancelAfter(Settings.TimeoutDuration);
@@ -71,7 +110,7 @@ namespace Incrementalist.Cmd.Commands
             if (affectedFiles.Count == 0)
             {
                 Logger.LogInformation("No files were affected by the changes");
-                return new IncrementalBuildResult(Array.Empty<AbsolutePath>());
+                return (new IncrementalBuildResult(Array.Empty<AbsolutePath>()), []);
             }
 
             // Log the breakdown of modified files by type
@@ -96,7 +135,7 @@ namespace Incrementalist.Cmd.Commands
             if (importDetector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
+                return (new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!)), projectFiles);
             }
 
             // Get the list of affected project files directly
@@ -108,7 +147,7 @@ namespace Incrementalist.Cmd.Commands
             if (directlyAffectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
+                return (new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!)), projectFiles);
             }
 
             /* INCREMENTAL BUILDS */
@@ -121,7 +160,7 @@ namespace Incrementalist.Cmd.Commands
             var projectsToRebuild = dependencyGraph.SelectMany(x => x.Value).Distinct().ToList();
 
             // need to write a new cache
-            return ComputeResult(projectsToRebuild);
+            return (ComputeResult(projectsToRebuild), projectFiles);
 
             BuildAnalysisResult ComputeResult(IReadOnlyList<AbsolutePath> projectFilePaths)
             {
@@ -142,6 +181,15 @@ namespace Incrementalist.Cmd.Commands
                     projectFilePaths.Count, string.Join(", ", projectFilePaths));
                 return new IncrementalBuildResult(projectFilePaths);
             }
+        }
+
+        public async Task<BuildAnalysisResult> Run()
+        {
+            var (buildResult, allProjects) = await RunInternal();
+            
+            // Post-process the build result
+            var filteredResult = FilterBuildResult(buildResult, allProjects);
+            return filteredResult;
         }
     }
 }

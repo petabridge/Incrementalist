@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Microsoft.Extensions.Logging;
 
@@ -13,16 +14,17 @@ namespace Incrementalist
     /// <summary>
     ///     The settings used for this execution of incremental build analysis.
     /// </summary>
-    public class BuildSettings
+    public sealed class BuildSettings
     {
         public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
 
-        public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory,
-            TimeSpan? timeoutDuration = null)
+        public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory, IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs, TimeSpan? timeoutDuration = null)
         {
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
             WorkingDirectory = workingDirectory;
+            SkipGlobs = skipGlobs;
+            TargetGlobs = targetGlobs;
             TimeoutDuration = timeoutDuration ?? DefaultTimeout;
         }
 
@@ -50,5 +52,15 @@ namespace Incrementalist
         ///     prior to cancelling it.
         /// </summary>
         public TimeSpan TimeoutDuration { get; }
+        
+        /// <summary>
+        /// Globs to skip when searching for project files.
+        /// </summary>
+        public IReadOnlyList<string> SkipGlobs { get; }
+        
+        /// <summary>
+        /// Exclude all projects that don't match the given globs.
+        /// </summary>
+        public IReadOnlyList<string> TargetGlobs { get; }
     }
 }
