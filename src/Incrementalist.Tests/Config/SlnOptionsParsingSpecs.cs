@@ -6,6 +6,7 @@
 
 using System.Linq;
 using Incrementalist.Cmd;
+using Incrementalist.Cmd.Config;
 using Microsoft.CodeAnalysis;
 using Xunit;
 using static Incrementalist.Cmd.SlnOptionsParser;
@@ -33,5 +34,36 @@ public class SlnOptionsParsingSpecs
 
         Assert.Equal(0, r);
         Assert.NotNull(result);
+    }
+    
+    /*
+     *  Looking for a suspected bug where:
+     * 
+     *  1. No globs specified on command line
+     *  2. globs specified in config file
+     *  3. Parse operation supplies an empty array instead of a null array
+     *  4. Merge operation fails because it uses the empty array instead of the config file globs
+     */
+    [Fact]
+    public void ShouldKeepConfigGlobs()
+    {
+        string[] expectedGlobs = ["**/*.Tests.csproj", "**/tests/*.csproj"];
+        var args = CommandLineParser
+            .SplitCommandLineIntoArguments("run", true).ToArray();
+        var r = TryParseSlnOptions(args, out SlnOptions? result);
+
+        Assert.Equal(0, r);
+        Assert.NotNull(result);
+        
+        var config = new IncrementalistConfig
+        {
+            TargetGlob = null,
+            SkipGlob = expectedGlobs,
+            GitBranch = "dev",
+            WorkingDirectory = @"C:\user\workingdir"
+        };
+        
+        var merged = ConfigMerger.Merge(result, config);
+        Assert.Equivalent(expectedGlobs, merged.SkipGlobs);
     }
 }

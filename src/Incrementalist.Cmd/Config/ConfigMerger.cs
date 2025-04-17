@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using System;
+using System.Linq;
 
 namespace Incrementalist.Cmd.Config
 {
@@ -42,8 +43,8 @@ namespace Incrementalist.Cmd.Config
             merged.ContinueOnError = config.ContinueOnError.GetValueOrDefault(true);
             merged.RunInParallel = config.RunInParallel.GetValueOrDefault(false);
             merged.FailOnNoProjects = config.FailOnNoProjects.GetValueOrDefault(false);
-            merged.SkipGlobs = options.SkipGlobs ?? config.SkipGlob;
-            merged.TargetGlobs = options.TargetGlobs ?? config.TargetGlob;
+            merged.SkipGlobs = MergeGlobs(options.SkipGlobs?.ToArray(), config.SkipGlob);
+            merged.TargetGlobs = MergeGlobs(options.TargetGlobs?.ToArray(), config.TargetGlob);
 
             // Merge int properties (CLI takes precedence)
             merged.TimeoutMinutes = config.TimeoutMinutes.GetValueOrDefault(2);
@@ -60,6 +61,15 @@ namespace Incrementalist.Cmd.Config
             if (options.ConfigFile != null) merged.ConfigFile = options.ConfigFile;
 
             return merged;
+        }
+
+        private static string[] MergeGlobs(string[]? primary, string[]? secondary)
+        {
+            if(primary is { Length: > 0 })
+                return primary;
+            if (secondary is { Length: > 0 })
+                return secondary;
+            return [];
         }
 
         /// <summary>
