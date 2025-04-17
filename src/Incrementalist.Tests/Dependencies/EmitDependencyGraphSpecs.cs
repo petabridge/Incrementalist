@@ -35,8 +35,8 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         _logger = new TestOutputLogger(outputHelper);
     }
 
-    private BuildSettings GetBuildSettings() =>
-        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath);
+    private BuildSettings GetBuildSettings(string[]? skipGlobs = null, string[]? targetGlobs = null) =>
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, skipGlobs ?? [], targetGlobs ?? []);
 
     public const string ProjectBTests = "ProjectB.Tests";
     public const string ProjectB = "ProjectB";
@@ -130,6 +130,36 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         // assert
         Assert.NotNull(result);
         Assert.IsType<FullSolutionBuildResult>(result);
+    }
+
+    /// <summary>
+    /// Reproduction for https://github.com/petabridge/Incrementalist/issues/395
+    /// </summary>
+    [Fact]
+    public async Task ShouldPerformGlobbingOnSolutionWideChanges()
+    {
+        // arrange
+        // will trigger a full rebuild
+        var newFile = new SampleFile("Directory.Build.props", SolutionFileSamples.DirectoryBuildProps);
+        Repository
+            .WriteFile(newFile)
+            .Commit("Added new file"); // should create the diffs
+        
+        // should only target the tests project
+        var buildSettings = GetBuildSettings(["src/**/*.csproj"]);
+        
+        var cmd = new EmitDependencyGraphTask(buildSettings, _workspace, _logger);
+
+        // act
+        var result = await cmd.Run();
+
+        // assert
+        Assert.NotNull(result);
+        Assert.IsType<IncrementalBuildResult>(result);
+        var actualAffectedProjects = ((IncrementalBuildResult)result).AffectedProjects
+            .Select(c => Path.GetFileNameWithoutExtension(c.Path)).ToList();
+        var expectedAffectedProjects = new[] { ProjectBTests };
+        Assert.Equivalent(expectedAffectedProjects, actualAffectedProjects);
     }
 
     public Task InitializeAsync()

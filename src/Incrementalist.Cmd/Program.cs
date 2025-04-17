@@ -189,6 +189,8 @@ namespace Incrementalist.Cmd
 
             var settings = new BuildSettings(options.GitBranch!, normalized,
                 workingFolder,
+                options.SkipGlobs?.ToArray() ?? [],
+                options.TargetGlobs?.ToArray() ?? [],
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitAffectedFoldersTask(settings, logger);
             var affectedFiles = (await emitTask.Run());
@@ -226,11 +228,13 @@ namespace Incrementalist.Cmd
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
             var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
+                options.SkipGlobs?.ToArray() ?? [],
+                options.TargetGlobs?.ToArray() ?? [],
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
 
             logger.LogInformation("Beginning dependency analysis...");
             var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
-            var buildResult = FilterBuildResult(await emitTask.Run());
+            var buildResult = await emitTask.Run();
 
             var analysisTime = stopwatch.Elapsed;
             logger.LogInformation("Solution analysis completed in {Duration:g}", analysisTime);
@@ -251,7 +255,7 @@ namespace Incrementalist.Cmd
 
                 switch (buildResult)
                 {
-                    case FullSolutionBuildResult _:
+                    case FullSolutionBuildResult:
                         buildType = "Full solution build";
                         projectsToRebuild = msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
                             .Select(p => new AbsolutePath(p.FilePath!)).ToList();
@@ -289,48 +293,6 @@ namespace Incrementalist.Cmd
                     logger.LogInformation("{BuildType} required:", buildType);
                     logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}", projectsToRebuild.Count, affectedFilesStr);
                 }
-            }
-
-            return;
-
-            // Post-process the build result
-            BuildAnalysisResult FilterBuildResult(BuildAnalysisResult original)
-            {
-                var skipGlobs = options.SkipGlobs?.ToArray() ?? [];
-                var targetGlobs = options.TargetGlobs?.ToArray() ?? [];
-
-                if (targetGlobs.Length == 0 && skipGlobs.Length == 0)
-                    return original;
-
-                var projectsToRebuild = original switch
-                {
-                    FullSolutionBuildResult full => msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                        .Select(p => new AbsolutePath(p.FilePath!)).ToList(),
-                    IncrementalBuildResult incremental => incremental.AffectedProjects,
-                    _ => []
-                };
-
-                // Need to process our globs
-
-                // globbing is designed to work with relative paths
-                var relativePaths = projectsToRebuild.Select(c =>
-                    settings.WorkingDirectory.ComputeRelativePathToMe(c)).ToList();
-
-                // we glob and then convert back into absolute paths
-                var filteredProjects = GlobFilter.FilterProjects(relativePaths, skipGlobs, targetGlobs)
-                    .Select(c => c.ComputeAbsolutePath(settings.WorkingDirectory)).ToList();
-
-                if (filteredProjects.Count != projectsToRebuild.Count)
-                {
-                    // had at least 1 hit on a filter
-                    logger.LogInformation(
-                        "Incrementalist selected {OriginalAffectedProjects} projects for rebuild, after filtering with globs: {FilteredAffectedProjects}",
-                        projectsToRebuild.Count, filteredProjects.Count);
-
-                    return new IncrementalBuildResult(filteredProjects);
-                }
-
-                return original;
             }
         }
 
