@@ -1,17 +1,16 @@
 <Project>
-    <PropertyGroup>
-        <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
-        <Authors>Petabridge</Authors>
-        <VersionPrefix>1.0.0-rc3</VersionPrefix>
-        <PackageReleaseNotes>Bug fixes and improvements:
+  <PropertyGroup>
+    <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
+    <Authors>Petabridge</Authors>
+    <VersionPrefix>1.0.0-rc4</VersionPrefix>
+    <PackageReleaseNotes>Major Changes:
 
-            * Resolved: [Not properly detecting changes to "solution-wide" files](https://github.com/petabridge/Incrementalist/issues/388)
-            * Resolved: [Dependency graph calculation is not correct](https://github.com/petabridge/Incrementalist/issues/389)
-            * Resolved: [Globbing does not work with absolute paths](https://github.com/petabridge/Incrementalist/issues/386)
-        </PackageReleaseNotes>
-        <tags>build, msbuild, incremental build, roslyn, git</tags>
-        <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
-        <PackageProjectUrl>
+* **Breaking Change**: [Rewrote all command line arguments to use real verbs](https://github.com/petabridge/Incrementalist/issues/393)
+* Resolved: [Globbing must always apply, even when a full solution build is required](https://github.com/petabridge/Incrementalist/issues/395)
+* [Log used config file](https://github.com/petabridge/Incrementalist/pull/398)</PackageReleaseNotes>
+    <tags>build, msbuild, incremental build, roslyn, git</tags>
+    <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
+    <PackageProjectUrl>
             https://github.com/petabridge/Incrementalist
         </PackageProjectUrl>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
