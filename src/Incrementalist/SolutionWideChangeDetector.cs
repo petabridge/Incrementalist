@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="SolutionWideChangeDetector.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2024 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -45,7 +45,7 @@ namespace Incrementalist
                 .Where(p => p.FilePath != null)
                 .Select(p => new SlnFileWithPath(new AbsolutePath(p.FilePath!), new SlnFile(FileType.Project, p.Id)))
                 .ToList();
-            
+
             _projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
         }
 
@@ -66,7 +66,7 @@ namespace Incrementalist
         {
             if (changedFiles == null) throw new ArgumentNullException(nameof(changedFiles));
 
-            foreach(var file in changedFiles)
+            foreach (var file in changedFiles)
             {
                 if (IsSolutionWideFile(file))
                     return true;
@@ -90,7 +90,7 @@ namespace Incrementalist
             var fileName = Path.GetFileName(filePath.Path);
             var extension = Path.GetExtension(filePath.Path);
 
-            return AlwaysSolutionWideFiles.Contains(fileName) || 
+            return AlwaysSolutionWideFiles.Contains(fileName) ||
                    AlwaysSolutionWideExtensions.Contains(extension);
         }
 
@@ -102,8 +102,9 @@ namespace Incrementalist
             // If this props/targets file is imported by Directory.Build.props or affects multiple projects,
             // we should do a full solution build
             var isImportedByDirectoryBuildProps = importedFile.DependentProjects
-                .Any(p => Path.GetFileName(p.Path.Path).Equals("Directory.Build.props", StringComparison.OrdinalIgnoreCase));
-            
+                .Any(p => Path.GetFileName(p.Path.Path)
+                    .Equals("Directory.Build.props", StringComparison.OrdinalIgnoreCase));
+
             var affectsMultipleProjects = importedFile.DependentProjects.Count > 1;
 
             return isImportedByDirectoryBuildProps || affectsMultipleProjects;
@@ -115,14 +116,15 @@ namespace Incrementalist
         /// <param name="solution">The solution being analyzed.</param>
         /// <param name="affectedProjects">The list of affected project paths.</param>
         /// <returns>A FullSolutionBuildResult if all projects are affected, otherwise an IncrementalBuildResult.</returns>
-        public static BuildAnalysisResult CreateBuildResult(Solution solution, IReadOnlyList<AbsolutePath> affectedProjects)
+        public static BuildAnalysisResult CreateBuildResult(Solution solution,
+            IReadOnlyList<AbsolutePath> affectedProjects)
         {
             ArgumentNullException.ThrowIfNull(solution);
             ArgumentNullException.ThrowIfNull(affectedProjects);
             ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
 
             var totalProjects = solution.Projects.Count();
-            
+
             // If all projects are affected, return a full solution build result
             if (affectedProjects.Count == totalProjects)
             {
@@ -132,4 +134,4 @@ namespace Incrementalist
             return new IncrementalBuildResult(affectedProjects);
         }
     }
-} 
+}

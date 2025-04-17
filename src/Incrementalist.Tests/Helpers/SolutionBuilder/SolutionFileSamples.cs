@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="SolutionFileSamples.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace Incrementalist.Tests.Helpers;
 
 public static class SolutionFileSamples
@@ -9,7 +15,7 @@ public static class SolutionFileSamples
                                          }
                                      }
                                      """;
-    
+
     public const string DirectoryBuildProps = """
                                               <Project>
                                                   <PropertyGroup>
@@ -17,7 +23,7 @@ public static class SolutionFileSamples
                                                   </PropertyGroup>
                                               </Project>
                                               """;
-    
+
     public const string DirectoryPackagesProps = """
                                                  <Project>
                                                      <ItemGroup>

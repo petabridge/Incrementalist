@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="SolutionWideChangeDetectorTests.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2024 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -25,34 +25,34 @@ namespace Incrementalist.Tests
         public SolutionWideChangeDetectorTests()
         {
             _repository = new DisposableRepository();
-            
+
             // Create a sample solution with project imports
             var sample = ProjectSampleGenerator.GetProjectWithImportSample("TestProject.csproj");
-            
+
             // Write files to the repository
             _repository.WriteFile(sample.ProjectFile);
             _repository.WriteFile(sample.ImportedPropsFile);
-            
+
             // Create a solution file
             var solutionPath = Path.Combine(_repository.BasePath.Path, "test.sln");
             File.WriteAllText(solutionPath, ""); // Empty solution file is sufficient for our tests
-            
+
             // Create some solution-wide files
             File.WriteAllText(Path.Combine(_repository.BasePath.Path, "Directory.Build.props"), "<Project />");
             File.WriteAllText(Path.Combine(_repository.BasePath.Path, "Directory.Packages.props"), "<Project />");
-            
+
             // Load the solution
             var workspace = new AdhocWorkspace();
             var solutionInfo = SolutionInfo.Create(
                 SolutionId.CreateNewId(),
                 VersionStamp.Create(),
                 solutionPath);
-            
+
             _solution = workspace.AddSolution(solutionInfo);
             _detector = new SolutionWideChangeDetector(_solution);
         }
-        
-        private AbsolutePath GetAbsolutePath(string fileName) 
+
+        private AbsolutePath GetAbsolutePath(string fileName)
         {
             return new AbsolutePath(Path.Combine(_repository.BasePath.Path, fileName));
         }
@@ -65,7 +65,7 @@ namespace Incrementalist.Tests
         [InlineData("some/path/Directory.Build.props")]
         public void DirectMatch_SolutionWideFiles_ReturnsTrue(string fileName)
         {
-            var changes = new[] {GetAbsolutePath(fileName) };
+            var changes = new[] { GetAbsolutePath(fileName) };
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -97,7 +97,7 @@ namespace Incrementalist.Tests
                 "Directory.Build.props",
                 "src/Project2/Class2.cs"
             }.Select(GetAbsolutePath);
-            
+
             Assert.True(_detector.RequiresFullSolutionBuild(changes));
         }
 
@@ -130,4 +130,4 @@ namespace Incrementalist.Tests
             _repository.Dispose();
         }
     }
-} 
+}

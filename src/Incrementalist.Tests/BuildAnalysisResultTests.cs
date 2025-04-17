@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="BuildAnalysisResultTests.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2024 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ namespace Incrementalist.Tests
         {
             Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null!));
         }
-        
+
         private AbsolutePath MakeAbsolutePath(string path)
         {
             return new AbsolutePath(Path.Combine(Directory.GetCurrentDirectory(), path));
@@ -45,7 +45,7 @@ namespace Incrementalist.Tests
                 SolutionId.CreateNewId(),
                 VersionStamp.Create(),
                 solutionPath.Path);
-            
+
             var solution = workspace.AddSolution(solutionInfo);
 
             var projectIds = new[] { ProjectId.CreateNewId(), ProjectId.CreateNewId() };
@@ -83,7 +83,7 @@ namespace Incrementalist.Tests
                 SolutionId.CreateNewId(),
                 VersionStamp.Create(),
                 solutionPath.Path);
-            
+
             var solution = workspace.AddSolution(solutionInfo);
 
             var projectIds = new[] { ProjectId.CreateNewId(), ProjectId.CreateNewId(), ProjectId.CreateNewId() };
@@ -122,4 +122,4 @@ namespace Incrementalist.Tests
             Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(solution, null!));
         }
     }
-} 
+}

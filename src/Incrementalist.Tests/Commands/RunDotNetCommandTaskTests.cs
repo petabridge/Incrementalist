@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="RunDotNetCommandTaskTests.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2023 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Execute_Command_Successfully()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath,[], []);
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
             var projectPath = new AbsolutePath(Path.Combine(_repository.BasePath.Path, "test.csproj"));
             await File.WriteAllTextAsync(projectPath.Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>

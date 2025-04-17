@@ -1,4 +1,10 @@
-﻿using System.IO;
+﻿// -----------------------------------------------------------------------
+// <copyright file="EmitDependencyGraphSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +42,8 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
     }
 
     private BuildSettings GetBuildSettings(string[]? skipGlobs = null, string[]? targetGlobs = null) =>
-        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, skipGlobs ?? [], targetGlobs ?? []);
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, skipGlobs ?? [],
+            targetGlobs ?? []);
 
     public const string ProjectBTests = "ProjectB.Tests";
     public const string ProjectB = "ProjectB";
@@ -144,10 +151,10 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         Repository
             .WriteFile(newFile)
             .Commit("Added new file"); // should create the diffs
-        
+
         // should only target the tests project
         var buildSettings = GetBuildSettings(["src/**/*.csproj"]);
-        
+
         var cmd = new EmitDependencyGraphTask(buildSettings, _workspace, _logger);
 
         // act

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ConfigMerger.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2023 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -54,10 +54,10 @@ namespace Incrementalist.Cmd.Config
             if (options.RunInParallel) merged.RunInParallel = true;
             if (options.FailOnNoProjects) merged.FailOnNoProjects = true;
             if (options.TimeoutMinutes != 2) merged.TimeoutMinutes = options.TimeoutMinutes;
-            
+
             // Bugfix for https://github.com/petabridge/Incrementalist/issues/381 and
             // https://github.com/petabridge/Incrementalist/issues/380
-            if(options.ConfigFile != null) merged.ConfigFile = options.ConfigFile;
+            if (options.ConfigFile != null) merged.ConfigFile = options.ConfigFile;
 
             return merged;
         }
@@ -74,11 +74,11 @@ namespace Incrementalist.Cmd.Config
 
             // Default values for string properties
             options.GitBranch ??= "dev";
-            
+
             // Default values for int properties
             if (options.TimeoutMinutes == 0)
                 options.TimeoutMinutes = 2;
-                
+
             // Default values for bool properties
             // These are already initialized to their default values by C#
             // but we'll set them explicitly for clarity
@@ -88,4 +88,4 @@ namespace Incrementalist.Cmd.Config
             return options;
         }
     }
-} 
+}

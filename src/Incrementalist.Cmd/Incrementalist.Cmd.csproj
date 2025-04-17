@@ -1,26 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <ToolCommandName>incrementalist</ToolCommandName>
-    <PackAsTool>true</PackAsTool>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <RollForward>LatestMajor</RollForward>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <LangVersion>latest</LangVersion>
-    <Description>.NET Core global tool for determining how to run incremental builds based on the current Git diff.</Description>
-  </PropertyGroup>
+    <PropertyGroup>
+        <ToolCommandName>incrementalist</ToolCommandName>
+        <PackAsTool>true</PackAsTool>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <RollForward>LatestMajor</RollForward>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <LangVersion>latest</LangVersion>
+        <Description>.NET Core global tool for determining how to run incremental builds based on the current Git diff.</Description>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CommandLineParser" />
-    <PackageReference Include="Microsoft.Build.Locator" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
-    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-    <PackageReference Include="NuGet.ProjectModel" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="CommandLineParser"/>
+        <PackageReference Include="Microsoft.Build.Locator"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"/>
+        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
+        <PackageReference Include="NuGet.ProjectModel"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Incrementalist\Incrementalist.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Incrementalist\Incrementalist.csproj"/>
+    </ItemGroup>
 
 </Project>

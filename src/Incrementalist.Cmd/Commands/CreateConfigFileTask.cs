@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="CreateConfigFileTask.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2024 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -59,14 +59,15 @@ namespace Incrementalist.Cmd.Commands
                 {
                     // Use default filename in the same directory as the dependency cache
                     var workingDir = _options.WorkingDirectory ?? Directory.GetCurrentDirectory();
-                    var incrementalistDir = Path.Combine(workingDir, IncrementalistFileConstants.IncrementalistDirectory);
-                    
+                    var incrementalistDir =
+                        Path.Combine(workingDir, IncrementalistFileConstants.IncrementalistDirectory);
+
                     // Create the directory if it doesn't exist
                     if (!Directory.Exists(incrementalistDir))
                     {
                         Directory.CreateDirectory(incrementalistDir);
                     }
-                    
+
                     configFilePath = Path.Combine(incrementalistDir, IncrementalistConfig.DefaultConfigFileName);
                 }
 
@@ -92,4 +93,4 @@ namespace Incrementalist.Cmd.Commands
             }
         }
     }
-} 
+}

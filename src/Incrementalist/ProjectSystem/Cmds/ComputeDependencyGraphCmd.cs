@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="ComputeDependencyGraphCmd.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                 Logger.LogDebug("No affected projects found. Skipping dependency graph computation.");
                 return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             }
-                
+
 
             /*
              * Special case: in instances where the project files themselves are modified,
@@ -57,8 +57,8 @@ namespace Incrementalist.ProjectSystem.Cmds
                     additionalProjectIds.AddRange(_solution.Projects
                         .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key.Path)).Select(x => x.Id));
             }
-            
-            if(additionalProjectIds.Count > 0)
+
+            if (additionalProjectIds.Count > 0)
                 Logger.LogDebug("Found {Count} additional project IDs in affected files.", additionalProjectIds.Count);
 
             var ds = _solution.GetProjectDependencyGraph();
@@ -71,7 +71,8 @@ namespace Incrementalist.ProjectSystem.Cmds
                 {
                     {
                         new AbsolutePath(_solution.FilePath),
-                        _solution.Projects.Where(c => c.FilePath != null).Select(x => new AbsolutePath(x.FilePath!)).ToList()!
+                        _solution.Projects.Where(c => c.FilePath != null).Select(x => new AbsolutePath(x.FilePath!))
+                            .ToList()!
                     }
                 };
             }
@@ -80,9 +81,9 @@ namespace Incrementalist.ProjectSystem.Cmds
                 .Where(c => c.Value.ProjectId != null)
                 .Select(x => x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
-            
+
             Logger.LogDebug("Evaluating {Count} unique project IDs.", uniqueProjectIds.Count);
-            
+
             var graphs = uniqueProjectIds.ToDictionary(x => x,
                 v => ds.GetProjectsThatTransitivelyDependOnThisProject(v).ToList());
 
@@ -93,10 +94,10 @@ namespace Incrementalist.ProjectSystem.Cmds
             foreach (var r in independentGraphs)
             {
                 var projectPath = GetProjectFilePath(r.Key);
-                
-                if(projectPath == null)
+
+                if (projectPath == null)
                     continue;
-                
+
                 /*
                  * BUGFIX for https://github.com/petabridge/Incrementalist/issues/63
                  *
@@ -128,7 +129,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                 var rootProject = _solution.GetProject(root);
                 if (rootProject?.FilePath == null)
                     return Array.Empty<AbsolutePath>();
-                
+
                 var results = new HashSet<AbsolutePath> { new AbsolutePath(rootProject.FilePath) };
                 foreach (var p in graph)
                 {

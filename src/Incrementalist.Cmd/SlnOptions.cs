@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="SlnOptions.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -33,7 +33,8 @@ namespace Incrementalist.Cmd
         }
     }
 
-    [Verb("run", HelpText = "Run a command against affected projects. Use the `--dry` option to test without executing.")]
+    [Verb("run",
+        HelpText = "Run a command against affected projects. Use the `--dry` option to test without executing.")]
     public sealed class RunOptions : SlnOptions
     {
         // Property to store dotnet CLI arguments that come after --
@@ -113,7 +114,7 @@ namespace Incrementalist.Cmd
                 "Glob pattern to include only matching projects in the final list. Applied after analyzing dependencies.",
             Required = false)]
         public IEnumerable<string>? TargetGlobs { get; set; }
-        
+
         /// <summary>
         /// Needed for configuration merging.
         /// </summary>

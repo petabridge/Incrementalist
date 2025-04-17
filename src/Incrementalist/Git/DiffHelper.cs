@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="DiffHelper.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -23,17 +23,19 @@ namespace Incrementalist.Git
 
             // Get all changes between target branch and current state (including both staged and unstaged)
             var status = repo.RetrieveStatus();
-            
+
             // Add staged changes
             foreach (var staged in status.Staged)
             {
-                changes.Add(new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, staged.FilePath))));
+                changes.Add(
+                    new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, staged.FilePath))));
             }
 
             // Add unstaged changes
             foreach (var unstaged in status.Modified.Concat(status.Added).Concat(status.Untracked))
             {
-                changes.Add(new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, unstaged.FilePath))));
+                changes.Add(
+                    new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, unstaged.FilePath))));
             }
 
             // Add changes between target branch and HEAD

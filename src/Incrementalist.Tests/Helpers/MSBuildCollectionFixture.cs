@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="MSBuildCollectionFixture.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -27,4 +33,4 @@ namespace Incrementalist.Tests.Helpers
             Workspace?.Dispose();
         }
     }
-} 
+}

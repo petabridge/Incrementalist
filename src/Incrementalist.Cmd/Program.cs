@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -84,9 +84,9 @@ namespace Incrementalist.Cmd
                     .AddConsole()
                     .SetMinimumLevel(minLevel);
             });
-            
+
             // Check if we are creating a configuration file
-            
+
             if (cmdConfiguration is CreateConfigOptions createConfigOptions)
             {
                 var createConfigTask =
@@ -102,7 +102,8 @@ namespace Incrementalist.Cmd
             return exitCode;
         }
 
-        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory, bool loadedConfig)
+        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory,
+            bool loadedConfig)
         {
             // Create a logger from the factory
             ILogger logger = loggerFactory.CreateLogger<Program>();
@@ -113,7 +114,7 @@ namespace Incrementalist.Cmd
                 {
                     logger.LogInformation("Loaded configuration file: {ConfigFile}", cmdOptions.ConfigFile);
                 }
-                
+
                 var pwd = new AbsolutePath(
                     Path.GetFullPath(cmdOptions.WorkingDirectory ?? Directory.GetCurrentDirectory()));
 
@@ -184,7 +185,8 @@ namespace Incrementalist.Cmd
             }
         }
 
-        private static async Task AnalyzeFolderDiff(ListFoldersOptions options, AbsolutePath workingFolder, ILogger logger)
+        private static async Task AnalyzeFolderDiff(ListFoldersOptions options, AbsolutePath workingFolder,
+            ILogger logger)
         {
             /*
              * options.SolutionFilePath can be null here, but it won't affect this task
@@ -274,21 +276,20 @@ namespace Incrementalist.Cmd
                     default:
                         throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
                 }
-                
+
                 var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
 
                 if (!projectsToRebuild.Any())
                 {
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
-                    
+
                     // log an empty file anyway
                     await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
                     return;
                 }
-                
+
                 logger.LogInformation("Calculating dry run....");
 
-                
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
@@ -298,7 +299,8 @@ namespace Incrementalist.Cmd
                 else
                 {
                     logger.LogInformation("{BuildType} required:", buildType);
-                    logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}", projectsToRebuild.Count, affectedFilesStr);
+                    logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}",
+                        projectsToRebuild.Count, affectedFilesStr);
                 }
             }
         }
@@ -321,7 +323,7 @@ namespace Incrementalist.Cmd
             ILogger logger)
         {
             var listingFolders = options is ListFoldersOptions;
-            
+
             if (affectedFilesCount == 0)
             {
                 logger.LogInformation("No changes detected by Incrementalist when analyzing {FileSysType}.",
