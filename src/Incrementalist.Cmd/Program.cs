@@ -112,7 +112,8 @@ namespace Incrementalist.Cmd
             {
                 if (loadedConfig)
                 {
-                    logger.LogInformation("Loaded configuration file: {ConfigFile}", cmdOptions.ConfigFile);
+                    var configFileName = cmdOptions.ConfigFile ?? Path.Combine(IncrementalistConfig.IncrementalistDirectory, IncrementalistConfig.DefaultConfigFileName);
+                    logger.LogInformation("Loaded configuration file: {ConfigFile}", configFileName);
                 }
 
                 var pwd = new AbsolutePath(
