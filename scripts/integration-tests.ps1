@@ -674,6 +674,93 @@ function Test-CreateConfigOverwrite {
     }
 }
 
+# Test creating and using a custom config file
+function Test-CreateAndUseConfig {
+    param($ProjectPath, $Configuration, $TestResultsDir)
+    
+    $tempConfigName = "test-incrementalist-config-$([guid]::NewGuid()).json"
+    $tempConfigPath = Join-Path $TestResultsDir $tempConfigName
+    $customOutputFile = Join-Path $TestResultsDir "custom-output-$([guid]::NewGuid()).txt"
+    
+    Invoke-IncrementalistTest -TestName "Create and use custom config file" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
+        try {
+            # Step 1: Create a custom config with specific settings
+            Write-Host "Creating custom config at $tempConfigPath with output file set to $customOutputFile"
+            $exitCode1 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @(
+                "create-config", 
+                "--config", $tempConfigPath, 
+                "-b", "dev", 
+                "--file", $customOutputFile,
+                "--verbose",
+                "--parallel"
+            )
+            
+            if ($exitCode1 -ne 0) {
+                throw "Failed to create custom config with exit code $exitCode1"
+            }
+            
+            # Verify the config file was created
+            if (-not (Test-Path $tempConfigPath)) {
+                throw "Config file was not created at $tempConfigPath"
+            }
+            
+            # Verify config contents contain our custom settings
+            $configContent = Get-Content $tempConfigPath | ConvertFrom-Json
+            Write-Host "Loaded config content:" -ForegroundColor Cyan
+            $configContent | ConvertTo-Json | Write-Host -ForegroundColor Cyan
+            
+            if ($configContent.outputFile -ne $customOutputFile) {
+                throw "Config file does not contain the expected output file: $customOutputFile"
+            }
+            
+            if ($configContent.verbose -ne $true) {
+                throw "Config file does not have verbose enabled"
+            }
+            
+            if ($configContent.runInParallel -ne $true) {
+                throw "Config file does not have runInParallel enabled"
+            }
+            
+            # Step 2: Run Incrementalist using the custom config
+            Write-Host "Running Incrementalist with custom config"
+            $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @(
+                "run", 
+                "--dry",  # Dry run to just list affected projects
+                "--config", $tempConfigPath
+            )
+            
+            if ($exitCode2 -ne 0) {
+                throw "Failed to run with custom config with exit code $exitCode2"
+            }
+            
+            # Step 3: Verify the output was written to the custom location
+            if (-not (Test-Path $customOutputFile)) {
+                throw "Custom output file was not created at $customOutputFile"
+            }
+            
+            $outputContent = Get-Content $customOutputFile -ErrorAction SilentlyContinue
+            Write-Host "Custom output file content:" -ForegroundColor Cyan
+            $outputContent | ForEach-Object { Write-Host "  $_" -ForegroundColor Cyan }
+            
+            # This test is only valid if there are actually affected projects
+            if ($outputContent.Count -eq 0) {
+                Write-Host "No affected projects found. This is acceptable if there are no changes." -ForegroundColor Yellow
+            }
+            
+            return 0 # Success
+        }
+        finally {
+            # Cleanup
+            if (Test-Path $tempConfigPath) {
+                Remove-Item -Path $tempConfigPath -Force -ErrorAction SilentlyContinue
+            }
+            if (Test-Path $customOutputFile) {
+                Remove-Item -Path $customOutputFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 # Main execution
 Write-Host "Running Incrementalist integration tests in $ExecutionMode mode..." -ForegroundColor Cyan
 $testResultsDir = Initialize-TestEnvironment
@@ -693,6 +780,7 @@ foreach ($project in $incrementalistProjects) {
     # Run config tests
     Test-CreateConfigCustomPath -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
     Test-CreateConfigOverwrite -ProjectPath $project.FullName -Configuration $Configuration
+    Test-CreateAndUseConfig -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir
     
     # Run all test scenarios
     Test-FoldersOnly -ProjectPath $project.FullName -Configuration $Configuration -TestResultsDir $testResultsDir

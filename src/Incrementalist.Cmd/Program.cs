@@ -60,8 +60,10 @@ namespace Incrementalist.Cmd
 
             // Load configuration file if applicable
             IncrementalistConfig? config = null;
+            bool haveConfig = false;
             if (IncrementalistConfig.TryLoad(cmdConfiguration?.ConfigFile, out var loadedConfig))
             {
+                haveConfig = true;
                 config = loadedConfig;
             }
 
@@ -82,7 +84,7 @@ namespace Incrementalist.Cmd
                     .AddConsole()
                     .SetMinimumLevel(minLevel);
             });
-
+            
             // Check if we are creating a configuration file
             
             if (cmdConfiguration is CreateConfigOptions createConfigOptions)
@@ -94,19 +96,24 @@ namespace Incrementalist.Cmd
                 return configResult;
             }
 
-            var exitCode = await RunIncrementalist(cmdConfiguration, loggerFactory);
+            var exitCode = await RunIncrementalist(cmdConfiguration, loggerFactory, haveConfig);
 
             ResetTitle();
             return exitCode;
         }
 
-        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory)
+        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory, bool loadedConfig)
         {
             // Create a logger from the factory
             ILogger logger = loggerFactory.CreateLogger<Program>();
 
             try
             {
+                if (loadedConfig)
+                {
+                    logger.LogInformation("Loaded configuration file: {ConfigFile}", cmdOptions.ConfigFile);
+                }
+                
                 var pwd = new AbsolutePath(
                     Path.GetFullPath(cmdOptions.WorkingDirectory ?? Directory.GetCurrentDirectory()));
 
@@ -267,32 +274,46 @@ namespace Incrementalist.Cmd
                     default:
                         throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
                 }
+                
+                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
 
                 if (!projectsToRebuild.Any())
                 {
                     logger.LogInformation("No changes detected by Incrementalist when analyzing solution");
+                    
+                    // log an empty file anyway
+                    await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
                     return;
                 }
                 
                 logger.LogInformation("Calculating dry run....");
 
-                var affectedFilesStr = string.Join(Environment.NewLine, projectsToRebuild);
+                
 
                 // Check to see if we're planning on writing out to the file system or not.
                 if (!string.IsNullOrEmpty(options.OutputFile))
                 {
-                    logger.LogInformation(
-                        "{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
-                        buildType,
-                        projectsToRebuild.Count,
-                        options.OutputFile);
-                    await File.WriteAllTextAsync(options.OutputFile, affectedFilesStr);
+                    await WriteOutputFileAsync(options, logger, buildType, projectsToRebuild, affectedFilesStr);
                 }
                 else
                 {
                     logger.LogInformation("{BuildType} required:", buildType);
                     logger.LogInformation("{AffectedProjects} affected projects: {AllProjectList}", projectsToRebuild.Count, affectedFilesStr);
                 }
+            }
+        }
+
+        private static async Task WriteOutputFileAsync(RunOptions options, ILogger logger, string buildType,
+            IReadOnlyList<AbsolutePath> projectsToRebuild, string affectedFilesStr)
+        {
+            if (!string.IsNullOrEmpty(options.OutputFile))
+            {
+                logger.LogInformation(
+                    "{BuildType} required - {AffectedProjects} affected projects - writing out to {OutputFilePath}",
+                    buildType,
+                    projectsToRebuild.Count,
+                    options.OutputFile);
+                await File.WriteAllTextAsync(options.OutputFile, affectedFilesStr);
             }
         }
 
