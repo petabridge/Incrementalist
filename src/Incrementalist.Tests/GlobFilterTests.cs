@@ -205,7 +205,7 @@ public class GlobFilterTests
             })]
         // Target tests, skip all -> Should be empty
         [InlineData(new[] { "tests/**" }, new[] { "**/*" }, new string[] { })]
-        [InlineData(new[] { "**/*ProjectA*", "**/samples/*.csproj" }, new[] { "tests/**" }, new
+        [InlineData(new[] { "**/*ProjectA*", "samples/**/*.*sproj" }, new[] { "tests/**" }, new
             []
             {
                 // should filter out the ProjectA tests, but keep ProjectA itself and the samples
