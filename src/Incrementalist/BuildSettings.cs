@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BuildSettings.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -18,7 +18,8 @@ namespace Incrementalist
     {
         public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
 
-        public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory, IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs, TimeSpan? timeoutDuration = null)
+        public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory,
+            IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs, TimeSpan? timeoutDuration = null)
         {
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
@@ -52,12 +53,12 @@ namespace Incrementalist
         ///     prior to cancelling it.
         /// </summary>
         public TimeSpan TimeoutDuration { get; }
-        
+
         /// <summary>
         /// Globs to skip when searching for project files.
         /// </summary>
         public IReadOnlyList<string> SkipGlobs { get; }
-        
+
         /// <summary>
         /// Exclude all projects that don't match the given globs.
         /// </summary>

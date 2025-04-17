@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="ConfigFileTests.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2023 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ namespace Incrementalist.Tests.Config
                 // CLI options - should override config
                 GitBranch = "dev",
                 TimeoutMinutes = 3,
-                
+
                 // Run command options that don't come from config
                 DotNetArgs = ["build", "--configuration", "Release"]
             };
@@ -117,13 +117,13 @@ namespace Incrementalist.Tests.Config
             // Assert - CLI options should override config
             Assert.Equal("dev", merged.GitBranch); // From CLI
             Assert.Equal(3, merged.TimeoutMinutes); // From CLI
-            
+
             // Config values should be used when CLI doesn't specify
             Assert.Equal("MySolution.sln", merged.SolutionFilePath); // From config
             Assert.Equal("output.txt", merged.OutputFile); // From config
             Assert.True(merged.Verbose); // From config
             Assert.True(merged.RunInParallel); // From config
-            
+
             // Command-specific options should be preserved
             Assert.Equal(3, merged.DotNetArgs.Length);
         }
@@ -146,7 +146,7 @@ namespace Incrementalist.Tests.Config
             Assert.False(options.RunInParallel);
             Assert.False(options.FailOnNoProjects);
         }
-        
+
         [Fact]
         public async Task CreateConfigFile_WithGlobs_RoundTripSerialization()
         {
@@ -154,14 +154,14 @@ namespace Incrementalist.Tests.Config
             var configPath = Path.GetTempFileName();
             var skipGlobs = new[] { "**/obj/**", "**/bin/**" };
             var targetGlobs = new[] { "src/**/*.csproj", "tests/**/*.csproj" };
-            
+
             var options = new CreateConfigOptions()
             {
                 ConfigFile = configPath, // Specify path for CreateConfigFileTask
                 SkipGlobs = skipGlobs,
                 TargetGlobs = targetGlobs
             };
-            
+
             var createConfigTask = new CreateConfigFileTask(options, NullLogger.Instance);
 
             try
@@ -173,16 +173,16 @@ namespace Incrementalist.Tests.Config
                 // Assert - load the config back and verify globs
                 Assert.True(IncrementalistConfig.TryLoad(configPath, out var loadedConfig));
                 Assert.NotNull(loadedConfig);
-                
+
                 Assert.Equivalent(skipGlobs, loadedConfig.SkipGlob);
                 Assert.Equivalent(targetGlobs, loadedConfig.TargetGlob);
             }
             finally
             {
                 // Clean up
-                if(File.Exists(configPath))
+                if (File.Exists(configPath))
                     File.Delete(configPath);
             }
         }
     }
-} 
+}

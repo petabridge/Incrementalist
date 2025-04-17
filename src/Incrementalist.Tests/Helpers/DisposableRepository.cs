@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="DisposableRepository.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -35,9 +35,9 @@ namespace Incrementalist.Tests.Helpers
                                                # Uncomment if you have tasks that create the project's static files in wwwroot
                                                #wwwroot/
                                                """;
-        
+
         public const string GitIgnoreFileName = ".gitignore";
-        
+
         /// <summary>
         ///     Since it might take a few tries to delete the Git repository.
         /// </summary>
@@ -69,7 +69,7 @@ namespace Incrementalist.Tests.Helpers
                 }
                 catch (Exception)
                 {
-                    if (attempt < MaxDeleteAttempts) Thread.Sleep(100 + (int) Math.Pow(10, attempt - 1));
+                    if (attempt < MaxDeleteAttempts) Thread.Sleep(100 + (int)Math.Pow(10, attempt - 1));
                 }
         }
 
@@ -136,7 +136,7 @@ namespace Incrementalist.Tests.Helpers
         {
             // need to traverse the solution and write the entire graph
             // of projects to disk
-            
+
             // write the solution first
             var solutionText = testSolutionModel.Serialize();
             WriteFile(testSolutionModel.FileName.Name, solutionText);
@@ -164,7 +164,7 @@ namespace Incrementalist.Tests.Helpers
                 var serializedProject = project.Serialize();
                 CreateDirectory(project.RelativePathFromRepository);
                 WriteFile(project.CompletePath, serializedProject);
-                
+
                 foreach (var file in project.IncludedFiles)
                 {
                     var fullPath = Path.Combine(project.RelativePathFromRepository, file.Name);
@@ -208,7 +208,7 @@ namespace Incrementalist.Tests.Helpers
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
         public DisposableRepository WriteFile(SampleFile sampleFile) =>
             WriteFile(sampleFile.Name, sampleFile.Content);
-        
+
         /// <summary>
         ///     Delete an existing file from the repository.
         /// </summary>
@@ -225,7 +225,7 @@ namespace Incrementalist.Tests.Helpers
         public DisposableRepository AddOrModifyProjectFile(ProjectModel project, SampleFile sampleFile)
         {
             var filePath = Path.Combine(project.RelativePathFromRepository, sampleFile.Name);
-            
+
             // this will overwrite the file if it already exists
             WriteFile(filePath, sampleFile.Content);
             return this;

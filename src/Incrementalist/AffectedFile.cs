@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="AffectedFile.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ namespace Incrementalist
             unchecked
             {
                 var hashCode = Path != null ? Path.GetHashCode() : 0;
-                hashCode = (hashCode * 397) ^ (int) FileType;
+                hashCode = (hashCode * 397) ^ (int)FileType;
                 hashCode = (hashCode * 397) ^ (Project != null ? Project.GetHashCode() : 0);
                 return hashCode;
             }

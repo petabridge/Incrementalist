@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="FSharpProjectsTrackingSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Threading.Tasks;
 using Incrementalist.Cmd.Commands;
@@ -15,7 +21,7 @@ namespace Incrementalist.Tests.Dependencies
         private readonly ITestOutputHelper _outputHelper;
         private readonly MSBuildWorkspace _workspace;
         public DisposableRepository Repository { get; }
-        
+
         public FSharpProjectsTrackingSpecs(ITestOutputHelper outputHelper, MSBuildFixture fixture)
         {
             _outputHelper = outputHelper;
@@ -27,7 +33,7 @@ namespace Incrementalist.Tests.Dependencies
         {
             Repository.Dispose();
         }
-        
+
         [Fact]
         public async Task FSharpProjectDiff_should_be_tracked()
         {
@@ -46,9 +52,10 @@ namespace Incrementalist.Tests.Dependencies
                 .WriteFile(sample.CSharpProjectFile.Name, sample.CSharpProjectFile.Content + " ")
                 .WriteFile(sample.FSharpProjectFile.Name, sample.FSharpProjectFile.Content + " ")
                 .Commit("Updated both project files");
-            
+
             var logger = new TestOutputLogger(_outputHelper);
-            var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath, [],
+                []);
             var emitTask = new EmitDependencyGraphTask(settings, _workspace, logger);
             var buildResult = await emitTask.Run();
 

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="SolutionFinderSpecs.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2023 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ namespace Incrementalist.Tests.ProjectSystem
             Assert.Single(solutions);
             Assert.EndsWith("MySolution.sln", solutions.First().Path);
         }
-        
+
         /// <summary>
         /// https://github.com/petabridge/Incrementalist/issues/365
         /// </summary>
@@ -80,7 +80,7 @@ namespace Incrementalist.Tests.ProjectSystem
             // Arrange
             var solutionContent = "dummy solution content";
             _repository.WriteFile("Solution1.sln", solutionContent)
-                      .WriteFile("Solution2.sln", solutionContent);
+                .WriteFile("Solution2.sln", solutionContent);
 
             // Act
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
@@ -124,7 +124,7 @@ namespace Incrementalist.Tests.ProjectSystem
             // Arrange
             const string solutionContent = "dummy solution content";
             _repository.WriteFile("Solution1.sln", solutionContent)
-                      .WriteFile("Test.sln", solutionContent);
+                .WriteFile("Test.sln", solutionContent);
 
             // Act
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath, "Test*.sln").ToList();
@@ -141,10 +141,11 @@ namespace Incrementalist.Tests.ProjectSystem
             const string solutionContent = "dummy solution content";
             Directory.CreateDirectory(Path.Combine(_repository.BasePath.Path, "src"));
             _repository.WriteFile("Solution1.sln", solutionContent)
-                      .WriteFile("src/Solution2.sln", solutionContent);
+                .WriteFile("src/Solution2.sln", solutionContent);
 
             // Act - TopDirectoryOnly
-            var topDirSolutions = SolutionFinder.GetSolutions(_repository.BasePath, searchOption: SearchOption.TopDirectoryOnly).ToList();
+            var topDirSolutions = SolutionFinder
+                .GetSolutions(_repository.BasePath, searchOption: SearchOption.TopDirectoryOnly).ToList();
 
             // Assert
             Assert.Single(topDirSolutions);
@@ -157,8 +158,8 @@ namespace Incrementalist.Tests.ProjectSystem
             // Arrange
             const string solutionContent = "dummy solution content";
             _repository.WriteFile("A.Solution.sln", solutionContent)
-                      .WriteFile("B.Solution.sln", solutionContent)
-                      .WriteFile("C.Solution.sln", solutionContent);
+                .WriteFile("B.Solution.sln", solutionContent)
+                .WriteFile("C.Solution.sln", solutionContent);
 
             // Act
             var solutions = SolutionFinder.GetSolutions(_repository.BasePath).ToList();
@@ -168,9 +169,9 @@ namespace Incrementalist.Tests.ProjectSystem
             var orderedSolutions = solutions.Select(s => Path.GetFileName(s.Path)).OrderBy(x => x).ToList();
             for (var i = 1; i < orderedSolutions.Count; i++)
             {
-                Assert.True(string.CompareOrdinal(orderedSolutions[i - 1], orderedSolutions[i]) <= 0, 
+                Assert.True(string.CompareOrdinal(orderedSolutions[i - 1], orderedSolutions[i]) <= 0,
                     $"Solutions are not in ascending order: {orderedSolutions[i - 1]} comes after {orderedSolutions[i]}");
             }
         }
     }
-} 
+}

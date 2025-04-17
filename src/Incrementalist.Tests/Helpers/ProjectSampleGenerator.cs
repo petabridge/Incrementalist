@@ -1,4 +1,8 @@
-#nullable enable
+// -----------------------------------------------------------------------
+// <copyright file="ProjectSampleGenerator.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
@@ -10,8 +14,6 @@ using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Tests.Helpers
 {
-
-    
     /// <summary>
     /// ProjectSampleGenerator
     /// </summary>
@@ -22,11 +24,13 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         public static ProjectWithImportSample GetProjectWithImportSample(string projectFileName)
         {
-            var projectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ProjectFileWithImportSample.xml"));
-            var importedPropsContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ImportedPropsSample.xml"));
-            
+            var projectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory,
+                "../../../Samples/ProjectFileWithImportSample.xml"));
+            var importedPropsContent =
+                File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/ImportedPropsSample.xml"));
+
             return new ProjectWithImportSample(
-                new SampleFile(projectFileName, projectContent), 
+                new SampleFile(projectFileName, projectContent),
                 new SampleFile("imported.props", importedPropsContent));
         }
 
@@ -35,13 +39,16 @@ namespace Incrementalist.Tests.Helpers
         /// </summary>
         public static FSharpSampleSolution GetFSharpSolutionSample(string solutionName)
         {
-            var solutionContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/Solution.xml"));
-            var fsharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/FSharpProject.xml"));
-            var csharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../Samples/FSharpSampleSolution/CSharpProject.xml"));
-            
+            var solutionContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory,
+                "../../../Samples/FSharpSampleSolution/Solution.xml"));
+            var fsharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory,
+                "../../../Samples/FSharpSampleSolution/FSharpProject.xml"));
+            var csharpProjectContent = File.ReadAllText(Path.Combine(AppContext.BaseDirectory,
+                "../../../Samples/FSharpSampleSolution/CSharpProject.xml"));
+
             return new FSharpSampleSolution(
-                new SampleFile(solutionName, solutionContent), 
-                new SampleFile("CSharpProject.csproj", csharpProjectContent), 
+                new SampleFile(solutionName, solutionContent),
+                new SampleFile("CSharpProject.csproj", csharpProjectContent),
                 new SampleFile("FSharpProject.fsproj", fsharpProjectContent));
         }
 
@@ -59,7 +66,8 @@ namespace Incrementalist.Tests.Helpers
             foreach (var projectName in projectNames)
             {
                 var projectGuid = Guid.NewGuid().ToString("B").ToUpperInvariant();
-                sb.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{projectName}\", \"src\\{projectName}\\{projectName}.csproj\", \"{projectGuid}\"");
+                sb.AppendLine(
+                    $"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{projectName}\", \"src\\{projectName}\\{projectName}.csproj\", \"{projectGuid}\"");
                 sb.AppendLine("EndProject");
             }
 
@@ -96,6 +104,7 @@ namespace Incrementalist.Tests.Helpers
                 {
                     sb.AppendLine($"    <ProjectReference Include=\"..\\{reference}\\{reference}.csproj\" />");
                 }
+
                 sb.AppendLine("  </ItemGroup>");
             }
 
@@ -122,6 +131,7 @@ namespace Incrementalist.Tests.Helpers
             /// Name of the file is not important here
             /// </remarks>
             public SampleFile ProjectFile { get; }
+
             /// <summary>
             /// Imported props file info
             /// </summary>
@@ -130,13 +140,14 @@ namespace Incrementalist.Tests.Helpers
             /// </remarks>
             public SampleFile ImportedPropsFile { get; }
         }
-        
+
         /// <summary>
         /// FSharp sample solution data
         /// </summary>
         public class FSharpSampleSolution
         {
-            public FSharpSampleSolution(SampleFile solutionFile, SampleFile fSharpProjectFile, SampleFile cSharpProjectFile)
+            public FSharpSampleSolution(SampleFile solutionFile, SampleFile fSharpProjectFile,
+                SampleFile cSharpProjectFile)
             {
                 SolutionFile = solutionFile;
                 FSharpProjectFile = fSharpProjectFile;
@@ -147,10 +158,12 @@ namespace Incrementalist.Tests.Helpers
             /// Solution file info.
             /// </summary>
             public SampleFile SolutionFile { get; }
+
             /// <summary>
             /// FSharp project file info. Name of the project is used in solution's content
             /// </summary>
             public SampleFile FSharpProjectFile { get; }
+
             /// <summary>
             /// CSharp project file info. Name of the project is used in solution's content
             /// </summary>

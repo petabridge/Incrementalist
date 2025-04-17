@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="SolutionFinder.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ namespace Incrementalist.ProjectSystem
                 return slnFiles.Concat(slnxFiles).OrderBy(Path.GetFileName)
                     .Select(c => folderPath.ComputeRelativePathToMe(new AbsolutePath(c)));
             }
-            
+
             // Use the provided search filter
             return Directory.EnumerateFileSystemEntries(folderPath.Path, searchFilter, finalSearchOption)
                 .OrderBy(Path.GetFileName).Select(c => folderPath.ComputeRelativePathToMe(new AbsolutePath(c)));

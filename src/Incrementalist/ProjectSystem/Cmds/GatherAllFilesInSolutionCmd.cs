@@ -1,8 +1,9 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="GatherAllFilesInSolutionCmd.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
+
 #nullable enable
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -20,7 +21,8 @@ namespace Incrementalist.ProjectSystem.Cmds
     {
         private readonly AbsolutePath _workingDirectory;
 
-        public GatherAllFilesInSolutionCmd(ILogger logger, CancellationToken cancellationToken, AbsolutePath workingDirectory)
+        public GatherAllFilesInSolutionCmd(ILogger logger, CancellationToken cancellationToken,
+            AbsolutePath workingDirectory)
             : base("GatherAllSlnFiles", logger, cancellationToken)
         {
             _workingDirectory = workingDirectory;

@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CommandLineArgumentsTests.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using Xunit;
@@ -9,12 +15,13 @@ namespace Incrementalist.Tests.Commands
         private string CombineArgs(params string[] args)
         {
             // This is the same logic used in RunDotNetCommandTask
-            return string.Join(" ", args.Select(arg => 
+            return string.Join(" ", args.Select(arg =>
             {
                 if (arg.Contains(' ') || arg.Contains('"'))
                 {
                     return $"\"{arg.Replace("\"", "\\\"")}\"";
                 }
+
                 return arg;
             }));
         }
@@ -54,7 +61,7 @@ namespace Incrementalist.Tests.Commands
                 "test " +
                 "\"--collect:\\\"XPlat Code Coverage\\\"\" " +
                 "\"--logger:\\\"console;verbosity=detailed\\\"\" " +
-                "\"--results-directory:\\\"Test Results\\\"\"", 
+                "\"--results-directory:\\\"Test Results\\\"\"",
                 result);
         }
 
@@ -90,4 +97,4 @@ namespace Incrementalist.Tests.Commands
                 result);
         }
     }
-} 
+}

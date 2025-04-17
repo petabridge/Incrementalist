@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="CsharpSamples.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 namespace Incrementalist.Tests.Helpers;
 
 public static class CsharpSamples
@@ -11,7 +17,7 @@ public static class CsharpSamples
                                          }
                                      }
                                      """;
-    
+
     public const string HelloClassWithNamespace = """
                                                   namespace HelloWorld
                                                   {
@@ -24,7 +30,7 @@ public static class CsharpSamples
                                                       }
                                                   }
                                                   """;
-    
+
     // do a Goodbye class with a method that returns "Goodbye, world!"
     public const string GoodbyeClass = """
                                        public class Goodbye
@@ -35,7 +41,7 @@ public static class CsharpSamples
                                            }
                                        }
                                        """;
-    
+
     public const string GoodbyeClassWithNamespace = """
                                                     namespace GoodbyeWorld
                                                     {
@@ -48,7 +54,7 @@ public static class CsharpSamples
                                                         }
                                                     }
                                                     """;
-    
+
     // do a Foo class
     public const string FooClass = """
                                    public class Foo
@@ -59,7 +65,7 @@ public static class CsharpSamples
                                        }
                                    }
                                    """;
-    
+
     // do a Bar class
     public const string BarClass = """
                                    public class Bar

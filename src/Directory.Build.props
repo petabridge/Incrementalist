@@ -1,33 +1,34 @@
 <Project>
-  <PropertyGroup>
-    <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
-    <Authors>Petabridge</Authors>
-    <VersionPrefix>1.0.0-rc3</VersionPrefix>
-    <PackageReleaseNotes>Bug fixes and improvements:
+    <PropertyGroup>
+        <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
+        <Authors>Petabridge</Authors>
+        <VersionPrefix>1.0.0-rc3</VersionPrefix>
+        <PackageReleaseNotes>Bug fixes and improvements:
 
-* Resolved: [Not properly detecting changes to "solution-wide" files](https://github.com/petabridge/Incrementalist/issues/388)
-* Resolved: [Dependency graph calculation is not correct](https://github.com/petabridge/Incrementalist/issues/389)
-* Resolved: [Globbing does not work with absolute paths](https://github.com/petabridge/Incrementalist/issues/386)</PackageReleaseNotes>
-    <tags>build, msbuild, incremental build, roslyn, git</tags>
-    <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
-    <PackageProjectUrl>
+            * Resolved: [Not properly detecting changes to "solution-wide" files](https://github.com/petabridge/Incrementalist/issues/388)
+            * Resolved: [Dependency graph calculation is not correct](https://github.com/petabridge/Incrementalist/issues/389)
+            * Resolved: [Globbing does not work with absolute paths](https://github.com/petabridge/Incrementalist/issues/386)
+        </PackageReleaseNotes>
+        <tags>build, msbuild, incremental build, roslyn, git</tags>
+        <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
+        <PackageProjectUrl>
             https://github.com/petabridge/Incrementalist
         </PackageProjectUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  <PropertyGroup>
-    <NBenchVersion>1.2.2</NBenchVersion>
-    <XunitVersion>2.9.3</XunitVersion>
-    <TestSdkVersion>17.13.0</TestSdkVersion>
-    <RoslynVersion>4.13.0</RoslynVersion>
-    <NugetVersion>6.13.2</NugetVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
-    <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\" />
-  </ItemGroup>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+    <PropertyGroup>
+        <NBenchVersion>1.2.2</NBenchVersion>
+        <XunitVersion>2.9.3</XunitVersion>
+        <TestSdkVersion>17.13.0</TestSdkVersion>
+        <RoslynVersion>4.13.0</RoslynVersion>
+        <NugetVersion>6.13.2</NugetVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\"/>
+        <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\"/>
+    </ItemGroup>
 </Project>

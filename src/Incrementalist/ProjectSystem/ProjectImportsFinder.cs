@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="ProjectImportsFinder.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,7 +25,7 @@ namespace Incrementalist.ProjectSystem
         public AbsolutePath Path { get; }
         public SlnFile File { get; }
     }
-    
+
     public sealed class ImportedFile
     {
         public ImportedFile(AbsolutePath path, IImmutableList<SlnFileWithPath> dependentProjects)
@@ -32,12 +38,13 @@ namespace Incrementalist.ProjectSystem
         /// List of project files that are importing this file
         /// </summary>
         public IImmutableList<SlnFileWithPath> DependentProjects { get; }
+
         /// <summary>
         /// File path
         /// </summary>
         public AbsolutePath Path { get; }
     }
-    
+
     /// <summary>
     /// Helps finding all imported files paths and their dependant projects
     /// </summary>
@@ -48,17 +55,18 @@ namespace Incrementalist.ProjectSystem
         /// </summary>
         /// <param name="projectFiles">List of project files with their paths</param>
         /// <returns>Dictionary of imported files with their paths</returns>
-        public static Dictionary<AbsolutePath, ImportedFile> FindProjectImports(IEnumerable<SlnFileWithPath> projectFiles)
+        public static Dictionary<AbsolutePath, ImportedFile> FindProjectImports(
+            IEnumerable<SlnFileWithPath> projectFiles)
         {
             var imports = new ConcurrentDictionary<AbsolutePath, IImmutableList<SlnFileWithPath>>();
-            
+
             Parallel.ForEach(projectFiles, projectFile =>
             {
                 if (projectFile.File.FileType != FileType.Project)
                     return;
 
                 var xmlDoc = ParseXmlDocument(projectFile.Path.Path);
-                
+
                 var projectDir = Path.GetDirectoryName(projectFile.Path.Path);
                 if (string.IsNullOrEmpty(projectDir))
                     return;
@@ -67,16 +75,17 @@ namespace Incrementalist.ProjectSystem
                 var importTags = xmlDoc.DocumentElement?.SelectNodes("//Import");
                 if (importTags == null)
                     return;
-                
+
                 foreach (XmlNode importTag in importTags)
                 {
                     var importedFilePath = importTag.Attributes?.GetNamedItem("Project")?.Value;
                     if (string.IsNullOrEmpty(importedFilePath))
                         continue;
-                    
-                    var importedFileFillPath = new AbsolutePath(Path.GetFullPath(Path.Combine(projectDir, importedFilePath)));
+
+                    var importedFileFillPath =
+                        new AbsolutePath(Path.GetFullPath(Path.Combine(projectDir, importedFilePath)));
                     imports.AddOrUpdate(importedFileFillPath,
-                        addValue: ImmutableList<SlnFileWithPath>.Empty.Add(projectFile), 
+                        addValue: ImmutableList<SlnFileWithPath>.Empty.Add(projectFile),
                         updateValueFactory: (_, dependentProjects) => dependentProjects.Add(projectFile));
                 }
             });

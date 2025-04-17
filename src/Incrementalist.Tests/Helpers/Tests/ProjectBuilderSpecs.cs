@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ProjectBuilderSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -56,17 +62,17 @@ public class ProjectBuilderSpecs
             .WithProjectType(outputType)
             .WithLanguage(language)
             .Build();
-        
+
         var serialized = project.Serialize();
-        
+
         var targetFrameworks = project.TargetFrameworks.Serialize();
         var outputTypeSerialized = project.ProjectProperties
             .Single(c => c.PropertyType == PropertyType.OutputType).Serialize();
-        
+
         // assert
         var expectedFileExtension = language == ProjectLanguage.CSharp ? ".csproj" : ".fsproj";
         var expectedProjectPath = Path.Combine(projectPath, $"{projectName}{expectedFileExtension}");
-        
+
         Assert.Equal(projectId, project.ProjectId);
         Assert.Equal(expectedProjectPath, project.CompletePath);
         Assert.Contains(targetFrameworks, serialized);
@@ -82,28 +88,28 @@ public class ProjectBuilderSpecs
         var projectIdA = ProjectId.CreateFromSerialized(guidA);
         var projectPathA = @"src/MyProjectA/";
         var projectNameA = "MyProjectA";
-        
+
         var guidB = new Guid("00000000-0000-0000-0000-000000000002");
         var projectIdB = ProjectId.CreateFromSerialized(guidB);
         var projectPathB = @"src/MyProjectB/";
         var projectNameB = "MyProjectB";
-        
+
         // act
         var projectBuilderA = new ProjectBuilder(projectIdA, projectPathA, projectNameA);
         var projectA = projectBuilderA
             .WithProjectType(OutputType.Library)
             .WithLanguage(ProjectLanguage.CSharp)
             .Build();
-        
+
         var projectBuilderB = new ProjectBuilder(projectIdB, projectPathB, projectNameB);
         var projectB = projectBuilderB
             .WithProjectType(OutputType.Library)
             .WithLanguage(ProjectLanguage.CSharp)
             .WithProjectReference(projectA)
             .Build();
-        
+
         var serializedB = projectB.Serialize();
-        
+
         // assert
         // Need to validate that there is a ProjectReference that uses the path "../MyProjectA/MyProjectA.csproj"
         Assert.Contains("ProjectReference Include=\"..\\MyProjectA\\MyProjectA.csproj\"", serializedB);

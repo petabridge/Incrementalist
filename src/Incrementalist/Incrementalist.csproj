@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Description>Library for running incremental, Git-based builds and tests in .NET and .NET Core.</Description>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Description>Library for running incremental, Git-based builds and tests in .NET and .NET Core.</Description>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Libgit2Sharp"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
-    <PackageReference Include="Microsoft.Extensions.Logging"/>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <InternalsVisibleTo Include="Incrementalist.Cmd" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Libgit2Sharp"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
+        <PackageReference Include="Microsoft.Extensions.Logging"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Incrementalist.Cmd"/>
+    </ItemGroup>
 </Project>

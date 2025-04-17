@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="BuildAnalysisResult.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2024 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ namespace Incrementalist
     /// <summary>
     /// Represents a result where only specific projects need to be built.
     /// </summary>
-    public sealed class IncrementalBuildResult : BuildAnalysisResult 
+    public sealed class IncrementalBuildResult : BuildAnalysisResult
     {
         public IncrementalBuildResult(IReadOnlyList<AbsolutePath> affectedProjects)
         {
@@ -37,7 +37,7 @@ namespace Incrementalist
     /// <summary>
     /// Represents a result where the entire solution needs to be built.
     /// </summary>
-    public sealed class FullSolutionBuildResult : BuildAnalysisResult 
+    public sealed class FullSolutionBuildResult : BuildAnalysisResult
     {
         public FullSolutionBuildResult(AbsolutePath solutionPath)
         {
@@ -49,4 +49,4 @@ namespace Incrementalist
         /// </summary>
         public AbsolutePath SolutionPath { get; }
     }
-} 
+}
