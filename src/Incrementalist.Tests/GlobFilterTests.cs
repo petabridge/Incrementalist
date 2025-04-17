@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="GlobFilterTests.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +20,7 @@ public class GlobFilterTests
         public class LinuxPaths
         {
             public static readonly AbsolutePath BasePath = new AbsolutePath("/usr/a/repositories/Akka.Management");
-            
+
             public static readonly IReadOnlyList<AbsolutePath> LinuxTestProjects = new List<string>
             {
                 "/usr/a/repositories/Akka.Management/src/ProjectA/ProjectA.csproj",
@@ -24,7 +30,7 @@ public class GlobFilterTests
                 "/usr/a/repositories/Akka.Management/samples/Sample1/Sample1.csproj",
                 "/usr/a/repositories/Akka.Management/samples/Sample2/Sample2.fsproj" // Different extension
             }.Select(c => new AbsolutePath(c)).ToList().AsReadOnly();
-            
+
             [Theory]
             [InlineData(new[] { "src/**/*.csproj" }, 2)] // Match src projects
             [InlineData(new[] { "src/**/*" }, 2)] // Match src projects
@@ -35,7 +41,8 @@ public class GlobFilterTests
             [InlineData(new[] { "**/src/ProjectA/ProjectA.csproj" }, 1)] // Exact match
             [InlineData(new[] { "**/ProjectA*", "**/ProjectB*" }, 4)] // Multiple patterns
             [InlineData(new[] { "SRC/**/*.csproj" }, 2)] // Case-insensitive check
-            public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs, int expectedCount)
+            public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs,
+                int expectedCount)
             {
                 // Arrange
                 var skipGlobs = Array.Empty<string>();
@@ -52,7 +59,7 @@ public class GlobFilterTests
         public class WindowsPaths
         {
             public static readonly AbsolutePath BasePath = new AbsolutePath(@"C:\repositories\Akka.Management");
-            
+
             public static readonly IReadOnlyList<AbsolutePath> WindowsTestProjects = new List<string>
             {
                 @"C:\repositories\Akka.Management\src\ProjectA\ProjectA.csproj",
@@ -62,7 +69,7 @@ public class GlobFilterTests
                 @"C:\repositories\Akka.Management\samples\Sample1\Sample1.csproj",
                 @"C:\repositories\Akka.Management\samples\Sample2\Sample2.fsproj" // Different extension
             }.Select(c => new AbsolutePath(c)).ToList().AsReadOnly();
-            
+
             [Theory]
             [InlineData(new[] { "src/**/*.csproj" }, 2)] // Match src projects
             [InlineData(new[] { "src/**/*" }, 2)] // Match src projects
@@ -73,14 +80,15 @@ public class GlobFilterTests
             [InlineData(new[] { "src/ProjectA/ProjectA.csproj" }, 1)] // Exact match
             [InlineData(new[] { "**/ProjectA*", "**/ProjectB*" }, 4)] // Multiple patterns
             [InlineData(new[] { "SRC/**" }, 2)] // Case-insensitive check
-            public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs, int expectedCount)
+            public void FilterProjects_OnlyTargetFilters_ReturnsMatchingProjects(string[] targetGlobs,
+                int expectedCount)
             {
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     // skip
                     return;
                 }
-                
+
                 // Arrange
                 var skipGlobs = Array.Empty<string>();
 
@@ -93,7 +101,7 @@ public class GlobFilterTests
             }
         }
     }
-    
+
     public class RelativePaths
     {
         public static readonly IReadOnlyList<RelativePath> TestProjects = new List<string>

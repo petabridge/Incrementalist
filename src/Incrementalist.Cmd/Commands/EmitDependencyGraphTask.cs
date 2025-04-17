@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="EmitDependencyGraphTask.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ namespace Incrementalist.Cmd.Commands
         public MSBuildWorkspace Workspace { get; }
 
         public ILogger Logger { get; }
-        
+
         // Post-process the build result
         BuildAnalysisResult FilterBuildResult(BuildAnalysisResult original, IReadOnlyList<SlnFileWithPath> allProjects)
         {
@@ -186,7 +186,7 @@ namespace Incrementalist.Cmd.Commands
         public async Task<BuildAnalysisResult> Run()
         {
             var (buildResult, allProjects) = await RunInternal();
-            
+
             // Post-process the build result
             var filteredResult = FilterBuildResult(buildResult, allProjects);
             return filteredResult;

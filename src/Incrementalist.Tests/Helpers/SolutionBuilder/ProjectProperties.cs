@@ -1,4 +1,10 @@
-﻿namespace Incrementalist.Tests.Helpers;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ProjectProperties.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Incrementalist.Tests.Helpers;
 
 public enum PropertyType
 {
@@ -35,6 +41,5 @@ public sealed record OutputTypeProperty(OutputType OutputType) : IProjectModelPr
 
 public sealed record ProjectImport(string RelativePath) : IMsBuildSerializable
 {
-
     public string Serialize() => $"<Import Project=\"{RelativePath}\" />";
 }

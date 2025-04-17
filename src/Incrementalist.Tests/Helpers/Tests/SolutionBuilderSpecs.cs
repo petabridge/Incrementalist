@@ -1,4 +1,10 @@
-﻿using System.IO;
+﻿// -----------------------------------------------------------------------
+// <copyright file="SolutionBuilderSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -30,25 +36,26 @@ public class SolutionBuilderSpecs
                     projBuilder.WithProjectReference(projectA);
                 });
             })
-            .AddProject("BuildProject", (otherProjects, projBuilder) =>
-            {
-                projBuilder.WithFile("BuildFile.cs", "using System; public class BuildFile { }");
-            }).Build();
+            .AddProject("BuildProject",
+                (otherProjects, projBuilder) =>
+                {
+                    projBuilder.WithFile("BuildFile.cs", "using System; public class BuildFile { }");
+                }).Build();
 
         var serializedSolution = solution.Serialize();
-        
+
         // assert
         Assert.Equal("TestSolution", solution.Name);
         Assert.Equal("TestSolution.sln", solution.FileName.Name);
         Assert.Equal(3, solution.FlatProjects.Count);
-        
+
         var expectedProjectNames = new[]
         {
-            Path.Join("src", "ProjectA" , "ProjectA.csproj"),
-            Path.Join("src", "ProjectB" , "ProjectB.csproj"),
-            Path.Join( "BuildProject" , "BuildProject.csproj"),
+            Path.Join("src", "ProjectA", "ProjectA.csproj"),
+            Path.Join("src", "ProjectB", "ProjectB.csproj"),
+            Path.Join("BuildProject", "BuildProject.csproj"),
         }.Select(ProjectModelSerializer.NormalizePathSeparators).ToArray();
-        
+
         Assert.Contains(expectedProjectNames[0], serializedSolution);
         Assert.Contains(expectedProjectNames[1], serializedSolution);
         Assert.Contains(expectedProjectNames[2], serializedSolution);

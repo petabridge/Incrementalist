@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="SlnOptionsParsingSpecs.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System.Linq;
 using Incrementalist.Cmd;
 using Microsoft.CodeAnalysis;
@@ -24,7 +30,7 @@ public class SlnOptionsParsingSpecs
         var args = CommandLineParser
             .SplitCommandLineIntoArguments(cliArg, true).ToArray();
         var r = TryParseSlnOptions(args, out SlnOptions? result);
-        
+
         Assert.Equal(0, r);
         Assert.NotNull(result);
     }

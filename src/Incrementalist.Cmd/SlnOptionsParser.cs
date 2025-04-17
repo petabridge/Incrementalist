@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="SlnOptionsParser.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using CommandLine;
@@ -10,7 +16,7 @@ namespace Incrementalist.Cmd;
 public static class SlnOptionsParser
 {
     public const int NON_ERROR_IMMEDIATE_EXIT_CODE = 1000;
-    
+
     public static int TryParseSlnOptions(string[] args, out SlnOptions? result)
     {
         try
@@ -40,7 +46,7 @@ public static class SlnOptionsParser
                 }, errors =>
                 {
                     var errorCode = NON_ERROR_IMMEDIATE_EXIT_CODE;
-                    foreach(var error in errors)
+                    foreach (var error in errors)
                         switch (error.Tag)
                         {
                             case ErrorType.HelpRequestedError:
@@ -51,7 +57,7 @@ public static class SlnOptionsParser
                                 errorCode = 1;
                                 break;
                         }
-                            
+
                     // error was inconsequential - like --help
                     return errorCode;
                 });

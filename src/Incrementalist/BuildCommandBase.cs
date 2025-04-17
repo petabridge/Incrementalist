@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="BuildCommandBase.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -35,7 +35,8 @@ namespace Incrementalist
 
             if (CancellationToken.IsCancellationRequested)
             {
-                Logger.LogInformation("Cancellation requested. Terminating Incrementalist at stage [{StageName}]", Name);
+                Logger.LogInformation("Cancellation requested. Terminating Incrementalist at stage [{StageName}]",
+                    Name);
                 CancellationToken.ThrowIfCancellationRequested();
             }
 

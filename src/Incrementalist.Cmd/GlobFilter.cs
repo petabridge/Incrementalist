@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="GlobFilter.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +21,8 @@ public static class GlobFilter
     /// <param name="skipGlobs">Filter out any projects that match these glob patterns.</param>
     /// <param name="targetGlobs">Only include projects that match these glob patterns.</param>
     /// <returns>The final set of filtered project paths.</returns>
-    public static IReadOnlyList<RelativePath> FilterProjects(IReadOnlyList<RelativePath> originalProjects, IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs)
+    public static IReadOnlyList<RelativePath> FilterProjects(IReadOnlyList<RelativePath> originalProjects,
+        IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs)
     {
         if (skipGlobs.Count == 0 && targetGlobs.Count == 0)
             return originalProjects;
@@ -25,7 +32,8 @@ public static class GlobFilter
         // 1. Apply targetGlobs (inclusion filter)
         if (targetGlobs.Count > 0)
         {
-            var targetMatcher = new Matcher(StringComparison.OrdinalIgnoreCase); // Use case-insensitive matching for file paths
+            var targetMatcher =
+                new Matcher(StringComparison.OrdinalIgnoreCase); // Use case-insensitive matching for file paths
             targetMatcher.AddIncludePatterns(targetGlobs);
             // Keep only projects that match at least one target pattern
             currentProjects = currentProjects.Where(p => targetMatcher.Match(p.Path).HasMatches);

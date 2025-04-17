@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
 // <copyright file="EmitAffectedFoldersTask.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2019 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -38,14 +38,16 @@ namespace Incrementalist.Cmd.Commands
 
             if (!foundRepo || repo == null)
             {
-                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.", Settings.WorkingDirectory);
+                Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.",
+                    Settings.WorkingDirectory);
                 return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             }
 
             // validate the target branch
             if (!DiffHelper.HasBranch(repo, Settings.TargetBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{BranchName}]. Shutting down.", Settings.TargetBranch);
+                Logger.LogError("Current git repository doesn't have any branch named [{BranchName}]. Shutting down.",
+                    Settings.TargetBranch);
                 return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             }
 

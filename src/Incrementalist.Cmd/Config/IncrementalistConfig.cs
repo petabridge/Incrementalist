@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="IncrementalistConfig.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2023 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ namespace Incrementalist.Cmd.Config
         /// The default configuration file name
         /// </summary>
         public const string DefaultConfigFileName = "incrementalist.json";
-        
+
         /// <summary>
         /// The default directory for Incrementalist files (cache, config)
         /// </summary>
@@ -92,12 +92,10 @@ namespace Incrementalist.Cmd.Config
         /// </summary>
         [JsonPropertyName("noCache")]
         public bool? NoCache { get; set; }
-        
-        [JsonPropertyName("skip")]
-        public string[]? SkipGlob { get; set; }
 
-        [JsonPropertyName("target")]
-        public string[]? TargetGlob { get; set; }
+        [JsonPropertyName("skip")] public string[]? SkipGlob { get; set; }
+
+        [JsonPropertyName("target")] public string[]? TargetGlob { get; set; }
 
         /// <summary>
         /// Tries to load the Incrementalist configuration from the specified file path.
@@ -114,7 +112,7 @@ namespace Incrementalist.Cmd.Config
             if (string.IsNullOrEmpty(filePath))
             {
                 // Use the current working directory if not specified in options (this function doesn't have SlnOptions)
-                var workingDir = Directory.GetCurrentDirectory(); 
+                var workingDir = Directory.GetCurrentDirectory();
                 filePath = Path.Combine(workingDir, IncrementalistDirectory, DefaultConfigFileName);
             }
 
@@ -140,4 +138,4 @@ namespace Incrementalist.Cmd.Config
             }
         }
     }
-} 
+}

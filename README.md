@@ -2,16 +2,23 @@
 
 <img src="https://raw.githubusercontent.com/petabridge/Incrementalist/refs/heads/dev/docs/incrementalist-logo-dark.svg" width="90" alt="Incrementalist Logo" />
 
-Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/) and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large .NET solutions. It helps optimize your CI/CD pipeline by building and testing only the projects affected by your changes.
+Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/)
+and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large
+.NET solutions. It helps optimize your CI/CD pipeline by building and testing only the projects affected by your
+changes.
 
 ## 🎯 When to Use Incrementalist
 
 Incrementalist is particularly valuable for:
 
-- 🏗️ **Large Solutions**: If your solution contains dozens or hundreds of projects, Incrementalist can significantly reduce build times by only building what's necessary.
-- 📦 **Monorepos**: When managing multiple applications or services in a single repository, Incrementalist helps identify and build only the affected components.
-- 🌐 **Microservice Architectures**: In repositories containing multiple microservices, build only the services impacted by your changes.
-- 🔗 **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the complete build graph.
+- 🏗️ **Large Solutions**: If your solution contains dozens or hundreds of projects, Incrementalist can significantly
+  reduce build times by only building what's necessary.
+- 📦 **Monorepos**: When managing multiple applications or services in a single repository, Incrementalist helps identify
+  and build only the affected components.
+- 🌐 **Microservice Architectures**: In repositories containing multiple microservices, build only the services impacted
+  by your changes.
+- 🔗 **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the
+  complete build graph.
 - ⚡ **CI/CD Optimization**: Reduce CI/CD pipeline execution time by skipping unnecessary builds and tests.
 
 ## ⚙️ Requirements
@@ -24,7 +31,8 @@ Incrementalist is particularly valuable for:
 Incrementalist is available in two forms:
 
 1. [Incrementalist Library](https://www.nuget.org/packages/Incrementalist/) - a .NET 8 library for programmatic use
-2. [Incrementalist.Cmd](https://www.nuget.org/packages/Incrementalist.Cmd/) - a `dotnet tool` for command-line use (recommended)
+2. [Incrementalist.Cmd](https://www.nuget.org/packages/Incrementalist.Cmd/) - a `dotnet tool` for command-line use (
+   recommended)
 
 Install the command-line tool globally:
 
@@ -60,7 +68,8 @@ incrementalist run -b dev --target-glob "src/*.Tests.csproj" -- test -c Release
 
 ### Running as a Local Tool
 
-When using Incrementalist as a local tool, you need to use `dotnet tool run` with an additional `--` before the Incrementalist commands:
+When using Incrementalist as a local tool, you need to use `dotnet tool run` with an additional `--` before the
+Incrementalist commands:
 
 ```shell
 # Get list of affected projects
@@ -83,12 +92,13 @@ dotnet incrementalist -- -b dev -f ./affected-projects.txt run -- build -c Relea
 ```
 
 > ![NOTE]
-> Don't call `dotnet tool run incrementalist` - this runs into some very annoying parse issues: https://github.com/petabridge/Incrementalist/issues/378 . Just call `dotnet incrementalist` instead.
-
+> Don't call `dotnet tool run incrementalist` - this runs into some very annoying parse
+> issues: https://github.com/petabridge/Incrementalist/issues/378 . Just call `dotnet incrementalist` instead.
 
 ## 📄 Configuration Files
 
-Incrementalist supports JSON configuration files to store commonly used settings. This eliminates the need to specify the same command-line arguments repeatedly.
+Incrementalist supports JSON configuration files to store commonly used settings. This eliminates the need to specify
+the same command-line arguments repeatedly.
 
 ```shell
 # Use default configuration file (.incrementalist/incrementalist.json)
@@ -112,7 +122,8 @@ Create a configuration file in your repository:
 }
 ```
 
-Command-line arguments take precedence over configuration file settings. See [Configuration Documentation](docs/config.md) for complete details.
+Command-line arguments take precedence over configuration file settings.
+See [Configuration Documentation](docs/config.md) for complete details.
 
 ## 🚀 Quick Start Examples
 
@@ -175,7 +186,8 @@ These files can be used in build scripts, CI/CD pipelines, or other automation t
 
 ## 🛠️ Command-Line Options
 
-Incrementalist now uses a verb-based command structure. Common options are available across all verbs, with some verb-specific options.
+Incrementalist now uses a verb-based command structure. Common options are available across all verbs, with some
+verb-specific options.
 
 ### Common Options (available for all verbs)
 
@@ -220,6 +232,7 @@ Incrementalist now uses a verb-based command structure. Common options are avail
 ### Available Verbs
 
 #### `create-config`
+
 Creates a new configuration file with current options.
 
 ```
@@ -227,6 +240,7 @@ incrementalist create-config [options]
 ```
 
 #### `list-affected-folders`
+
 List affected folders instead of .NET projects.
 
 ```
@@ -234,6 +248,7 @@ incrementalist list-affected-folders [options]
 ```
 
 #### `run`
+
 Run a command against affected projects. Use the `--dry` option to test without executing.
 
 ```
@@ -241,6 +256,7 @@ incrementalist run [options] -- [dotnet command and arguments]
 ```
 
 Additional options for `run`:
+
 ```
   --dry                 Optional. (Default: false) Performs a dry run without
                         executing any commands. Useful for testing.
@@ -269,10 +285,14 @@ incrementalist run -b dev --dry -- build -c Release --nologo
 
 ## 🌐 Filtering Projects with Glob Patterns
 
-After Incrementalist determines the initial set of affected projects based on Git changes and project dependencies, you can further refine this list using glob patterns.
+After Incrementalist determines the initial set of affected projects based on Git changes and project dependencies, you
+can further refine this list using glob patterns.
 
-- **`--target-glob "<pattern>"`**: Only includes projects whose paths match the specified glob pattern(s). If multiple patterns are provided, a project matching *any* of them will be included. This filter is applied first.
-- **`--skip-glob "<pattern>"`**: Excludes projects whose paths match the specified glob pattern(s) from the list remaining after any `--target-glob` filters have been applied. If multiple patterns are provided, a project matching *any* of them will be excluded.
+- **`--target-glob "<pattern>"`**: Only includes projects whose paths match the specified glob pattern(s). If multiple
+  patterns are provided, a project matching *any* of them will be included. This filter is applied first.
+- **`--skip-glob "<pattern>"`**: Excludes projects whose paths match the specified glob pattern(s) from the list
+  remaining after any `--target-glob` filters have been applied. If multiple patterns are provided, a project matching
+  *any* of them will be excluded.
 
 Both options can be specified multiple times on the command line.
 

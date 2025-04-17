@@ -1,17 +1,20 @@
-function UpdateVersionAndReleaseNotes {
+function UpdateVersionAndReleaseNotes
+{
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [PSCustomObject]$ReleaseNotesResult,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$XmlFilePath
     )
 
-    if (-not (Test-Path $XmlFilePath)) {
+    if (-not (Test-Path $XmlFilePath))
+    {
         throw "Directory.Build.props not found at: $XmlFilePath"
     }
 
-    try {
+    try
+    {
         # Load XML
         $xmlContent = New-Object XML
         $xmlContent.Load($XmlFilePath)
@@ -26,7 +29,8 @@ function UpdateVersionAndReleaseNotes {
         # Save the updated XML
         $xmlContent.Save($XmlFilePath)
     }
-    catch {
+    catch
+    {
         throw "Failed to update Directory.Build.props: $_"
     }
 } 

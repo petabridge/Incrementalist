@@ -1,4 +1,10 @@
-﻿using System;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ProjectBuilder.cs" company="Petabridge, LLC">
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
+// </copyright>
+// -----------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -8,290 +14,294 @@ using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Tests.Helpers;
 
-    public enum ProjectLanguage
-    {
-        CSharp,
-        FSharp
-    }
-    
-    public enum OutputType
-    {
-        Exe,
-        Library
-    }
-    
-    public enum TargetFramework
-    {
-        Net7,
-        Net8,
-        Net9,
-        NetStandard2_0,
-        NetStandard2_1
-    }
+public enum ProjectLanguage
+{
+    CSharp,
+    FSharp
+}
 
-    public interface IMsBuildSerializable
-    {
-        string Serialize();
-    }
+public enum OutputType
+{
+    Exe,
+    Library
+}
 
-    public sealed record TargetFrameworks(ImmutableList<TargetFramework> Frameworks) : IMsBuildSerializable
-    {
+public enum TargetFramework
+{
+    Net7,
+    Net8,
+    Net9,
+    NetStandard2_0,
+    NetStandard2_1
+}
 
-        public string Serialize()
+public interface IMsBuildSerializable
+{
+    string Serialize();
+}
+
+public sealed record TargetFrameworks(ImmutableList<TargetFramework> Frameworks) : IMsBuildSerializable
+{
+    public string Serialize()
+    {
+        return Frameworks.Count switch
         {
-            return Frameworks.Count switch
-            {
-                // throw an exception if the list is empty
-                0 => throw new InvalidOperationException("TargetFrameworks cannot be empty."),
-                // need to serialize this to either be a TargetFramework or a TargetFrameworks tag
-                // depending on the number of frameworks
-                1 => $"<TargetFramework>{GetFrameworkString(Frameworks[0])}</TargetFramework>",
-                _ => "<TargetFrameworks>" + string.Join(";", Frameworks.Select(GetFrameworkString)) +
-                     "</TargetFrameworks>"
-            };
+            // throw an exception if the list is empty
+            0 => throw new InvalidOperationException("TargetFrameworks cannot be empty."),
+            // need to serialize this to either be a TargetFramework or a TargetFrameworks tag
+            // depending on the number of frameworks
+            1 => $"<TargetFramework>{GetFrameworkString(Frameworks[0])}</TargetFramework>",
+            _ => "<TargetFrameworks>" + string.Join(";", Frameworks.Select(GetFrameworkString)) +
+                 "</TargetFrameworks>"
+        };
+    }
+
+    public static string GetFrameworkString(TargetFramework framework)
+    {
+        return framework switch
+        {
+            TargetFramework.Net7 => "net7.0",
+            TargetFramework.Net8 => "net8.0",
+            TargetFramework.Net9 => "net9.0",
+            TargetFramework.NetStandard2_0 => "netstandard2.0",
+            TargetFramework.NetStandard2_1 => "netstandard2.1",
+            _ => throw new ArgumentOutOfRangeException(nameof(framework), framework, null)
+        };
+    }
+}
+
+/// <summary>
+/// Used to construct a MSBuild project
+/// </summary>
+public sealed class ProjectBuilder
+{
+    private readonly ProjectId _projectId;
+    private readonly string _basePath;
+    private readonly string _nameWithoutExtension;
+
+    private readonly HashSet<IProjectModelProperty> _projectProperties = [];
+    private readonly HashSet<ProjectImport> _projectImports = [];
+    private readonly HashSet<ProjectModel> _projectReferences = [];
+    private readonly List<SampleFile> _includedFiles = [];
+
+    private ProjectLanguage _language = ProjectLanguage.CSharp;
+    private OutputType _projectType = OutputType.Library;
+
+    // provide a default framework
+    private TargetFrameworks _targetFrameworks = new(ImmutableList<TargetFramework>.Empty.Add(TargetFramework.Net9));
+
+    private bool _isBuilt;
+
+    private ProjectModel BuildInternal()
+    {
+        if (_isBuilt)
+        {
+            throw new InvalidOperationException("Project has already been built.");
         }
 
-        public static string GetFrameworkString(TargetFramework framework)
+        _isBuilt = true;
+
+        if (_projectProperties.Count == 0) // need to add our default property for output type
+            _projectProperties.Add(new OutputTypeProperty(_projectType));
+
+        return new ProjectModel(
+            _projectId,
+            _basePath,
+            _nameWithoutExtension)
         {
-            return framework switch
-            {
-                TargetFramework.Net7 => "net7.0",
-                TargetFramework.Net8 => "net8.0",
-                TargetFramework.Net9 => "net9.0",
-                TargetFramework.NetStandard2_0 => "netstandard2.0",
-                TargetFramework.NetStandard2_1 => "netstandard2.1",
-                _ => throw new ArgumentOutOfRangeException(nameof(framework), framework, null)
-            };
-        }
+            ProjectProperties = _projectProperties,
+            ProjectReferences = _projectReferences,
+            IncludedFiles = _includedFiles,
+            ProjectLanguage = _language,
+            ProjectType = _projectType,
+            TargetFrameworks = _targetFrameworks,
+            ProjectImports = _projectImports
+        };
+    }
+
+    public ProjectBuilder(ProjectId projectId, string basePath, string nameWithoutExtension)
+    {
+        _projectId = projectId;
+        _basePath = basePath;
+        _nameWithoutExtension = nameWithoutExtension;
+    }
+
+    public ProjectBuilder WithProjectLanguage(ProjectLanguage language)
+    {
+        _language = language;
+        return this;
+    }
+
+    public ProjectBuilder WithProjectType(OutputType projectType)
+    {
+        _projectType = projectType;
+        return WithProjectProperty(new OutputTypeProperty(projectType));
+    }
+
+    public ProjectBuilder WithTargetFrameworks(IEnumerable<TargetFramework> targetFrameworks)
+    {
+        _targetFrameworks = new TargetFrameworks(targetFrameworks.ToImmutableList());
+        return this;
+    }
+
+    public ProjectBuilder WithTargetFramework(TargetFramework targetFramework)
+    {
+        _targetFrameworks = new TargetFrameworks(ImmutableList<TargetFramework>.Empty.Add(targetFramework));
+        return this;
+    }
+
+    public ProjectBuilder WithProjectProperty(IProjectModelProperty projectProperty)
+    {
+        _projectProperties.Add(projectProperty);
+        return this;
+    }
+
+    public ProjectBuilder WithProjectReference(ProjectModel otherProject)
+    {
+        _projectReferences.Add(otherProject);
+        return this;
+    }
+
+    public ProjectBuilder WithProjectImport(string relativePath)
+    {
+        var projectImport = new ProjectImport(relativePath);
+        _projectImports.Add(projectImport);
+        return this;
+    }
+
+    public ProjectBuilder WithFile(SampleFile file)
+    {
+        _includedFiles.Add(file);
+        return this;
+    }
+
+    public ProjectBuilder WithFile(string relativeToProjectFilePathWithExtension, string fileText)
+    {
+        var sampleFile = new SampleFile(relativeToProjectFilePathWithExtension, fileText);
+        _includedFiles.Add(sampleFile);
+        return this;
+    }
+
+    public ProjectBuilder WithLanguage(ProjectLanguage language)
+    {
+        _language = language;
+        return this;
+    }
+
+    public ProjectModel Build() => BuildInternal();
+}
+
+public static class ProjectModelSerializer
+{
+    /// <summary>
+    /// B depends on A
+    /// </summary>
+    public static string ComputeProjectReferencePath(string projectB, string projectA)
+    {
+        // Use a dummy absolute base. Its value is arbitrary as long as it's the same for both.
+        var dummyBase = Path.Join("c", "dummyroot");
+
+        // Convert the paths to absolute paths using the dummy base
+        var aAbsolute = Path.Combine(dummyBase, projectA);
+        var bAbsolute = Path.Combine(dummyBase, projectB);
+
+        // Get the directory of B.csproj (our base for the relative calculation)
+        var bDirectory = Path.GetDirectoryName(bAbsolute)!;
+
+        // Compute the relative path from B's directory to A.csproj
+        var relativePathFromBToA = Path.GetRelativePath(bDirectory, aAbsolute);
+
+        return relativePathFromBToA;
     }
 
     /// <summary>
-    /// Used to construct a MSBuild project
+    /// MSBuild uses backslashes for paths, even on Unix systems.
     /// </summary>
-    public sealed class ProjectBuilder
+    public static string NormalizePathSeparators(string path)
     {
-        private readonly ProjectId _projectId;
-        private readonly string _basePath;
-        private readonly string _nameWithoutExtension;
-        
-        private readonly HashSet<IProjectModelProperty> _projectProperties = [];
-        private readonly HashSet<ProjectImport> _projectImports = [];
-        private readonly HashSet<ProjectModel> _projectReferences = [];
-        private readonly List<SampleFile> _includedFiles = [];
-        
-        private ProjectLanguage _language = ProjectLanguage.CSharp;
-        private OutputType _projectType = OutputType.Library;
-        
-        // provide a default framework
-        private TargetFrameworks _targetFrameworks = new(ImmutableList<TargetFramework>.Empty.Add(TargetFramework.Net9));
-        
-        private bool _isBuilt;
-        
-        private ProjectModel BuildInternal()
-        {
-            if (_isBuilt)
-            {
-                throw new InvalidOperationException("Project has already been built.");
-            }
-            _isBuilt = true;
-            
-            if(_projectProperties.Count == 0) // need to add our default property for output type
-                _projectProperties.Add(new OutputTypeProperty(_projectType));
-            
-            return new ProjectModel(
-                _projectId,
-                _basePath,
-                _nameWithoutExtension)
-            {
-                ProjectProperties = _projectProperties,
-                ProjectReferences = _projectReferences,
-                IncludedFiles = _includedFiles,
-                ProjectLanguage = _language,
-                ProjectType = _projectType,
-                TargetFrameworks = _targetFrameworks,
-                ProjectImports = _projectImports
-            };
-        }
-
-        public ProjectBuilder(ProjectId projectId, string basePath, string nameWithoutExtension)
-        {
-            _projectId = projectId;
-            _basePath = basePath;
-            _nameWithoutExtension = nameWithoutExtension;
-        }
-        
-        public ProjectBuilder WithProjectLanguage(ProjectLanguage language)
-        {
-            _language = language;
-            return this;
-        }
-        
-        public ProjectBuilder WithProjectType(OutputType projectType)
-        {
-            _projectType = projectType;
-            return WithProjectProperty(new OutputTypeProperty(projectType));
-        }
-        
-        public ProjectBuilder WithTargetFrameworks(IEnumerable<TargetFramework> targetFrameworks)
-        {
-            _targetFrameworks = new TargetFrameworks(targetFrameworks.ToImmutableList());
-            return this;
-        }
-        
-        public ProjectBuilder WithTargetFramework(TargetFramework targetFramework)
-        {
-            _targetFrameworks = new TargetFrameworks(ImmutableList<TargetFramework>.Empty.Add(targetFramework));
-            return this;
-        }
-        
-        public ProjectBuilder WithProjectProperty(IProjectModelProperty projectProperty)
-        {
-            _projectProperties.Add(projectProperty);
-            return this;
-        }
-        
-        public ProjectBuilder WithProjectReference(ProjectModel otherProject)
-        {
-            _projectReferences.Add(otherProject);
-            return this;
-        }
-        
-        public ProjectBuilder WithProjectImport(string relativePath)
-        {
-            var projectImport = new ProjectImport(relativePath);
-            _projectImports.Add(projectImport);
-            return this;
-        }
-        
-        public ProjectBuilder WithFile(SampleFile file)
-        {
-            _includedFiles.Add(file);
-            return this;
-        }
-        
-        public ProjectBuilder WithFile(string relativeToProjectFilePathWithExtension, string fileText)
-        {
-            var sampleFile = new SampleFile(relativeToProjectFilePathWithExtension, fileText);
-            _includedFiles.Add(sampleFile);
-            return this;
-        }
-        
-        public ProjectBuilder WithLanguage(ProjectLanguage language)
-        {
-            _language = language;
-            return this;
-        }
-        
-        public ProjectModel Build() => BuildInternal();
+        return path.Replace('/', '\\');
     }
 
-    public static class ProjectModelSerializer
+    public static string Serialize(ProjectModel projectModel)
     {
-        /// <summary>
-        /// B depends on A
-        /// </summary>
-        public static string ComputeProjectReferencePath(string projectB, string projectA)
+        var sb = new StringBuilder();
+        sb.AppendLine($"<Project Sdk=\"Microsoft.NET.Sdk\">");
+        sb.AppendLine($"  <PropertyGroup>");
+        sb.AppendLine($"    {projectModel.TargetFrameworks.Serialize()}");
+        foreach (var p in projectModel.ProjectProperties)
         {
-            // Use a dummy absolute base. Its value is arbitrary as long as it's the same for both.
-            var dummyBase = Path.Join("c", "dummyroot");
-            
-            // Convert the paths to absolute paths using the dummy base
-            var aAbsolute = Path.Combine(dummyBase, projectA);
-            var bAbsolute = Path.Combine(dummyBase, projectB);
-            
-            // Get the directory of B.csproj (our base for the relative calculation)
-            var bDirectory = Path.GetDirectoryName(bAbsolute)!;
+            sb.AppendLine($"    {p.Serialize()}");
+        }
 
-            // Compute the relative path from B's directory to A.csproj
-            var relativePathFromBToA = Path.GetRelativePath(bDirectory, aAbsolute);
-            
-            return relativePathFromBToA;
-        }
-        
-        /// <summary>
-        /// MSBuild uses backslashes for paths, even on Unix systems.
-        /// </summary>
-        public static string NormalizePathSeparators(string path)
+        sb.AppendLine($"  </PropertyGroup>");
+
+        foreach (var projectImport in projectModel.ProjectImports)
         {
-            return path.Replace('/', '\\');
+            sb.AppendLine($"  <Import Project=\"{NormalizePathSeparators(projectImport.RelativePath)}\" />");
         }
-        
-        public static string Serialize(ProjectModel projectModel)
+
+        if (projectModel.ProjectReferences.Count > 0)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine($"<Project Sdk=\"Microsoft.NET.Sdk\">");
-            sb.AppendLine($"  <PropertyGroup>");
-            sb.AppendLine($"    {projectModel.TargetFrameworks.Serialize()}");
-            foreach(var p in projectModel.ProjectProperties)
+            sb.AppendLine($"  <ItemGroup>");
+            foreach (var projectReference in projectModel.ProjectReferences)
             {
-                sb.AppendLine($"    {p.Serialize()}");
-            }
-            sb.AppendLine($"  </PropertyGroup>");
-            
-            foreach (var projectImport in projectModel.ProjectImports)
-            {
-                sb.AppendLine($"  <Import Project=\"{NormalizePathSeparators(projectImport.RelativePath)}\" />");
+                var computeRelativePath =
+                    NormalizePathSeparators(ComputeProjectReferencePath(projectModel.CompletePath,
+                        projectReference.CompletePath));
+                sb.AppendLine($"  <ProjectReference Include=\"{computeRelativePath}\" />");
             }
 
-            if (projectModel.ProjectReferences.Count > 0)
-            {
-                sb.AppendLine($"  <ItemGroup>");
-                foreach (var projectReference in projectModel.ProjectReferences)
-                {
-                    var computeRelativePath = NormalizePathSeparators(ComputeProjectReferencePath(projectModel.CompletePath, projectReference.CompletePath));
-                    sb.AppendLine($"  <ProjectReference Include=\"{computeRelativePath}\" />");
-                }
-                sb.AppendLine($"  </ItemGroup>");
-               
-            }
-            
-            sb.AppendLine($"</Project>");
-            
-            return sb.ToString();
+            sb.AppendLine($"  </ItemGroup>");
         }
+
+        sb.AppendLine($"</Project>");
+
+        return sb.ToString();
     }
-    
-    public sealed record ProjectModel(ProjectId ProjectId, string RelativePathFromRepository, string NameWithoutExtension) : IMsBuildSerializable
+}
+
+public sealed record ProjectModel(ProjectId ProjectId, string RelativePathFromRepository, string NameWithoutExtension)
+    : IMsBuildSerializable
+{
+    public ProjectLanguage ProjectLanguage { get; init; } = ProjectLanguage.CSharp;
+
+    public required TargetFrameworks TargetFrameworks { get; init; }
+
+    public OutputType ProjectType { get; init; } = OutputType.Library;
+
+    /// <summary>
+    /// All the arbitrary properties that are set in the project file
+    /// </summary>
+    /// <remarks>
+    /// The left-hand string is the name of the property, the right-hand string is XML-serialized value.
+    /// </remarks>
+    public required IReadOnlyCollection<IProjectModelProperty> ProjectProperties { get; init; }
+
+    /// <summary>
+    /// A set of project imports that are used in this project
+    /// </summary>
+    public required IReadOnlyCollection<ProjectImport> ProjectImports { get; init; }
+
+    /// <summary>
+    /// All dependencies of this project - expressed as a dictionary of projectId -> relative path
+    /// </summary>
+    public required IReadOnlyCollection<ProjectModel> ProjectReferences { get; init; }
+
+    public required IReadOnlyCollection<SampleFile> IncludedFiles { get; init; }
+
+    public string FileExtension => ProjectLanguage switch
     {
-        public ProjectLanguage ProjectLanguage { get; init; } = ProjectLanguage.CSharp;
-        
-        public required TargetFrameworks TargetFrameworks { get; init; }
+        ProjectLanguage.CSharp => ".csproj",
+        ProjectLanguage.FSharp => ".fsproj",
+        _ => throw new ArgumentOutOfRangeException(nameof(ProjectLanguage), ProjectLanguage, null)
+    };
 
-        public OutputType ProjectType { get; init; } = OutputType.Library;
+    public string FileName => $"{NameWithoutExtension}{FileExtension}";
 
-        /// <summary>
-        /// All the arbitrary properties that are set in the project file
-        /// </summary>
-        /// <remarks>
-        /// The left-hand string is the name of the property, the right-hand string is XML-serialized value.
-        /// </remarks>
-        public required IReadOnlyCollection<IProjectModelProperty> ProjectProperties { get; init; }
-        
-        /// <summary>
-        /// A set of project imports that are used in this project
-        /// </summary>
-        public required IReadOnlyCollection<ProjectImport> ProjectImports { get; init; }
-        
-        /// <summary>
-        /// All dependencies of this project - expressed as a dictionary of projectId -> relative path
-        /// </summary>
-        public required IReadOnlyCollection<ProjectModel> ProjectReferences { get; init; }
-        
-        public required IReadOnlyCollection<SampleFile> IncludedFiles { get; init; }
-        
-        public string FileExtension => ProjectLanguage switch
-        {
-            ProjectLanguage.CSharp => ".csproj",
-            ProjectLanguage.FSharp => ".fsproj",
-            _ => throw new ArgumentOutOfRangeException(nameof(ProjectLanguage), ProjectLanguage, null)
-        };
-        
-        public string FileName => $"{NameWithoutExtension}{FileExtension}";
-        
-        public string CompletePath => Path.Combine(RelativePathFromRepository, FileName);
-        
-        public string Serialize()
-        {
-            return ProjectModelSerializer.Serialize(this);
-        }
+    public string CompletePath => Path.Combine(RelativePathFromRepository, FileName);
+
+    public string Serialize()
+    {
+        return ProjectModelSerializer.Serialize(this);
     }
+}

@@ -1,6 +1,6 @@
 // -----------------------------------------------------------------------
 // <copyright file="RunDotNetCommandTask.cs" company="Petabridge, LLC">
-//      Copyright (C) 2015 - 2023 Petabridge, LLC <https://petabridge.com>
+//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -25,7 +25,8 @@ namespace Incrementalist.Cmd.Commands
         private readonly bool _runInParallel;
         private readonly bool _failOnNoProjects;
 
-        public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError, bool runInParallel, bool failOnNoProjects = false)
+        public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError,
+            bool runInParallel, bool failOnNoProjects = false)
         {
             _settings = settings;
             _logger = logger;
@@ -63,10 +64,11 @@ namespace Incrementalist.Cmd.Commands
                 return _failOnNoProjects ? 1 : 0;
             }
 
-            _logger.LogInformation("Running '{0}' against {1} affected projects", string.Join(" ", _dotnetArgs), projects.Count);
-            
+            _logger.LogInformation("Running '{0}' against {1} affected projects", string.Join(" ", _dotnetArgs),
+                projects.Count);
+
             var failedProjects = new List<AbsolutePath>();
-            
+
             if (_runInParallel)
             {
                 var tasks = projects.Select(async project =>
@@ -78,7 +80,7 @@ namespace Incrementalist.Cmd.Commands
                             return;
                     }
                 });
-                
+
                 await Task.WhenAll(tasks);
             }
             else
@@ -130,7 +132,7 @@ namespace Incrementalist.Cmd.Commands
                 process.StartInfo.ArgumentList.Add(target.Path);
             }
 
-            _logger.LogInformation("Executing 'dotnet {ArgsList}' for {Target}", 
+            _logger.LogInformation("Executing 'dotnet {ArgsList}' for {Target}",
                 string.Join(" ", process.StartInfo.ArgumentList), target);
 
             // Redirect to console streams directly
@@ -147,23 +149,23 @@ namespace Incrementalist.Cmd.Commands
             };
 
             try
-            {                
+            {
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 await process.WaitForExitAsync();
-                
+
                 if (process.ExitCode != 0)
                 {
-                    _logger.LogError("Command 'dotnet {ArgsList}' failed for {Target} with exit code {ExitCode}", 
+                    _logger.LogError("Command 'dotnet {ArgsList}' failed for {Target} with exit code {ExitCode}",
                         string.Join(" ", process.StartInfo.ArgumentList), target, process.ExitCode);
                 }
-                
+
                 return process.ExitCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute command 'dotnet {ArgsList}' for {Target}", 
+                _logger.LogError(ex, "Failed to execute command 'dotnet {ArgsList}' for {Target}",
                     string.Join(" ", process.StartInfo.ArgumentList), target);
                 return 1;
             }
@@ -173,4 +175,4 @@ namespace Incrementalist.Cmd.Commands
             }
         }
     }
-} 
+}

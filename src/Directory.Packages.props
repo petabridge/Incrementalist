@@ -1,23 +1,23 @@
 <Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageVersion Include="Libgit2Sharp" Version="0.31.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
-    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
-    <PackageVersion Include="Microsoft.Build.Locator" Version="1.9.1" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(RoslynVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="9.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.4" />
-    <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
-    <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
-  </ItemGroup>
-  <!-- Test Packages -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
-    <PackageVersion Include="xunit" Version="$(XunitVersion)" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="Libgit2Sharp" Version="0.31.0"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)"/>
+        <PackageVersion Include="CommandLineParser" Version="2.9.1"/>
+        <PackageVersion Include="Microsoft.Build.Locator" Version="1.9.1"/>
+        <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(RoslynVersion)"/>
+        <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="9.0.4"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.4"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.4"/>
+        <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52"/>
+        <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)"/>
+    </ItemGroup>
+    <!-- Test Packages -->
+    <ItemGroup>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)"/>
+        <PackageVersion Include="xunit" Version="$(XunitVersion)"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2"/>
+    </ItemGroup>
 </Project>
