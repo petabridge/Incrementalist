@@ -188,6 +188,7 @@ public class GlobFilterTests
         [Theory]
         // Target 'src/**', then skip '*B*' -> Should only include ProjectA.csproj
         [InlineData(new[] { "src/**" }, new[] { "**/ProjectB*" }, new[] { "src/ProjectA/ProjectA.csproj" })]
+        [InlineData(new[] { "src/**/*.csproj" }, new[] { "**/ProjectB*" }, new[] { "src/ProjectA/ProjectA.csproj" })]
         // Target '**/*Tests*', then skip '*B*' -> Should only include ProjectA.Tests.csproj
         [InlineData(new[] { "**/*Tests*" }, new[] { "**/ProjectB*" },
             new[] { "tests/ProjectA.Tests/ProjectA.Tests.csproj" })]
@@ -205,6 +206,14 @@ public class GlobFilterTests
             })]
         // Target tests, skip all -> Should be empty
         [InlineData(new[] { "tests/**" }, new[] { "**/*" }, new string[] { })]
+        [InlineData(new[] { "**/*ProjectA*", "samples/**/*.*sproj" }, new[] { "tests/**" }, new
+            []
+            {
+                // should filter out the ProjectA tests, but keep ProjectA itself and the samples
+                "src/ProjectA/ProjectA.csproj",
+                "samples/Sample1/Sample1.csproj",
+                "samples/Sample2/Sample2.fsproj"
+            })]
         public void FilterProjects_BothFilters_AppliesTargetThenSkip(string[] targetGlobs, string[] skipGlobs,
             string[] expectedProjects)
         {
