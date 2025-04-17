@@ -98,7 +98,9 @@ namespace Incrementalist.Tests.Config
                 TimeoutMinutes = 5,
                 Verbose = true,
                 RunInParallel = true,
-                OutputFile = "output.txt"
+                OutputFile = "output.txt",
+                SkipGlob = ["**/obj/**", "**/bin/**"],
+                TargetGlob = ["src/**/*.csproj", "tests/**/*.csproj"]
             };
 
             var options = new RunOptions()
@@ -123,6 +125,8 @@ namespace Incrementalist.Tests.Config
             Assert.Equal("output.txt", merged.OutputFile); // From config
             Assert.True(merged.Verbose); // From config
             Assert.True(merged.RunInParallel); // From config
+            Assert.Equivalent(config.SkipGlob, merged.SkipGlobs); // From config
+            Assert.Equivalent(config.TargetGlob, merged.TargetGlobs); // From config
 
             // Command-specific options should be preserved
             Assert.Equal(3, merged.DotNetArgs.Length);
