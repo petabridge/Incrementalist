@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using Incrementalist.Cmd;
 using Incrementalist.Cmd.Config;
@@ -19,14 +20,14 @@ public class SlnOptionsParsingSpecs
     /// Reproduction spec for https://github.com/petabridge/Incrementalist/issues/378 
     /// </summary>
     [Theory]
-    [InlineData("run --config -- build -c Release")]
-    [InlineData("run --dry --b dev -- build -c Release")]
-    [InlineData("run -c -- build -c Release")]
-    [InlineData(@"run --config -b dev -f C:\user\output.txt -- build -c Release")]
-    [InlineData(@"create-config --config C:\user\config.json -b dev --skip-glob **/*.Tests.csproj **/tests/*.csproj")]
-    [InlineData(@"create-config")]
-    [InlineData("list-affected-folders")]
-    public void ShouldSeparateDotnetArgsFromSlnOptions(string cliArg)
+    [InlineData("run --config -- build -c Release", "build -c Release")]
+    [InlineData("run --dry --b dev -- build -c Release", "build -c Release")]
+    [InlineData("run -c -- build -c Release", "build -c Release")]
+    [InlineData(@"run --config -b dev -f C:\user\output.txt -- build -c Release", "build -c Release")]
+    [InlineData(@"create-config --config C:\user\config.json -b dev --skip-glob **/*.Tests.csproj **/tests/*.csproj", null)]
+    [InlineData(@"create-config", null)]
+    [InlineData("list-affected-folders", null)]
+    public void ShouldSeparateDotnetArgsFromSlnOptions(string cliArg, string? expectedDotNetArgs)
     {
         var args = CommandLineParser
             .SplitCommandLineIntoArguments(cliArg, true).ToArray();
@@ -34,6 +35,14 @@ public class SlnOptionsParsingSpecs
 
         Assert.Equal(0, r);
         Assert.NotNull(result);
+
+        if (expectedDotNetArgs != null)
+        {
+            var runOptions = result as RunOptions;
+            Assert.NotNull(runOptions);
+            
+            Assert.Equal(expectedDotNetArgs, string.Join(" ", runOptions.DotNetArgs));
+        }
     }
     
     /*
