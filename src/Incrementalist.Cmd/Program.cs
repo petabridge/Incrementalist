@@ -60,8 +60,10 @@ namespace Incrementalist.Cmd
 
             // Load configuration file if applicable
             IncrementalistConfig? config = null;
+            bool haveConfig = false;
             if (IncrementalistConfig.TryLoad(cmdConfiguration?.ConfigFile, out var loadedConfig))
             {
+                haveConfig = true;
                 config = loadedConfig;
             }
 
@@ -82,7 +84,7 @@ namespace Incrementalist.Cmd
                     .AddConsole()
                     .SetMinimumLevel(minLevel);
             });
-
+            
             // Check if we are creating a configuration file
             
             if (cmdConfiguration is CreateConfigOptions createConfigOptions)
@@ -94,19 +96,24 @@ namespace Incrementalist.Cmd
                 return configResult;
             }
 
-            var exitCode = await RunIncrementalist(cmdConfiguration, loggerFactory);
+            var exitCode = await RunIncrementalist(cmdConfiguration, loggerFactory, haveConfig);
 
             ResetTitle();
             return exitCode;
         }
 
-        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory)
+        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory, bool loadedConfig)
         {
             // Create a logger from the factory
             ILogger logger = loggerFactory.CreateLogger<Program>();
 
             try
             {
+                if (loadedConfig)
+                {
+                    logger.LogInformation("Loaded configuration file: {ConfigFile}", cmdOptions.ConfigFile);
+                }
+                
                 var pwd = new AbsolutePath(
                     Path.GetFullPath(cmdOptions.WorkingDirectory ?? Directory.GetCurrentDirectory()));
 
