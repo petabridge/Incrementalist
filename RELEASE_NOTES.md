@@ -1,3 +1,11 @@
+#### 1.0.0-rc4 April 16 2025 ####
+
+Major Changes:
+
+* **Breaking Change**: [Rewrote all command line arguments to use real verbs](https://github.com/petabridge/Incrementalist/issues/393)
+* Resolved: [Globbing must always apply, even when a full solution build is required](https://github.com/petabridge/Incrementalist/issues/395)
+* [Log used config file](https://github.com/petabridge/Incrementalist/pull/398)
+
 #### 1.0.0-rc3 April 16 2025 ####
 
 Bug fixes and improvements:
