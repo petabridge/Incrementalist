@@ -2,32 +2,31 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>1.0.0-rc4</VersionPrefix>
-    <PackageReleaseNotes>Major Changes:
+    <VersionPrefix>1.0.0-rc5</VersionPrefix>
+    <PackageReleaseNotes>Bug fixes and improvements:
 
-* **Breaking Change**: [Rewrote all command line arguments to use real verbs](https://github.com/petabridge/Incrementalist/issues/393)
-* Resolved: [Globbing must always apply, even when a full solution build is required](https://github.com/petabridge/Incrementalist/issues/395)
-* [Log used config file](https://github.com/petabridge/Incrementalist/pull/398)</PackageReleaseNotes>
+* Resolved: [Bug: config-based `SkipGlob` and `TargetGlob` get overwritten when not specified on CLI](https://github.com/petabridge/Incrementalist/issues/402)
+* Resolved: [Don't log `null` when loading default config](https://github.com/petabridge/Incrementalist/pull/401)</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
     <PackageProjectUrl>
             https://github.com/petabridge/Incrementalist
         </PackageProjectUrl>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <NoWarn>$(NoWarn);CS1591</NoWarn>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
-    <PropertyGroup>
-        <NBenchVersion>1.2.2</NBenchVersion>
-        <XunitVersion>2.9.3</XunitVersion>
-        <TestSdkVersion>17.13.0</TestSdkVersion>
-        <RoslynVersion>4.13.0</RoslynVersion>
-        <NugetVersion>6.13.2</NugetVersion>
-    </PropertyGroup>
-    <ItemGroup>
-        <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\"/>
-        <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\"/>
-    </ItemGroup>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NBenchVersion>1.2.2</NBenchVersion>
+    <XunitVersion>2.9.3</XunitVersion>
+    <TestSdkVersion>17.13.0</TestSdkVersion>
+    <RoslynVersion>4.13.0</RoslynVersion>
+    <NugetVersion>6.13.2</NugetVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)\..\docs\incrementalist-logo-dark.png" Pack="true" Visible="false" PackagePath="\" />
+  </ItemGroup>
 </Project>

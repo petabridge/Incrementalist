@@ -1,3 +1,10 @@
+#### 1.0.0-rc5 April 16 2025 ####
+
+Bug fixes and improvements:
+
+* Resolved: [Bug: config-based `SkipGlob` and `TargetGlob` get overwritten when not specified on CLI](https://github.com/petabridge/Incrementalist/issues/402)
+* Resolved: [Don't log `null` when loading default config](https://github.com/petabridge/Incrementalist/pull/401)
+
 #### 1.0.0-rc4 April 16 2025 ####
 
 Major Changes:
