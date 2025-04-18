@@ -17,8 +17,7 @@ Incrementalist is particularly valuable for:
   and build only the affected components.
 - 🌐 **Microservice Architectures**: In repositories containing multiple microservices, build only the services impacted
   by your changes.
-- 🔗 **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the
-  complete build graph.
+- 🔗 **Complex Dependencies**: When projects have intricate dependencies, Incrementalist automatically determines the impacted build graph.
 - ⚡ **CI/CD Optimization**: Reduce CI/CD pipeline execution time by skipping unnecessary builds and tests.
 
 ## ⚙️ Requirements
