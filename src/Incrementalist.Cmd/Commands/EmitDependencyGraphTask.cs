@@ -23,14 +23,14 @@ namespace Incrementalist.Cmd.Commands
     /// </summary>
     public sealed class EmitDependencyGraphTask
     {
-        private readonly CancellationTokenSource _cts;
+        private readonly CancellationToken _ct;
 
-        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger)
+        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger, CancellationToken cancellation)
         {
             Settings = settings;
             Workspace = workspace;
             Logger = new WrappedLogger(logger, nameof(EmitDependencyGraphTask));
-            _cts = new CancellationTokenSource();
+            _ct = cancellation;
         }
 
         public BuildSettings Settings { get; }
@@ -40,7 +40,7 @@ namespace Incrementalist.Cmd.Commands
         public ILogger Logger { get; }
 
         // Post-process the build result
-        BuildAnalysisResult FilterBuildResult(BuildAnalysisResult original, IReadOnlyList<SlnFileWithPath> allProjects)
+        private BuildAnalysisResult FilterBuildResult(BuildAnalysisResult original, IReadOnlyList<SlnFileWithPath> allProjects)
         {
             var skipGlobs = Settings.SkipGlobs;
             var targetGlobs = Settings.TargetGlobs;
@@ -81,8 +81,9 @@ namespace Incrementalist.Cmd.Commands
         private async Task<(BuildAnalysisResult result, IReadOnlyList<SlnFileWithPath> allProjects)> RunInternal()
         {
             // start the cancellation timer.
-            _cts.CancelAfter(Settings.TimeoutDuration);
-
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
+            linkedCts.CancelAfter(Settings.TimeoutDuration);
+            
             var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path);
             Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
             var progress = new Progress<ProjectLoadProgress>(x =>
@@ -91,12 +92,12 @@ namespace Incrementalist.Cmd.Commands
                     x.ElapsedTime);
             });
 
-            var solution = await Workspace.OpenSolutionAsync(solutionFilePath, progress, _cts.Token);
+            var solution = await Workspace.OpenSolutionAsync(solutionFilePath, progress, linkedCts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
-            var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, _cts.Token, Settings.WorkingDirectory);
+            var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, linkedCts.Token, Settings.WorkingDirectory);
             var filterFilesCmd =
-                new FilterAffectedProjectFilesCmd(Logger, _cts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
+                new FilterAffectedProjectFilesCmd(Logger, linkedCts.Token, Settings.WorkingDirectory, Settings.TargetBranch);
 
             // Get all files and filter affected ones
             var allFiles = await getFilesCmd.Process(Task.FromResult(solution));
@@ -153,7 +154,7 @@ namespace Incrementalist.Cmd.Commands
             /* INCREMENTAL BUILDS */
 
             // For incremental builds, compute the dependency graph
-            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, _cts.Token, solution);
+            var createDependencyGraph = new ComputeDependencyGraphCmd(Logger, linkedCts.Token, solution);
             var dependencyGraph = await createDependencyGraph.Process(Task.FromResult(affectedFiles));
 
             // Convert the dependency graph to a list of affected projects

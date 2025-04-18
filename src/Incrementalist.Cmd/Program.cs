@@ -20,6 +20,7 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
+using System.Threading;
 using static Incrementalist.Cmd.SlnOptionsParser;
 
 namespace Incrementalist.Cmd
@@ -27,6 +28,7 @@ namespace Incrementalist.Cmd
     internal class Program
     {
         private static string _originalTitle = string.Empty;
+        private static CancellationTokenSource _processCts = new CancellationTokenSource();
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         private static void SetTitle()
@@ -86,7 +88,6 @@ namespace Incrementalist.Cmd
             });
 
             // Check if we are creating a configuration file
-
             if (cmdConfiguration is CreateConfigOptions createConfigOptions)
             {
                 var createConfigTask =
@@ -95,19 +96,25 @@ namespace Incrementalist.Cmd
                 ResetTitle();
                 return configResult;
             }
-
-            var exitCode = await RunIncrementalist(cmdConfiguration, loggerFactory, haveConfig);
+            
+            // Create a logger from the factory
+            ILogger logger = loggerFactory.CreateLogger<Program>();
+            
+            Console.CancelKeyPress += delegate {
+                // call methods to clean up
+                logger.LogWarning("Cancellation requested. Exiting...");
+                _processCts.Cancel();
+            };
+            
+            var exitCode = await RunIncrementalist(cmdConfiguration, logger, haveConfig, _processCts.Token);
 
             ResetTitle();
             return exitCode;
         }
 
-        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILoggerFactory loggerFactory,
-            bool loadedConfig)
+        private static async Task<int> RunIncrementalist(SlnOptions cmdOptions, ILogger logger,
+            bool loadedConfig, CancellationToken ct)
         {
-            // Create a logger from the factory
-            ILogger logger = loggerFactory.CreateLogger<Program>();
-
             try
             {
                 if (loadedConfig)
@@ -166,10 +173,10 @@ namespace Incrementalist.Cmd
                     switch (cmdOptions)
                     {
                         case ListFoldersOptions listFoldersOptions:
-                            await AnalyzeFolderDiff(listFoldersOptions, workingFolder, logger);
+                            await AnalyzeFolderDiff(listFoldersOptions, workingFolder, logger, ct);
                             break;
                         case RunOptions runOptions:
-                            await AnalyzeSolutionDIff(runOptions, workingFolder, logger);
+                            await AnalyzeSolutionDIff(runOptions, workingFolder, logger, ct);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(cmdOptions),
@@ -187,7 +194,7 @@ namespace Incrementalist.Cmd
         }
 
         private static async Task AnalyzeFolderDiff(ListFoldersOptions options, AbsolutePath workingFolder,
-            ILogger logger)
+            ILogger logger, CancellationToken ct)
         {
             /*
              * options.SolutionFilePath can be null here, but it won't affect this task
@@ -202,7 +209,7 @@ namespace Incrementalist.Cmd
                 options.SkipGlobs?.ToArray() ?? [],
                 options.TargetGlobs?.ToArray() ?? [],
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
-            var emitTask = new EmitAffectedFoldersTask(settings, logger);
+            var emitTask = new EmitAffectedFoldersTask(settings, logger, ct);
             var affectedFiles = (await emitTask.Run());
 
             var affectedFilesStr = string.Join(",", affectedFiles.Keys);
@@ -210,7 +217,7 @@ namespace Incrementalist.Cmd
             await HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
-        private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger)
+        private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger, CancellationToken ct)
         {
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
@@ -221,16 +228,16 @@ namespace Incrementalist.Cmd
                 var normalizedPath =
                     workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)));
 
-                await ProcessSln(options, normalizedPath, workingFolder, msBuild, logger);
+                await ProcessSln(options, normalizedPath, workingFolder, msBuild, logger, ct);
             }
 
             else
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder))
-                    await ProcessSln(options, sln, workingFolder, msBuild, logger);
+                    await ProcessSln(options, sln, workingFolder, msBuild, logger, ct);
         }
 
         private static async Task ProcessSln(RunOptions options, RelativePath sln, AbsolutePath workingFolder,
-            MSBuildWorkspace msBuild, ILogger logger)
+            MSBuildWorkspace msBuild, ILogger logger, CancellationToken ct)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -243,7 +250,7 @@ namespace Incrementalist.Cmd
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
 
             logger.LogInformation("Beginning dependency analysis...");
-            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger);
+            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger, ct);
             var buildResult = await emitTask.Run();
 
             var analysisTime = stopwatch.Elapsed;
@@ -252,7 +259,7 @@ namespace Incrementalist.Cmd
             if (options is { DryRun: false, DotNetArgs.Length: > 0 })
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs,
-                    options.ContinueOnError, options.RunInParallel, options.FailOnNoProjects);
+                    options.ContinueOnError, options.RunInParallel, ct, options.FailOnNoProjects);
 
                 var exitCode = await runTask.Run(buildResult);
                 if (exitCode != 0)
