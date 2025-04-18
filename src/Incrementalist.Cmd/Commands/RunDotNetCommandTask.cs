@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -24,15 +25,17 @@ namespace Incrementalist.Cmd.Commands
         private readonly bool _continueOnError;
         private readonly bool _runInParallel;
         private readonly bool _failOnNoProjects;
+        private readonly CancellationToken _ct;
 
         public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError,
-            bool runInParallel, bool failOnNoProjects = false)
+            bool runInParallel, CancellationToken ct, bool failOnNoProjects = false)
         {
             _settings = settings;
             _logger = logger;
             _dotnetArgs = dotnetArgs;
             _continueOnError = continueOnError;
             _runInParallel = runInParallel;
+            _ct = ct;
             _failOnNoProjects = failOnNoProjects;
         }
 
@@ -41,30 +44,30 @@ namespace Incrementalist.Cmd.Commands
             switch (buildResult)
             {
                 case FullSolutionBuildResult full:
-                    return await RunSolutionBuild(full.SolutionPath);
+                    return await RunSolutionBuild(full.SolutionPath, _ct);
                 case IncrementalBuildResult incremental:
-                    return await RunIncrementalBuild(incremental.AffectedProjects);
+                    return await RunIncrementalBuild(incremental.AffectedProjects, _ct);
                 default:
                     throw new InvalidOperationException($"Unknown build result type: {buildResult.GetType()}");
             }
         }
 
-        private async Task<int> RunSolutionBuild(AbsolutePath solutionPath)
+        private async Task<int> RunSolutionBuild(AbsolutePath solutionPath, CancellationToken ct)
         {
-            _logger.LogInformation("Running '{0}' against solution {1}", string.Join(" ", _dotnetArgs), solutionPath);
-            return await RunCommand(solutionPath);
+            _logger.LogInformation("Running '{CommandString}' against solution {Solution}", string.Join(" ", _dotnetArgs), solutionPath);
+            return await RunCommandAsync(solutionPath, ct);
         }
 
-        private async Task<int> RunIncrementalBuild(IEnumerable<AbsolutePath> affectedProjects)
+        private async Task<int> RunIncrementalBuild(IEnumerable<AbsolutePath> affectedProjects, CancellationToken ct)
         {
             var projects = affectedProjects.ToList();
-            if (!projects.Any())
+            if (projects.Count == 0)
             {
                 _logger.LogInformation("No affected projects to run commands against.");
                 return _failOnNoProjects ? 1 : 0;
             }
 
-            _logger.LogInformation("Running '{0}' against {1} affected projects", string.Join(" ", _dotnetArgs),
+            _logger.LogInformation("Running '{CommandString}' against {Projects} affected projects", string.Join(" ", _dotnetArgs),
                 projects.Count);
 
             var failedProjects = new List<AbsolutePath>();
@@ -73,7 +76,7 @@ namespace Incrementalist.Cmd.Commands
             {
                 var tasks = projects.Select(async project =>
                 {
-                    if (await RunCommand(project) != 0)
+                    if (await RunCommandAsync(project, ct) != 0)
                     {
                         failedProjects.Add(project);
                         if (!_continueOnError)
@@ -87,7 +90,7 @@ namespace Incrementalist.Cmd.Commands
             {
                 foreach (var project in projects)
                 {
-                    if (await RunCommand(project) != 0)
+                    if (await RunCommandAsync(project, ct) != 0)
                     {
                         failedProjects.Add(project);
                         if (!_continueOnError)
@@ -105,8 +108,11 @@ namespace Incrementalist.Cmd.Commands
             return 0;
         }
 
-        private async Task<int> RunCommand(AbsolutePath target)
+        private async Task<int> RunCommandAsync(AbsolutePath target, CancellationToken ct)
         {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            linkedCts.CancelAfter(_settings.TimeoutDuration);
+            
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -147,26 +153,48 @@ namespace Incrementalist.Cmd.Commands
                 if (!string.IsNullOrEmpty(e.Data))
                     Console.Error.WriteLine(e.Data);
             };
+            
+            var startTime = DateTime.UtcNow;
 
             try
             {
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
-                await process.WaitForExitAsync();
+                await process.WaitForExitAsync(linkedCts.Token);
 
+                var finishTime = DateTime.UtcNow;
+                var elapsedTime = finishTime - startTime;
+                
                 if (process.ExitCode != 0)
                 {
-                    _logger.LogError("Command 'dotnet {ArgsList}' failed for {Target} with exit code {ExitCode}",
-                        string.Join(" ", process.StartInfo.ArgumentList), target, process.ExitCode);
+                    _logger.LogError("Command 'dotnet {ArgsList}' failed for {Target} with exit code {ExitCode} after {ElapsedTime}",
+                        string.Join(" ", process.StartInfo.ArgumentList), target, process.ExitCode, elapsedTime);
+                }
+                else
+                {
+                    // successful exit
+                    _logger.LogDebug("Command 'dotnet {ArgsList}' succeeded for {Target} after {ElapsedTime}",
+                        string.Join(" ", process.StartInfo.ArgumentList), target, elapsedTime);
                 }
 
                 return process.ExitCode;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute command 'dotnet {ArgsList}' for {Target}",
-                    string.Join(" ", process.StartInfo.ArgumentList), target);
+                var finishTime = DateTime.UtcNow;
+                var elapsedTime = finishTime - startTime;
+                if (ex is TaskCanceledException or OperationCanceledException)
+                {
+                    _logger.LogWarning("Command 'dotnet {ArgsList}' was canceled for {Target} after {ElapsedTime}",
+                        string.Join(" ", process.StartInfo.ArgumentList), target, elapsedTime);
+                }
+                else
+                {
+                    _logger.LogError(ex, "Failed to execute command 'dotnet {ArgsList}' for {Target} after {ElapsedTime}",
+                        string.Join(" ", process.StartInfo.ArgumentList), target, elapsedTime);
+                    
+                }
                 return 1;
             }
             finally

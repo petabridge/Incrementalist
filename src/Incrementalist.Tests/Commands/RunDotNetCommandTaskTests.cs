@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Tests.Helpers;
@@ -47,7 +48,7 @@ namespace Incrementalist.Tests.Commands
     <OutputType>Library</OutputType>
   </PropertyGroup>
 </Project>");
-            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false);
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false, CancellationToken.None);
 
             // Act
             var result = await task.Run(new IncrementalBuildResult([projectPath]));
@@ -61,7 +62,7 @@ namespace Incrementalist.Tests.Commands
         {
             // Arrange
             var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
-            var task = new RunDotNetCommandTask(settings, _logger, ["build", "--invalid-option"], true, false);
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "--invalid-option"], true, false, CancellationToken.None);
 
             // Act
             var result = await task.Run(new IncrementalBuildResult([
@@ -91,7 +92,7 @@ namespace Incrementalist.Tests.Commands
             }
 
             var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true,
-                true);
+                true, CancellationToken.None);
 
             // Act
             var result = await task.Run(new IncrementalBuildResult(projects));
@@ -105,7 +106,7 @@ namespace Incrementalist.Tests.Commands
         {
             // Arrange
             var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
-            var task = new RunDotNetCommandTask(settings, _logger, ["invalid-command"], false, false);
+            var task = new RunDotNetCommandTask(settings, _logger, ["invalid-command"], false, false, CancellationToken.None);
             var projects = new[] { "project1.csproj", "project2.csproj" }.Select(c =>
                 new AbsolutePath(Path.Combine(_repository.BasePath.Path, c))).ToList();
 
@@ -140,7 +141,7 @@ namespace Incrementalist.Tests.Commands
             await File.WriteAllTextAsync(solutionPath.Path, solutionContent);
 
             var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true,
-                false);
+                false, CancellationToken.None);
 
             // Act
             var result = await task.Run(new FullSolutionBuildResult(solutionPath));
@@ -175,7 +176,7 @@ namespace Incrementalist.Tests.Commands
                                                       </Project>
                                                       """);
 
-            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false);
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false, CancellationToken.None);
 
             // Act
             var result = await task.Run(new FullSolutionBuildResult(solutionPath));

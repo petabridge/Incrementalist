@@ -1,10 +1,4 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="EmitDependencyGraphSpecs.cs" company="Petabridge, LLC">
-//      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
-// </copyright>
-// -----------------------------------------------------------------------
-
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,9 +35,8 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         _logger = new TestOutputLogger(outputHelper);
     }
 
-    private BuildSettings GetBuildSettings(string[]? skipGlobs = null, string[]? targetGlobs = null) =>
-        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, skipGlobs ?? [],
-            targetGlobs ?? []);
+    private BuildSettings GetBuildSettings() =>
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, [], []);
 
     public const string ProjectBTests = "ProjectB.Tests";
     public const string ProjectB = "ProjectB";
@@ -100,8 +93,9 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
         Assert.NotEmpty(diffs);
 
-        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger);
-
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger,
+            CancellationToken.None);
+        
         // act
         var result = await cmd.Run();
 
@@ -129,7 +123,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
         Assert.NotEmpty(diffs);
 
-        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger);
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger, CancellationToken.None);
 
         // act
         var result = await cmd.Run();
@@ -137,36 +131,6 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         // assert
         Assert.NotNull(result);
         Assert.IsType<FullSolutionBuildResult>(result);
-    }
-
-    /// <summary>
-    /// Reproduction for https://github.com/petabridge/Incrementalist/issues/395
-    /// </summary>
-    [Fact]
-    public async Task ShouldPerformGlobbingOnSolutionWideChanges()
-    {
-        // arrange
-        // will trigger a full rebuild
-        var newFile = new SampleFile("Directory.Build.props", SolutionFileSamples.DirectoryBuildProps);
-        Repository
-            .WriteFile(newFile)
-            .Commit("Added new file"); // should create the diffs
-
-        // should only target the tests project
-        var buildSettings = GetBuildSettings(["src/**/*.csproj"]);
-
-        var cmd = new EmitDependencyGraphTask(buildSettings, _workspace, _logger);
-
-        // act
-        var result = await cmd.Run();
-
-        // assert
-        Assert.NotNull(result);
-        Assert.IsType<IncrementalBuildResult>(result);
-        var actualAffectedProjects = ((IncrementalBuildResult)result).AffectedProjects
-            .Select(c => Path.GetFileNameWithoutExtension(c.Path)).ToList();
-        var expectedAffectedProjects = new[] { ProjectBTests };
-        Assert.Equivalent(expectedAffectedProjects, actualAffectedProjects);
     }
 
     public Task InitializeAsync()

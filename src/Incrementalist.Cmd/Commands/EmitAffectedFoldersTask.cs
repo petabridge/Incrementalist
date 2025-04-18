@@ -18,13 +18,13 @@ namespace Incrementalist.Cmd.Commands
     /// </summary>
     public class EmitAffectedFoldersTask
     {
-        private readonly CancellationTokenSource _cts;
+        private readonly CancellationToken _cts;
 
-        public EmitAffectedFoldersTask(BuildSettings settings, ILogger logger)
+        public EmitAffectedFoldersTask(BuildSettings settings, ILogger logger, CancellationToken token)
         {
             Settings = settings;
             Logger = new WrappedLogger(logger, nameof(EmitAffectedFoldersTask));
-            _cts = new CancellationTokenSource();
+            _cts = token;
         }
 
         public BuildSettings Settings { get; }
@@ -52,9 +52,10 @@ namespace Incrementalist.Cmd.Commands
             }
 
             // start the cancellation timer.
-            _cts.CancelAfter(Settings.TimeoutDuration);
-            var listAllFilesCmd = new ListAffectedFilesCmd(Logger, _cts.Token, Settings.TargetBranch);
-            var filterAllFolders = new FilterAffectedFoldersCmd(Logger, _cts.Token);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts);
+            linkedCts.CancelAfter(Settings.TimeoutDuration);
+            var listAllFilesCmd = new ListAffectedFilesCmd(Logger, linkedCts.Token, Settings.TargetBranch);
+            var filterAllFolders = new FilterAffectedFoldersCmd(Logger, linkedCts.Token);
 
             return await filterAllFolders.Process(listAllFilesCmd.Process(Task.FromResult(repo)));
         }
