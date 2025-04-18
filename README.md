@@ -114,8 +114,7 @@ Create a configuration file in your repository:
 
 ```json
 {
-  "gitBranch": "master",
-  "solutionFilePath": "src/MySolution.sln",
+  "gitBranch": "dev",
   "verbose": true,
   "runInParallel": true
 }
