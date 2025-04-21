@@ -305,6 +305,7 @@ incrementalist run -b dev --target-glob "src/**/*.csproj" --skip-glob "**/*.Test
 - 🔍 [How It Works](docs/how-it-works.md) - Technical details and architecture
 - 🏗️ [Building from Source](docs/building.md) - Build instructions and development setup
 - ⚙️ [Configuration Files](docs/config.md) - Using JSON configuration files
+- 🌍 [Real-World Examples](docs/examples.md) - Production examples from other open source projects using Incrementalist in the wild.
 
 ## 📜 License
 
