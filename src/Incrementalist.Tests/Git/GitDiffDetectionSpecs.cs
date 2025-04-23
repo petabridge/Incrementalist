@@ -119,12 +119,12 @@ namespace Incrementalist.Tests.Git
         public void Should_detect_changes_against_commit_sha()
         {
             var initialCommit = Repository.WriteFile("file1.txt", "content1")
-                .Commit("Initial commit");
+                .Commit("Initial commit").Repository.Head.Tip.Sha;
 
             Repository.WriteFile("file2.txt", "content2")
                 .Commit("Second commit");
 
-            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, initialCommit.Repository.Head.Tip.Sha).ToList();
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, initialCommit).ToList();
             Assert.Single(diffedFiles);
             Assert.Equal("file2.txt", Path.GetFileName(diffedFiles[0].Path));
         }
