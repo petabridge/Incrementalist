@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,9 +17,21 @@ namespace Incrementalist.Git
     /// </summary>
     public static class DiffHelper
     {
-        public static IEnumerable<AbsolutePath> ChangedFiles(Repository repo, string targetBranch)
+        public static IEnumerable<AbsolutePath> ChangedFiles(Repository repo, string targetBranchOrCommit)
         {
-            var targetTree = repo.Branches[targetBranch].Tip.Tree;
+            // Use indexer to utilize name resolution
+            var targetTree = repo.Branches[targetBranchOrCommit]?.Tip.Tree;
+
+            if(targetTree == null)
+            {
+                targetTree = repo.Lookup<Commit>(targetBranchOrCommit)?.Tree;
+            }
+
+            if(targetTree == null)
+            {
+                throw new ArgumentException($"Target branch or commit [{targetBranchOrCommit}] not found.");
+            }
+
             var changes = new HashSet<AbsolutePath>();
 
             // Get all changes between target branch and current state (including both staged and unstaged)
@@ -51,6 +64,11 @@ namespace Incrementalist.Git
         public static bool HasBranch(Repository repo, string targetBranch)
         {
             return repo.Branches.Any(x => x.FriendlyName.Equals(targetBranch));
+        }
+
+        public static bool HasCommit(Repository repo, string commitSha)
+        {
+            return repo.Lookup<Commit>(commitSha) != null;
         }
     }
 }

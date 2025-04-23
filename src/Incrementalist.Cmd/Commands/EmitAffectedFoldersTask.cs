@@ -44,9 +44,9 @@ namespace Incrementalist.Cmd.Commands
             }
 
             // validate the target branch
-            if (!DiffHelper.HasBranch(repo, Settings.TargetBranch))
+            if (!DiffHelper.HasBranch(repo, Settings.TargetBranch) && !DiffHelper.HasCommit(repo, Settings.TargetBranch))
             {
-                Logger.LogError("Current git repository doesn't have any branch named [{BranchName}]. Shutting down.",
+                Logger.LogError("Current git repository doesn't have any branch or commit [{BranchName}]. Shutting down.",
                     Settings.TargetBranch);
                 return new Dictionary<AbsolutePath, ICollection<AbsolutePath>>();
             }

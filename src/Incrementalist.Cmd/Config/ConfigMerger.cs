@@ -37,6 +37,7 @@ namespace Incrementalist.Cmd.Config
             merged.OutputFile = options.OutputFile ?? config.OutputFile;
             merged.GitBranch = (options.GitBranch ?? config.GitBranch) ?? "dev";
             merged.WorkingDirectory = options.WorkingDirectory ?? config.WorkingDirectory;
+            merged.CompareSha = options.CompareSha; // Not useful to set CompareSha in config
 
             // Merge bool properties (CLI takes precedence)
             merged.Verbose = config.Verbose.GetValueOrDefault(false);

@@ -114,5 +114,19 @@ namespace Incrementalist.Tests.Git
             Assert.Equal("fuber.txt", Path.GetFileName(file.Path));
             Assert.Equal(Path.GetFullPath("fuber.txt", Repository.BasePath.Path), file.Path);
         }
+
+        [Fact(DisplayName = "Should detect changes when comparing against a commit SHA")]
+        public void Should_detect_changes_against_commit_sha()
+        {
+            var initialCommit = Repository.WriteFile("file1.txt", "content1")
+                .Commit("Initial commit");
+
+            Repository.WriteFile("file2.txt", "content2")
+                .Commit("Second commit");
+
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, initialCommit.Repository.Head.Tip.Sha).ToList();
+            Assert.Single(diffedFiles);
+            Assert.Equal("file2.txt", Path.GetFileName(diffedFiles[0].Path));
+        }
     }
 }

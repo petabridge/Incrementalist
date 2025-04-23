@@ -70,6 +70,11 @@ namespace Incrementalist.Cmd
             Required = false)]
         public string? GitBranch { get; set; }
 
+        [Option("compare-sha", 
+            HelpText = "Specify a commit SHA to compare against instead of a branch. If both --branch and --compare-sha are provided, --compare-sha takes precedence.", 
+            Required = false)]
+        public string? CompareSha { get; set; }
+
         [Option('d', "dir",
             HelpText = "Specify the working directory explicitly. Defaults to using the current working directory.")]
         public string? WorkingDirectory { get; set; }
@@ -114,6 +119,11 @@ namespace Incrementalist.Cmd
                 "Glob pattern to include only matching projects in the final list. Applied after analyzing dependencies.",
             Required = false)]
         public IEnumerable<string>? TargetGlobs { get; set; }
+
+        /// <summary>
+        /// Returns the target for comparison, prioritizing CompareSha over GitBranch.
+        /// </summary>
+        public string? CompareTarget => !string.IsNullOrEmpty(CompareSha) ? CompareSha : GitBranch;
 
         /// <summary>
         /// Needed for configuration merging.

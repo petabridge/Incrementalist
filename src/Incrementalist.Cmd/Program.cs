@@ -147,8 +147,17 @@ namespace Incrementalist.Cmd
                     return -3;
                 }
 
-                // validate the target branch
-                if (!DiffHelper.HasBranch(repo, cmdOptions.GitBranch!))
+                // validate the target branch or commit SHA
+                if (!string.IsNullOrEmpty(cmdOptions.CompareSha))
+                {
+                    if (!DiffHelper.HasCommit(repo, cmdOptions.CompareSha))
+                    {
+                        logger.LogError("The specified commit SHA [{CommitSha}] does not exist in the repository. Shutting down.",
+                            cmdOptions.CompareSha);
+                        return -5;
+                    }
+                }
+                else if (!DiffHelper.HasBranch(repo, cmdOptions.GitBranch!))
                 {
                     // workaround common CI server issues and check to see if this same branch is located
                     // under "origin/{branchname}"
@@ -204,7 +213,7 @@ namespace Incrementalist.Cmd
                 ? workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)))
                 : RelativePath.Empty;
 
-            var settings = new BuildSettings(options.GitBranch!, normalized,
+            var settings = new BuildSettings(options.CompareTarget!, normalized,
                 workingFolder,
                 options.SkipGlobs?.ToArray() ?? [],
                 options.TargetGlobs?.ToArray() ?? [],
@@ -244,7 +253,7 @@ namespace Incrementalist.Cmd
 
             logger.LogInformation("Starting analysis of solution: {Solution}", sln);
 
-            var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
+            var settings = new BuildSettings(options.CompareTarget!, sln, workingFolder,
                 options.SkipGlobs?.ToArray() ?? [],
                 options.TargetGlobs?.ToArray() ?? [],
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
