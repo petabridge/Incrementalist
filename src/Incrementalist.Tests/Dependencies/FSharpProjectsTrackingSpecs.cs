@@ -56,7 +56,7 @@ namespace Incrementalist.Tests.Dependencies
 
             var logger = new TestOutputLogger(_outputHelper);
             var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath, [],
-                []);
+                [], "dotnet");
             var emitTask = new EmitDependencyGraphTask(settings, _workspace, logger, CancellationToken.None);
             var buildResult = await emitTask.Run();
 
