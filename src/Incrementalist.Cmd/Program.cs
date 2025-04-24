@@ -208,6 +208,7 @@ namespace Incrementalist.Cmd
                 workingFolder,
                 options.SkipGlobs?.ToArray() ?? [],
                 options.TargetGlobs?.ToArray() ?? [],
+                options.NameApplicationToStart,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
             var emitTask = new EmitAffectedFoldersTask(settings, logger, ct);
             var affectedFiles = (await emitTask.Run());
@@ -247,6 +248,7 @@ namespace Incrementalist.Cmd
             var settings = new BuildSettings(options.GitBranch!, sln, workingFolder,
                 options.SkipGlobs?.ToArray() ?? [],
                 options.TargetGlobs?.ToArray() ?? [],
+                options.NameApplicationToStart,
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
 
             logger.LogInformation("Beginning dependency analysis...");

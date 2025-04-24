@@ -51,6 +51,7 @@ namespace Incrementalist.Cmd.Commands
                     FailOnNoProjects = _options.FailOnNoProjects,
                     SkipGlob = _options.SkipGlobs?.ToArray(),
                     TargetGlob = _options.TargetGlobs?.ToArray(),
+                    NameApplicationToStart = _options.NameApplicationToStart,
                 };
 
                 // Determine the output file path

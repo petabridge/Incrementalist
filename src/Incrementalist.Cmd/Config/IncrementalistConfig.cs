@@ -97,6 +97,8 @@ namespace Incrementalist.Cmd.Config
 
         [JsonPropertyName("target")] public string[]? TargetGlob { get; set; }
 
+        [JsonPropertyName("nameApplicationToStart")] public string? NameApplicationToStart { get; set; }
+
         /// <summary>
         /// Tries to load the Incrementalist configuration from the specified file path.
         /// </summary>
