@@ -75,9 +75,9 @@ namespace Incrementalist.Tests.Dependencies
 
             var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), CancellationToken.None,
                 Repository.BasePath, "master");
-            var solutionFiles = new Dictionary<AbsolutePath, SlnFile>()
+            var solutionFiles = new Dictionary<AbsolutePath, SlnFile[]>()
             {
-                [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
+                [projectFilePath] = [new SlnFile(FileType.Project, ProjectId.CreateNewId())]
             };
             var filteredAffectedFiles = await cmd.Process(Task.FromResult(solutionFiles));
             Assert.Single(filteredAffectedFiles);

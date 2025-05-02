@@ -115,11 +115,11 @@ namespace Incrementalist.Cmd.Commands
             }
 
             // Log the breakdown of modified files by type
-            var modifiedSourceFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Code);
-            var modifiedProjectFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Project);
-            var modifiedSolutionFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Solution);
-            var modifiedScriptFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Script);
-            var modifiedOtherFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Other);
+            var modifiedSourceFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Code));
+            var modifiedProjectFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Project));
+            var modifiedSolutionFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Solution));
+            var modifiedScriptFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Script));
+            var modifiedOtherFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Other));
             Logger.LogInformation(
                 "Modified files breakdown: {SourceFiles} source files, {ProjectFiles} project files, {SolutionFiles} solution files, {ScriptFiles} script files, {OtherFiles} other files",
                 modifiedSourceFiles, modifiedProjectFiles, modifiedSolutionFiles, modifiedScriptFiles,
@@ -127,8 +127,8 @@ namespace Incrementalist.Cmd.Commands
 
             // Check if any of the affected files require a solution-wide build
             Logger.LogInformation("Analyzing solution-wide impact...");
-            var projectFiles = allFiles.Where(x => x.Value.FileType == FileType.Project)
-                .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
+            var projectFiles = allFiles.Where(x => x.Value is [{ FileType: FileType.Project }])
+                .Select(pair => new SlnFileWithPath(pair.Key, pair.Value[0]))
                 .ToList();
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
             var importDetector = new SolutionWideChangeDetector(projectImports);
@@ -140,7 +140,7 @@ namespace Incrementalist.Cmd.Commands
             }
 
             // Get the list of affected project files directly
-            var directlyAffectedProjects = affectedFiles.Where(x => x.Value.FileType == FileType.Project)
+            var directlyAffectedProjects = affectedFiles.Where(x => x.Value.Any(f => f.FileType == FileType.Project))
                 .Select(x => x.Key)
                 .ToList();
 
