@@ -49,13 +49,18 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
             .AddFolder("src", f1Builder =>
             {
                 f1Builder.AddProject(ProjectA,
-                    (_, p1Builder) => { p1Builder.WithFile("HelloWorld.cs", CsharpSamples.HelloClass); });
+                    (_, p1Builder) =>
+                    {
+                        p1Builder.WithFile("HelloWorld.cs", CsharpSamples.HelloClass);
+                        p1Builder.WithTargetFrameworks([TargetFramework.Net8, TargetFramework.Net9, TargetFramework.NetStandard2_0, TargetFramework.NetStandard2_1]);
+                    });
 
                 f1Builder.AddProject(ProjectB, (otherProjects, p2Builder) =>
                 {
                     p2Builder.WithFile("GoodBye.cs", CsharpSamples.GoodbyeClassWithNamespace);
                     var projectA = otherProjects.First(p => p.NameWithoutExtension == ProjectA);
                     p2Builder.WithProjectReference(projectA);
+                    p2Builder.WithTargetFrameworks([TargetFramework.Net8, TargetFramework.Net9, TargetFramework.NetStandard2_0, TargetFramework.NetStandard2_1]);
                 });
 
                 // a third project, C, with no references to anyone else
@@ -69,6 +74,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
                     p3Builder.WithFile("HelloWorldTests.cs", CsharpSamples.BarClass);
                     var projectB = otherProjects.First(p => p.NameWithoutExtension == ProjectB);
                     p3Builder.WithProjectReference(projectB);
+                    p3Builder.WithTargetFrameworks([TargetFramework.Net9]);
                 });
             })
             .Build();
