@@ -49,18 +49,19 @@ namespace Incrementalist.Tests.Helpers
 
         public DisposableRepository(AbsolutePath basePath)
         {
-            BasePath = basePath;
+            var repoPath = new DirectoryInfo(Repository.Init(basePath.Path));
+            BasePath = new AbsolutePath(repoPath.Parent?.FullName ?? "");
+            Repository = new Repository(repoPath.FullName);
             Init();
         }
 
         public AbsolutePath BasePath { get; }
 
-        // Gets created via CTOR method call, so can't be null unless catastrophic failure
-        public Repository Repository { get; private set; } = null!;
+        public Repository Repository { get; }
 
         public void Dispose()
         {
-            Repository?.Dispose();
+            Repository.Dispose();
             for (var attempt = 1; attempt <= MaxDeleteAttempts; attempt++)
                 try
                 {
@@ -86,8 +87,6 @@ namespace Incrementalist.Tests.Helpers
 
         private void Init()
         {
-            var repoPath = Repository.Init(BasePath.Path);
-            Repository = new Repository(repoPath);
             var sig = CreateSignature();
             // add a .gitignore file to the repository immediately
             WriteFile(GitIgnoreFileName, GitIgnoreContent);
