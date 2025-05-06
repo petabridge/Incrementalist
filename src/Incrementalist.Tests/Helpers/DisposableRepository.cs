@@ -91,7 +91,12 @@ namespace Incrementalist.Tests.Helpers
             // add a .gitignore file to the repository immediately
             WriteFile(GitIgnoreFileName, GitIgnoreContent);
             Repository.Commit("First", sig, sig);
-            //Repository.CreateBranch("master"); // setup the master branch initially
+            if (Repository.Refs.Head.TargetIdentifier != "refs/heads/master")
+            {
+                // ensure the default branch is named "master", see https://github.com/libgit2/libgit2sharp/issues/1964
+                var master = Repository.CreateBranch("master");
+                Repository.Refs.UpdateTarget(Repository.Refs.Head, master.Reference);
+            }
         }
 
         /// <summary>
