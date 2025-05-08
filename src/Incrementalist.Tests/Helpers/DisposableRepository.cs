@@ -49,18 +49,19 @@ namespace Incrementalist.Tests.Helpers
 
         public DisposableRepository(AbsolutePath basePath)
         {
-            BasePath = basePath;
+            var repoPath = new DirectoryInfo(Repository.Init(basePath.Path));
+            BasePath = new AbsolutePath(repoPath.Parent?.FullName ?? "");
+            Repository = new Repository(repoPath.FullName);
             Init();
         }
 
         public AbsolutePath BasePath { get; }
 
-        // Gets created via CTOR method call, so can't be null unless catastrophic failure
-        public Repository Repository { get; private set; } = null!;
+        public Repository Repository { get; }
 
         public void Dispose()
         {
-            Repository?.Dispose();
+            Repository.Dispose();
             for (var attempt = 1; attempt <= MaxDeleteAttempts; attempt++)
                 try
                 {
@@ -86,13 +87,16 @@ namespace Incrementalist.Tests.Helpers
 
         private void Init()
         {
-            var repoPath = Repository.Init(BasePath.Path);
-            Repository = new Repository(repoPath);
             var sig = CreateSignature();
             // add a .gitignore file to the repository immediately
             WriteFile(GitIgnoreFileName, GitIgnoreContent);
             Repository.Commit("First", sig, sig);
-            //Repository.CreateBranch("master"); // setup the master branch initially
+            if (Repository.Refs.Head.TargetIdentifier != "refs/heads/master")
+            {
+                // ensure the default branch is named "master", see https://github.com/libgit2/libgit2sharp/issues/1964
+                var master = Repository.CreateBranch("master");
+                Repository.Refs.UpdateTarget(Repository.Refs.Head, master.Reference);
+            }
         }
 
         /// <summary>
