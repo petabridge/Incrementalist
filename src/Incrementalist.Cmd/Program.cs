@@ -274,7 +274,7 @@ namespace Incrementalist.Cmd
                 {
                     case FullSolutionBuildResult:
                         buildType = "Full solution build";
-                        var solutionFilePath = Path.Join(settings.WorkingDirectory.Path, settings.SolutionFile.Path);
+                        var solutionFilePath = new AbsolutePath(Path.Join(settings.WorkingDirectory.Path, settings.SolutionFile.Path));
                         projectsToRebuild = (await engine.CreateSolutionAsync(solutionFilePath, ct)).Projects.Select(p => p.FilePath).ToList();
                         break;
                     case IncrementalBuildResult incremental:

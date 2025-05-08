@@ -21,13 +21,13 @@ public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
 
     public override void Dispose() => _msBuild.Dispose();
 
-    public override async Task<Solution> CreateSolutionAsync(string solutionFilePath, CancellationToken cancellationToken = default)
+    public override async Task<Solution> CreateSolutionAsync(AbsolutePath solutionFilePath, CancellationToken cancellationToken = default)
     {
         var progress = new Progress<ProjectLoadProgress>(x =>
         {
             logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
         });
-        var solution = await _msBuild.OpenSolutionAsync(solutionFilePath,  progress, cancellationToken);
+        var solution = await _msBuild.OpenSolutionAsync(solutionFilePath.Path, progress, cancellationToken);
         return new WorkspaceSolution(solution);
     }
 }

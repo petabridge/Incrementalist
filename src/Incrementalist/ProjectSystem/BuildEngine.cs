@@ -13,7 +13,7 @@ namespace Incrementalist.ProjectSystem;
 
 public abstract class BuildEngine : IDisposable
 {
-    public abstract Task<Solution> CreateSolutionAsync(string solutionFilePath, CancellationToken cancellationToken = default);
+    public abstract Task<Solution> CreateSolutionAsync(AbsolutePath solutionFilePath, CancellationToken cancellationToken = default);
     public abstract void Dispose();
 }
 

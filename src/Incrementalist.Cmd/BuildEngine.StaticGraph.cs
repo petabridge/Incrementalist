@@ -31,13 +31,13 @@ public sealed class StaticGraphBuildEngine : BuildEngine
         _listener.Dispose();
     }
 
-    public override Task<Solution> CreateSolutionAsync(string solutionFilePath, CancellationToken cancellationToken = default)
+    public override Task<Solution> CreateSolutionAsync(AbsolutePath solutionFilePath, CancellationToken cancellationToken = default)
     {
-        var entryPoint = new ProjectGraphEntryPoint(solutionFilePath);
+        var entryPoint = new ProjectGraphEntryPoint(solutionFilePath.Path);
         var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection();
         var degreeOfParallelism = Environment.ProcessorCount;
         var projectGraph = new ProjectGraph([entryPoint], projectCollection, projectInstanceFactory: null, degreeOfParallelism, cancellationToken);
-        return Task.FromResult<Solution>(new StaticGraphSolution(new AbsolutePath(solutionFilePath), projectGraph));
+        return Task.FromResult<Solution>(new StaticGraphSolution(solutionFilePath, projectGraph));
     }
 }
 

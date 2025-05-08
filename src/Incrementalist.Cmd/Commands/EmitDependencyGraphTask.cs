@@ -82,7 +82,7 @@ namespace Incrementalist.Cmd.Commands
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
             linkedCts.CancelAfter(Settings.TimeoutDuration);
             
-            var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path);
+            var solutionFilePath = new AbsolutePath(Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path));
             Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
 
             var solution = await Engine.CreateSolutionAsync(solutionFilePath, linkedCts.Token);
