@@ -18,7 +18,7 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
 {
     public class Workspace(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new WorkspaceBuildEngine(logger));
 
-    public class StaticGraph(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, _ => new StaticGraphBuildEngine());
+    public class StaticGraph(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new StaticGraphBuildEngine(logger, verbose: false));
 
     private readonly BuildEngine _engine;
     private readonly TestSolutionModel _generatedTestSolution;

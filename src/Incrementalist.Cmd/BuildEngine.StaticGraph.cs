@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,18 +14,27 @@ using Incrementalist.ProjectSystem;
 using Microsoft.Build.Execution;
 using Microsoft.Build.Graph;
 using Microsoft.Build.Locator;
+using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Cmd;
 
 public sealed class StaticGraphBuildEngine : BuildEngine
 {
+    private readonly MicrosoftBuildEventListener _listener;
+
     static StaticGraphBuildEngine()
     {
         MSBuildLocator.RegisterDefaults();
     }
 
+    public StaticGraphBuildEngine(ILogger logger, bool verbose)
+    {
+        _listener = new MicrosoftBuildEventListener(logger, verbose ? EventLevel.Informational : EventLevel.Warning);
+    }
+
     public override void Dispose()
     {
+        _listener.Dispose();
     }
 
     public override Task<Solution> CreateSolutionAsync(string solutionFilePath, CancellationToken cancellationToken = default)

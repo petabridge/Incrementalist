@@ -225,7 +225,7 @@ namespace Incrementalist.Cmd
             if ("workspace".Equals(Environment.GetEnvironmentVariable("INCREMENTALIST_BUILD_ENGINE"), StringComparison.OrdinalIgnoreCase))
                 engine = new WorkspaceBuildEngine(logger);
             else
-                engine = new StaticGraphBuildEngine();
+                engine = new StaticGraphBuildEngine(logger, options.Verbose);
 
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
