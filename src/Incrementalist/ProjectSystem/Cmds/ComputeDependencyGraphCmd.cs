@@ -78,8 +78,7 @@ namespace Incrementalist.ProjectSystem.Cmds
 
             Logger.LogDebug("Evaluating {Count} unique project IDs.", uniqueProjects.Count);
 
-            var graphs = uniqueProjects.ToDictionary(x => x,
-                v => _solution.GetTransitiveProjects(v).ToList());
+            var graphs = uniqueProjects.ToDictionary(x => x, v => _solution.GetTransitiveProjects(v));
 
             var independentGraphs = graphs.Where(x => !IsGraphContained(x.Key, graphs));
 
@@ -109,7 +108,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             /*
              * Next: check to see if there are any overlapping graphs and remove those from the final set
              */
-            bool IsGraphContained(Project root, Dictionary<Project, List<Project>> otherGraphs)
+            bool IsGraphContained(Project root, Dictionary<Project, IReadOnlyCollection<Project>> otherGraphs)
             {
                 return otherGraphs.Where(x => !x.Key.Equals(root))
                     .Any(nonRootGraph => nonRootGraph.Value.Contains(root));
