@@ -12,8 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Cmd.Commands
@@ -25,17 +23,17 @@ namespace Incrementalist.Cmd.Commands
     {
         private readonly CancellationToken _ct;
 
-        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger, CancellationToken cancellation)
+        public EmitDependencyGraphTask(BuildSettings settings, BuildEngine engine, ILogger logger, CancellationToken cancellation)
         {
             Settings = settings;
-            Workspace = workspace;
+            Engine = engine;
             Logger = new WrappedLogger(logger, nameof(EmitDependencyGraphTask));
             _ct = cancellation;
         }
 
         public BuildSettings Settings { get; }
 
-        public MSBuildWorkspace Workspace { get; }
+        public BuildEngine Engine { get; }
 
         public ILogger Logger { get; }
 
@@ -86,13 +84,8 @@ namespace Incrementalist.Cmd.Commands
             
             var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path);
             Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
-            var progress = new Progress<ProjectLoadProgress>(x =>
-            {
-                Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath,
-                    x.ElapsedTime);
-            });
 
-            var solution = await Workspace.OpenSolutionAsync(solutionFilePath, progress, linkedCts.Token);
+            var solution = await Engine.CreateSolutionAsync(solutionFilePath, linkedCts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, linkedCts.Token, Settings.WorkingDirectory);
@@ -136,7 +129,7 @@ namespace Incrementalist.Cmd.Commands
             if (importDetector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return (new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!)), projectFiles);
+                return (new FullSolutionBuildResult(solution.FilePath), projectFiles);
             }
 
             // Get the list of affected project files directly
@@ -148,7 +141,7 @@ namespace Incrementalist.Cmd.Commands
             if (directlyAffectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return (new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!)), projectFiles);
+                return (new FullSolutionBuildResult(solution.FilePath), projectFiles);
             }
 
             /* INCREMENTAL BUILDS */
@@ -174,7 +167,7 @@ namespace Incrementalist.Cmd.Commands
                 if (projectFilePaths.Count == solution.Projects.Count())
                 {
                     Logger.LogInformation("All projects are affected. Full solution build required");
-                    return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
+                    return new FullSolutionBuildResult(solution.FilePath);
                 }
 
                 Logger.LogInformation(

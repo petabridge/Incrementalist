@@ -6,11 +6,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.IO;
-using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Tests.Helpers
 {
@@ -55,8 +53,12 @@ namespace Incrementalist.Tests.Helpers
         /// <summary>
         /// Creates a sample solution file content
         /// </summary>
-        public static string CreateSolutionFile(string solutionName, IEnumerable<string> projectNames)
+        public static FileInfo CreateSolutionFile(string solutionName, IEnumerable<string> projectNames)
         {
+            var basePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var slnFile = new FileInfo(Path.Combine(basePath, solutionName));
+            slnFile.Directory!.Create();
+
             var sb = new StringBuilder();
             sb.AppendLine("Microsoft Visual Studio Solution File, Format Version 12.00");
             sb.AppendLine("# Visual Studio Version 17");
@@ -65,10 +67,16 @@ namespace Incrementalist.Tests.Helpers
 
             foreach (var projectName in projectNames)
             {
+                string[] projectPath = ["src", projectName, $"{projectName}.csproj"];
                 var projectGuid = Guid.NewGuid().ToString("B").ToUpperInvariant();
                 sb.AppendLine(
-                    $"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{projectName}\", \"src\\{projectName}\\{projectName}.csproj\", \"{projectGuid}\"");
+                    $"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{projectName}\", \"{string.Join('\\',  projectPath)}\", \"{projectGuid}\"");
                 sb.AppendLine("EndProject");
+
+                var csproj = CreateProjectFile(projectName);
+                var projectFile = new FileInfo(Path.Combine(projectPath.Prepend(basePath).ToArray()));
+                projectFile.Directory!.Create();
+                File.WriteAllText(projectFile.FullName, csproj);
             }
 
             sb.AppendLine("Global");
@@ -78,13 +86,15 @@ namespace Incrementalist.Tests.Helpers
             sb.AppendLine("\tEndGlobalSection");
             sb.AppendLine("EndGlobal");
 
-            return sb.ToString();
+            File.WriteAllText(slnFile.FullName, sb.ToString());
+
+            return slnFile;
         }
 
         /// <summary>
         /// Creates a sample project file content
         /// </summary>
-        public static string CreateProjectFile(
+        private static string CreateProjectFile(
             string projectName,
             IEnumerable<string>? projectReferences = null,
             string targetFramework = "net7.0")

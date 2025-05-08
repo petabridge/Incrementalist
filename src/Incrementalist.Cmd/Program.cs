@@ -16,7 +16,6 @@ using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
 using Microsoft.Build.Locator;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
@@ -222,22 +221,22 @@ namespace Incrementalist.Cmd
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
 
-            var msBuild = MSBuildWorkspace.Create();
+            var engine = new WorkspaceBuildEngine(logger);
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
                 var normalizedPath =
                     workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)));
 
-                await ProcessSln(options, normalizedPath, workingFolder, msBuild, logger, ct);
+                await ProcessSln(options, normalizedPath, workingFolder, engine, logger, ct);
             }
 
             else
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder))
-                    await ProcessSln(options, sln, workingFolder, msBuild, logger, ct);
+                    await ProcessSln(options, sln, workingFolder, engine, logger, ct);
         }
 
         private static async Task ProcessSln(RunOptions options, RelativePath sln, AbsolutePath workingFolder,
-            MSBuildWorkspace msBuild, ILogger logger, CancellationToken ct)
+            BuildEngine engine, ILogger logger, CancellationToken ct)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -250,7 +249,7 @@ namespace Incrementalist.Cmd
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
 
             logger.LogInformation("Beginning dependency analysis...");
-            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger, ct);
+            var emitTask = new EmitDependencyGraphTask(settings, engine, logger, ct);
             var buildResult = await emitTask.Run();
 
             var analysisTime = stopwatch.Elapsed;
@@ -274,8 +273,8 @@ namespace Incrementalist.Cmd
                 {
                     case FullSolutionBuildResult:
                         buildType = "Full solution build";
-                        projectsToRebuild = msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                            .Select(p => new AbsolutePath(p.FilePath!)).ToList();
+                        var solutionFilePath = Path.Join(settings.WorkingDirectory.Path, settings.SolutionFile.Path);
+                        projectsToRebuild = (await engine.CreateSolutionAsync(solutionFilePath, ct)).Projects.Select(p => p.FilePath).ToList();
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";

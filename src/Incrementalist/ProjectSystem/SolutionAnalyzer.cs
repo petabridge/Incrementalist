@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="SolutionAnalyzer.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -7,30 +7,28 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.ProjectSystem
 {
     public readonly struct SlnFile
     {
-        public SlnFile(FileType fileType, ProjectId? projectId)
+        public SlnFile(FileType fileType, Project? project)
         {
             FileType = fileType;
-            ProjectId = projectId;
+            Project = project;
         }
 
         public FileType FileType { get; }
 
         /// <summary>
-        ///     The ID of the project to which this file belongs.
+        ///     The project to which this file belongs.
         ///     Used in the topological sorting of dependencies later.
         /// </summary>
         /// <remarks>
         ///     Will be <c>null</c> when <see cref="FileType" /> is Solution file.
         /// </remarks>
-        public ProjectId? ProjectId { get; }
+        public Project? Project { get; }
     }
 
     /// <summary>
@@ -50,19 +48,13 @@ namespace Incrementalist.ProjectSystem
             ArgumentNullException.ThrowIfNull(sln.FilePath, nameof(sln.FilePath));
 
             var allPossibleFiles = sln.Projects.SelectMany(x => x.Documents)
-                .Where(x => x.FilePath != null)
-                .GroupBy(x => x.FilePath,
-                    document => new SlnFile(
-                        document.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
-                        document.Project.Id))
-                .ToDictionary(x => new AbsolutePath(Path.GetFullPath(x.Key!)), x => x.ToArray())
-                .Concat(sln.Projects.Where(x => x.FilePath != null).Select(x =>
-                        new KeyValuePair<AbsolutePath, SlnFile[]>(new AbsolutePath(Path.GetFullPath(x.FilePath!)),
-                            [new SlnFile(FileType.Project, x.Id)]))
-                    .Concat([
-                        new KeyValuePair<AbsolutePath, SlnFile[]>
-                            (new AbsolutePath(Path.GetFullPath(sln.FilePath)), [new SlnFile(FileType.Solution, null)])
-                    ]));
+                .GroupBy(x => x.FilePath, document => new SlnFile(document.FileType, document.Project))
+                .ToDictionary(x => x.Key, x => x.ToArray()).ToList()
+                .Concat(sln.Projects.Select(x =>
+                        new KeyValuePair<AbsolutePath, SlnFile[]>(x.FilePath, [new SlnFile(FileType.Project, x)]))
+                    .Append(
+                        new KeyValuePair<AbsolutePath, SlnFile[]>(sln.FilePath, [new SlnFile(FileType.Solution, null)])
+                    ));
 
             // need to de-duplicate
             var finalFiles = new Dictionary<AbsolutePath, SlnFile[]>();

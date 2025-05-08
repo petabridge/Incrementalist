@@ -5,11 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using Incrementalist.ProjectSystem;
+using Incrementalist.Cmd;
 using Incrementalist.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -20,7 +18,6 @@ namespace Incrementalist.Tests
     {
         private readonly DisposableRepository _repository;
         private readonly SolutionWideChangeDetector _detector;
-        private readonly Solution _solution;
 
         public SolutionWideChangeDetectorTests()
         {
@@ -48,8 +45,8 @@ namespace Incrementalist.Tests
                 VersionStamp.Create(),
                 solutionPath);
 
-            _solution = workspace.AddSolution(solutionInfo);
-            _detector = new SolutionWideChangeDetector(_solution);
+            var solution = new WorkspaceSolution(workspace.AddSolution(solutionInfo));
+            _detector = new SolutionWideChangeDetector(solution);
         }
 
         private AbsolutePath GetAbsolutePath(string fileName)

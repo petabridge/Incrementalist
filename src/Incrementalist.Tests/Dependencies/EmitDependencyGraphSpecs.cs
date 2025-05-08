@@ -2,22 +2,20 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Incrementalist.Cmd;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Git;
-using Incrementalist.ProjectSystem.Cmds;
+using Incrementalist.ProjectSystem;
 using Incrementalist.Tests.Helpers;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Dependencies;
 
-[Collection(MSBuildCollectionFixture.Name)]
 public class EmitDependencyGraphSpecs : IAsyncLifetime
 {
-    private readonly ITestOutputHelper _outputHelper;
-    private readonly MSBuildWorkspace _workspace;
+    private readonly BuildEngine _engine;
     private readonly TestSolutionModel _generatedTestSolution;
     private readonly ILogger _logger;
 
@@ -26,13 +24,12 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
 
     public DisposableRepository Repository { get; }
 
-    public EmitDependencyGraphSpecs(ITestOutputHelper outputHelper, MSBuildFixture fixture)
+    public EmitDependencyGraphSpecs(ITestOutputHelper outputHelper)
     {
-        _outputHelper = outputHelper;
-        _workspace = fixture.Workspace;
         Repository = new DisposableRepository();
         _generatedTestSolution = CreateSolution();
         _logger = new TestOutputLogger(outputHelper);
+        _engine = new WorkspaceBuildEngine(_logger);
     }
 
     private BuildSettings GetBuildSettings() =>
@@ -99,7 +96,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
         Assert.NotEmpty(diffs);
 
-        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger,
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _engine, _logger,
             CancellationToken.None);
         
         // act
@@ -129,7 +126,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
         Assert.NotEmpty(diffs);
 
-        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger, CancellationToken.None);
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _engine, _logger, CancellationToken.None);
 
         // act
         var result = await cmd.Run();
