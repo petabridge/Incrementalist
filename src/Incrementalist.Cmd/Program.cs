@@ -15,7 +15,6 @@ using Incrementalist.Cmd.Config;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
-using Microsoft.Build.Locator;
 using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
@@ -218,9 +217,6 @@ namespace Incrementalist.Cmd
 
         private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger, CancellationToken ct)
         {
-            // Locate and register the default instance of MSBuild installed on this machine.
-            MSBuildLocator.RegisterDefaults();
-
             BuildEngine engine;
             if ("workspace".Equals(Environment.GetEnvironmentVariable("INCREMENTALIST_BUILD_ENGINE"), StringComparison.OrdinalIgnoreCase))
                 engine = new WorkspaceBuildEngine(logger);

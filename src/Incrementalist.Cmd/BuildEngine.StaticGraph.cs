@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Incrementalist.ProjectSystem;
 using Microsoft.Build.Execution;
 using Microsoft.Build.Graph;
-using Microsoft.Build.Locator;
 using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Cmd;
@@ -21,11 +20,6 @@ namespace Incrementalist.Cmd;
 public sealed class StaticGraphBuildEngine : BuildEngine
 {
     private readonly MicrosoftBuildEventListener _listener;
-
-    static StaticGraphBuildEngine()
-    {
-        MSBuildLocator.RegisterDefaults();
-    }
 
     public StaticGraphBuildEngine(ILogger logger, bool verbose)
     {
