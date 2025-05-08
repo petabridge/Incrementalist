@@ -215,13 +215,17 @@ namespace Incrementalist.Cmd
             await HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
+        private static BuildEngine CreateBuildEngine(RunOptions options, ILogger logger)
+        {
+            if ("workspace".Equals(Environment.GetEnvironmentVariable("INCREMENTALIST_BUILD_ENGINE"), StringComparison.OrdinalIgnoreCase))
+                return new WorkspaceBuildEngine(logger);
+
+            return new StaticGraphBuildEngine(logger, options.Verbose);
+        }
+
         private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger, CancellationToken ct)
         {
-            BuildEngine engine;
-            if ("workspace".Equals(Environment.GetEnvironmentVariable("INCREMENTALIST_BUILD_ENGINE"), StringComparison.OrdinalIgnoreCase))
-                engine = new WorkspaceBuildEngine(logger);
-            else
-                engine = new StaticGraphBuildEngine(logger, options.Verbose);
+            using var engine = CreateBuildEngine(options, logger);
 
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
