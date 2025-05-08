@@ -217,10 +217,12 @@ namespace Incrementalist.Cmd
 
         private static BuildEngine CreateBuildEngine(RunOptions options, ILogger logger)
         {
-            if ("workspace".Equals(Environment.GetEnvironmentVariable("INCREMENTALIST_BUILD_ENGINE"), StringComparison.OrdinalIgnoreCase))
-                return new WorkspaceBuildEngine(logger);
-
-            return new StaticGraphBuildEngine(logger, options.Verbose);
+            return options.Engine switch
+            {
+                Engine.StaticGraph => new StaticGraphBuildEngine(logger, options.Verbose),
+                Engine.Workspace => new WorkspaceBuildEngine(logger),
+                _ => throw new ArgumentOutOfRangeException(nameof(options.Engine), options.Engine, null)
+            };
         }
 
         private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger, CancellationToken ct)
