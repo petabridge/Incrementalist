@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -221,7 +221,12 @@ namespace Incrementalist.Cmd
             // Locate and register the default instance of MSBuild installed on this machine.
             MSBuildLocator.RegisterDefaults();
 
-            var engine = new WorkspaceBuildEngine(logger);
+            BuildEngine engine;
+            if ("workspace".Equals(Environment.GetEnvironmentVariable("INCREMENTALIST_BUILD_ENGINE"), StringComparison.OrdinalIgnoreCase))
+                engine = new WorkspaceBuildEngine(logger);
+            else
+                engine = new StaticGraphBuildEngine();
+
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
                 var normalizedPath =

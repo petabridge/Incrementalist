@@ -1,4 +1,5 @@
-﻿using System.IO;
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +14,12 @@ using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Dependencies;
 
-public class EmitDependencyGraphSpecs : IAsyncLifetime
+public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
 {
+    public class Workspace(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new WorkspaceBuildEngine(logger));
+
+    public class StaticGraph(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, _ => new StaticGraphBuildEngine());
+
     private readonly BuildEngine _engine;
     private readonly TestSolutionModel _generatedTestSolution;
     private readonly ILogger _logger;
@@ -24,12 +29,12 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
 
     public DisposableRepository Repository { get; }
 
-    public EmitDependencyGraphSpecs(ITestOutputHelper outputHelper)
+    protected EmitDependencyGraphSpecs(ITestOutputHelper outputHelper, Func<ILogger, BuildEngine> buildEngine)
     {
         Repository = new DisposableRepository();
         _generatedTestSolution = CreateSolution();
         _logger = new TestOutputLogger(outputHelper);
-        _engine = new WorkspaceBuildEngine(_logger);
+        _engine = buildEngine(_logger);
     }
 
     private BuildSettings GetBuildSettings() =>
