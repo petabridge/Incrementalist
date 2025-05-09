@@ -79,6 +79,7 @@
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.9.3</XunitVersion>
     <TestSdkVersion>17.13.0</TestSdkVersion>
+    <MicrosoftBuildVersion>17.11.4</MicrosoftBuildVersion>
     <RoslynVersion>4.13.0</RoslynVersion>
     <NugetVersion>6.13.2</NugetVersion>
   </PropertyGroup>
