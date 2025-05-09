@@ -7,15 +7,15 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Build.Locator;
 
-namespace Incrementalist.Cmd;
+namespace Incrementalist.Tests;
 
 public class ModuleInitializer
 {
     [ModuleInitializer]
     public static void Initialize()
     {
-        // Required for Microsoft.Build.Graph.ProjectGraph to work.
-        // Without this, it would fail with "The SDK 'Microsoft.NET.Sdk' specified could not be found."
+        // Called in Incrementalist.Cmd in the static constructor of the Program class
+        // Must also be called for the tests
         MSBuildLocator.RegisterDefaults();
     }
 }

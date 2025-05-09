@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
 using System.Threading;
+using Microsoft.Build.Locator;
 using static Incrementalist.Cmd.SlnOptionsParser;
 
 namespace Incrementalist.Cmd
@@ -28,6 +29,13 @@ namespace Incrementalist.Cmd
         private static string _originalTitle = string.Empty;
         private static CancellationTokenSource _processCts = new CancellationTokenSource();
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+        static Program()
+        {
+            // Required for Microsoft.Build.Graph.ProjectGraph to work.
+            // Without this, it would fail with "The SDK 'Microsoft.NET.Sdk' specified could not be found."
+            MSBuildLocator.RegisterDefaults();
+        }
 
         private static void SetTitle()
         {
