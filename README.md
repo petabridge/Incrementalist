@@ -225,8 +225,6 @@ verb-specific options.
   --help                      Display help screen.
 
   --version                   Display version information.
-
-  --name-application-to-start The application or document to start the process. By default 'dotnet'.
 ```
 
 ### Available Verbs
