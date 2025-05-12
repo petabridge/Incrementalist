@@ -38,7 +38,7 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
     }
 
     private BuildSettings GetBuildSettings() =>
-        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, [], []);
+        new BuildSettings(PrimaryBranch, _generatedTestSolution.FilePath, Repository.BasePath, [], [], "dotnet");
 
     public const string ProjectBTests = "ProjectB.Tests";
     public const string ProjectB = "ProjectB";

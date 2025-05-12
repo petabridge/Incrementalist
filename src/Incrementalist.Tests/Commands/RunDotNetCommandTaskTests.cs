@@ -40,7 +40,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Execute_Command_Successfully()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
             var projectPath = new AbsolutePath(Path.Combine(_repository.BasePath.Path, "test.csproj"));
             await File.WriteAllTextAsync(projectPath.Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
@@ -61,7 +61,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Handle_Failed_Command()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
             var task = new RunDotNetCommandTask(settings, _logger, ["build", "--invalid-option"], true, false, CancellationToken.None);
 
             // Act
@@ -77,7 +77,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Run_Commands_In_Parallel()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
             var projects = new List<AbsolutePath>();
             for (int i = 1; i <= 3; i++)
             {
@@ -105,7 +105,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Stop_On_First_Failure_When_ContinueOnError_False()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
             var task = new RunDotNetCommandTask(settings, _logger, ["invalid-command"], false, false, CancellationToken.None);
             var projects = new[] { "project1.csproj", "project2.csproj" }.Select(c =>
                 new AbsolutePath(Path.Combine(_repository.BasePath.Path, c))).ToList();
@@ -121,7 +121,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Execute_Full_Solution_Build()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
             var solutionPath = new AbsolutePath(Path.Combine(_repository.BasePath.Path, "test.sln"));
 
             // Create a minimal valid solution file
@@ -154,7 +154,7 @@ namespace Incrementalist.Tests.Commands
         public async Task Should_Execute_Full_Slnx_Build()
         {
             // Arrange
-            var settings = new BuildSettings("master", new RelativePath("test.slnx"), _repository.BasePath, [], []);
+            var settings = new BuildSettings("master", new RelativePath("test.slnx"), _repository.BasePath, [], [], "dotnet");
             var solutionPath = new AbsolutePath(Path.Combine(_repository.BasePath.Path, "test.slnx"));
 
             // Create a minimal valid solution file

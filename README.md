@@ -190,41 +190,43 @@ verb-specific options.
 ### Common Options (available for all verbs)
 
 ```
-  -s, --sln             Optional. Solution file to analyze. Uses first .sln in
-                        current directory if not specified.
+  -s, --sln                   Optional. Solution file to analyze. Uses first .sln in
+                              current directory if not specified.
 
-  -f, --file            Optional. Write output to the specified file.
+  -f, --file                  Optional. Write output to the specified file.
 
-  -b, --branch          Optional. Git branch to compare against
-                        (e.g., 'dev' or 'master').
+  -b, --branch                Optional. Git branch to compare against
+                              (e.g., 'dev' or 'master').
 
-  -d, --dir             Optional. Working directory. Defaults to current directory.
+  -d, --dir                   Optional. Working directory. Defaults to current directory.
 
-  --verbose             Optional. (Default: false) Enable debug logging.
+  --verbose                   Optional. (Default: false) Enable debug logging.
 
-  -t, --timeout         Optional. (Default: 2) Solution load timeout in minutes.
+  -t, --timeout               Optional. (Default: 2) Solution load timeout in minutes.
 
-  -c, --config          Optional. Path to the configuration file. Defaults to 
-                        .incrementalist/incrementalist.json in the current directory.
+  -c, --config                Optional. Path to the configuration file. Defaults to 
+                              .incrementalist/incrementalist.json in the current directory.
 
-  --continue-on-error   Optional. (Default: true) Continue executing commands even
-                        if some fail.
+  --continue-on-error         Optional. (Default: true) Continue executing commands even
+                              if some fail.
 
-  --parallel            Optional. (Default: false) Execute commands in parallel.
+  --parallel                  Optional. (Default: false) Execute commands in parallel.
 
-  --fail-on-no-projects Optional. (Default: false) Fail if no projects are affected.
+  --fail-on-no-projects       Optional. (Default: false) Fail if no projects are affected.
                         
-  --skip-glob           Optional. Glob pattern to exclude projects from the final
-                        list. Applied after analyzing dependencies. Can be used
-                        multiple times.
-                        
-  --target-glob         Optional. Glob pattern to include only matching projects in
-                        the final list. Applied after analyzing dependencies. Can
-                        be used multiple times.
+  --skip-glob                 Optional. Glob pattern to exclude projects from the final
+                              list. Applied after analyzing dependencies. Can be used
+                              multiple times.
 
-  --help                Display help screen.
+  --target-glob               Optional. Glob pattern to include only matching projects in
+                              the final list. Applied after analyzing dependencies. Can
+                              be used multiple times.
 
-  --version             Display version information.
+  --help                      Display help screen.
+
+  --version                   Display version information.
+
+  --name-application-to-start The application or document to start the process. By default 'dotnet'.
 ```
 
 ### Available Verbs
