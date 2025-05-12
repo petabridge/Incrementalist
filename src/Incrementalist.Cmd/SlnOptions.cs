@@ -61,6 +61,32 @@ namespace Incrementalist.Cmd
         }
     }
 
+    [Verb("run-process", HelpText = "Run a custom process against affected projects. Allows specifying the process to start and its arguments. Useful for non-dotnet commands or scripts.")]
+    public sealed class RunProcessOptions : SlnOptions
+    {
+        [Option("process", Required = true, HelpText = "The name or path of the process to start (e.g. 'dotnet', '/bin/bash', 'mytool').")] 
+        public string ProcessName { get; set; } = string.Empty;
+
+        // Arguments to pass to the process after --
+        public string[] ProcessArgs { get; set; } = [];
+
+        [Option("engine", Default = Engine.StaticGraph, Required = false,
+            HelpText = $"The engine used to analyze the solutions and projects. " +
+                       $"Either {nameof(Engine.StaticGraph)} or {nameof(Engine.Workspace)}")]
+        public Engine Engine { get; set; }
+
+        internal override SlnOptions PrepareForMerge()
+        {
+            return new RunProcessOptions
+            {
+                ProcessName = ProcessName,
+                ProcessArgs = ProcessArgs,
+                ConfigFile = ConfigFile,
+                Engine = Engine,
+            };
+        }
+    }
+
     public enum Engine
     {
         StaticGraph,
