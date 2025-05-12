@@ -20,7 +20,7 @@ namespace Incrementalist.ProjectSystem.Cmds
     ///     and emits a topologically sorted set of project file names to be used during testing.
     /// </summary>
     public sealed class
-        ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile[]>,
+        ComputeDependencyGraphCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile>,
         Dictionary<AbsolutePath, ICollection<AbsolutePath>>>
     {
         private readonly Solution _solution;
@@ -32,7 +32,7 @@ namespace Incrementalist.ProjectSystem.Cmds
         }
 
         protected override async Task<Dictionary<AbsolutePath, ICollection<AbsolutePath>>> ProcessImpl(
-            Task<Dictionary<AbsolutePath, SlnFile[]>> previousTask)
+            Task<Dictionary<AbsolutePath, SlnFile>> previousTask)
         {
             var affectedSlnFiles = await previousTask;
 
@@ -51,9 +51,9 @@ namespace Incrementalist.ProjectSystem.Cmds
              * We have to gather up each unique project file separately in this case.
              */
             List<ProjectId> additionalProjectIds = [];
-            if (affectedSlnFiles.Any(x => x.Value.Any(f => f.FileType == FileType.Project)))
+            if (affectedSlnFiles.Any(x => x.Value.FileType == FileType.Project))
             {
-                foreach (var proj in affectedSlnFiles.Where(x => x.Value.Any(f => f.FileType == FileType.Project)))
+                foreach (var proj in affectedSlnFiles.Where(x => x.Value.FileType == FileType.Project))
                     additionalProjectIds.AddRange(_solution.Projects
                         .Where(x => x.FilePath != null && x.FilePath.Equals(proj.Key.Path)).Select(x => x.Id));
             }
@@ -78,8 +78,8 @@ namespace Incrementalist.ProjectSystem.Cmds
             }
 
             var uniqueProjectIds = affectedSlnFiles
-                .Where(c => c.Value.All(f => f.ProjectId != null))
-                .SelectMany(x => x.Value.Select(f => f.ProjectId!)).Concat(additionalProjectIds)
+                .Where(c => c.Value.ProjectId != null)
+                .Select(x => x.Value.ProjectId!).Concat(additionalProjectIds)
                 .Distinct().ToList();
 
             Logger.LogDebug("Evaluating {Count} unique project IDs.", uniqueProjectIds.Count);

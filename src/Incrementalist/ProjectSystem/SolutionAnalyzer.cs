@@ -44,7 +44,7 @@ namespace Incrementalist.ProjectSystem
         /// <param name="sln">The Solution file.</param>
         /// <param name="workingFolder"></param>
         /// <returns>A flattened list of all files inside the solution.</returns>
-        public static Dictionary<AbsolutePath, SlnFile[]> AllSolutionFiles(Solution sln, AbsolutePath workingFolder)
+        public static Dictionary<AbsolutePath, SlnFile> AllSolutionFiles(Solution sln, AbsolutePath workingFolder)
         {
             // throw if the solution's file path is null
             ArgumentNullException.ThrowIfNull(sln.FilePath, nameof(sln.FilePath));
@@ -55,17 +55,17 @@ namespace Incrementalist.ProjectSystem
                     document => new SlnFile(
                         document.SourceCodeKind == SourceCodeKind.Regular ? FileType.Code : FileType.Script,
                         document.Project.Id))
-                .ToDictionary(x => new AbsolutePath(Path.GetFullPath(x.Key!)), x => x.ToArray())
+                .ToDictionary(x => new AbsolutePath(Path.GetFullPath(x.Key!)), x => x.First()).ToList()
                 .Concat(sln.Projects.Where(x => x.FilePath != null).Select(x =>
-                        new KeyValuePair<AbsolutePath, SlnFile[]>(new AbsolutePath(Path.GetFullPath(x.FilePath!)),
-                            [new SlnFile(FileType.Project, x.Id)]))
+                        new KeyValuePair<AbsolutePath, SlnFile>(new AbsolutePath(Path.GetFullPath(x.FilePath!)),
+                            new SlnFile(FileType.Project, x.Id)))
                     .Concat([
-                        new KeyValuePair<AbsolutePath, SlnFile[]>
-                            (new AbsolutePath(Path.GetFullPath(sln.FilePath)), [new SlnFile(FileType.Solution, null)])
+                        new KeyValuePair<AbsolutePath, SlnFile>
+                            (new AbsolutePath(Path.GetFullPath(sln.FilePath)), new SlnFile(FileType.Solution, null))
                     ]));
 
             // need to de-duplicate
-            var finalFiles = new Dictionary<AbsolutePath, SlnFile[]>();
+            var finalFiles = new Dictionary<AbsolutePath, SlnFile>();
             foreach (var file in allPossibleFiles)
             {
                 finalFiles[file.Key] = file.Value;
