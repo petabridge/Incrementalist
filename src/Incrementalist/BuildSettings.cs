@@ -19,7 +19,7 @@ namespace Incrementalist
         public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(100);
 
         public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory,
-            IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs, TimeSpan? timeoutDuration = null)
+            IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs, string? nameApplicationToStart, TimeSpan? timeoutDuration = null)
         {
             TargetBranch = targetBranch;
             SolutionFile = solutionFile;
@@ -27,6 +27,7 @@ namespace Incrementalist
             SkipGlobs = skipGlobs;
             TargetGlobs = targetGlobs;
             TimeoutDuration = timeoutDuration ?? DefaultTimeout;
+            NameApplicationToStart = nameApplicationToStart;
         }
 
         /// <summary>
@@ -63,5 +64,10 @@ namespace Incrementalist
         /// Exclude all projects that don't match the given globs.
         /// </summary>
         public IReadOnlyList<string> TargetGlobs { get; }
+
+        /// <summary>
+        /// The application or document to start the process.
+        /// </summary>
+        public string? NameApplicationToStart { get; }
     }
 }

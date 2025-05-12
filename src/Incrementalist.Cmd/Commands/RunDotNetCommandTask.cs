@@ -117,7 +117,7 @@ namespace Incrementalist.Cmd.Commands
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "dotnet",
+                    FileName = _settings.NameApplicationToStart,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

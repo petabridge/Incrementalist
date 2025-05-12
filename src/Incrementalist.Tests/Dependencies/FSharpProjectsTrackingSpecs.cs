@@ -54,8 +54,9 @@ namespace Incrementalist.Tests.Dependencies
 
             var logger = new TestOutputLogger(_outputHelper);
             var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath, [],
-                []);
+                [], "dotnet");
             var emitTask = new EmitDependencyGraphTask(settings, new WorkspaceBuildEngine(logger), logger, CancellationToken.None);
+
             var buildResult = await emitTask.Run();
 
             // When all projects are affected, we expect a full solution build
