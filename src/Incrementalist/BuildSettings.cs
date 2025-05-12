@@ -16,7 +16,7 @@ namespace Incrementalist
     /// </summary>
     public sealed class BuildSettings
     {
-        public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(1);
+        public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(100);
 
         public BuildSettings(string targetBranch, RelativePath solutionFile, AbsolutePath workingDirectory,
             IReadOnlyList<string> skipGlobs, IReadOnlyList<string> targetGlobs, string? nameApplicationToStart, TimeSpan? timeoutDuration = null)

@@ -6,11 +6,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.IO;
-using Microsoft.CodeAnalysis;
 
 namespace Incrementalist.Tests.Helpers
 {
@@ -50,67 +48,6 @@ namespace Incrementalist.Tests.Helpers
                 new SampleFile(solutionName, solutionContent),
                 new SampleFile("CSharpProject.csproj", csharpProjectContent),
                 new SampleFile("FSharpProject.fsproj", fsharpProjectContent));
-        }
-
-        /// <summary>
-        /// Creates a sample solution file content
-        /// </summary>
-        public static string CreateSolutionFile(string solutionName, IEnumerable<string> projectNames)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("Microsoft Visual Studio Solution File, Format Version 12.00");
-            sb.AppendLine("# Visual Studio Version 17");
-            sb.AppendLine("VisualStudioVersion = 17.0.31903.59");
-            sb.AppendLine("MinimumVisualStudioVersion = 10.0.40219.1");
-
-            foreach (var projectName in projectNames)
-            {
-                var projectGuid = Guid.NewGuid().ToString("B").ToUpperInvariant();
-                sb.AppendLine(
-                    $"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{projectName}\", \"src\\{projectName}\\{projectName}.csproj\", \"{projectGuid}\"");
-                sb.AppendLine("EndProject");
-            }
-
-            sb.AppendLine("Global");
-            sb.AppendLine("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
-            sb.AppendLine("\t\tDebug|Any CPU = Debug|Any CPU");
-            sb.AppendLine("\t\tRelease|Any CPU = Release|Any CPU");
-            sb.AppendLine("\tEndGlobalSection");
-            sb.AppendLine("EndGlobal");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Creates a sample project file content
-        /// </summary>
-        public static string CreateProjectFile(
-            string projectName,
-            IEnumerable<string>? projectReferences = null,
-            string targetFramework = "net7.0")
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("<Project Sdk=\"Microsoft.NET.Sdk\">");
-            sb.AppendLine("  <PropertyGroup>");
-            sb.AppendLine($"    <TargetFramework>{targetFramework}</TargetFramework>");
-            sb.AppendLine("    <ImplicitUsings>enable</ImplicitUsings>");
-            sb.AppendLine("    <Nullable>enable</Nullable>");
-            sb.AppendLine("  </PropertyGroup>");
-
-            if (projectReferences?.Any() == true)
-            {
-                sb.AppendLine("  <ItemGroup>");
-                foreach (var reference in projectReferences)
-                {
-                    sb.AppendLine($"    <ProjectReference Include=\"..\\{reference}\\{reference}.csproj\" />");
-                }
-
-                sb.AppendLine("  </ItemGroup>");
-            }
-
-            sb.AppendLine("</Project>");
-
-            return sb.ToString();
         }
 
         /// <summary>

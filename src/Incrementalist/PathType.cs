@@ -69,7 +69,7 @@ public sealed record AbsolutePath : IHavePathType
 
     public string Path { get; init; }
 
-    public PathType PathType => PathType.RelativePath;
+    public PathType PathType => PathType.AbsolutePath;
 
     public RelativePath ComputeRelativePathToMe(AbsolutePath basePath)
     {

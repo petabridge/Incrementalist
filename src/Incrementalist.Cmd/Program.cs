@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Program.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -15,12 +15,11 @@ using Incrementalist.Cmd.Config;
 using Incrementalist.Git;
 using Incrementalist.ProjectSystem;
 using LibGit2Sharp;
-using Microsoft.Build.Locator;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 using System.Diagnostics;
 using System.Threading;
+using Microsoft.Build.Locator;
 using static Incrementalist.Cmd.SlnOptionsParser;
 
 namespace Incrementalist.Cmd
@@ -30,6 +29,13 @@ namespace Incrementalist.Cmd
         private static string _originalTitle = string.Empty;
         private static CancellationTokenSource _processCts = new CancellationTokenSource();
         private static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+        static Program()
+        {
+            // Required for Microsoft.Build.Graph.ProjectGraph to work.
+            // Without this, it would fail with "The SDK 'Microsoft.NET.Sdk' specified could not be found."
+            MSBuildLocator.RegisterDefaults();
+        }
 
         private static void SetTitle()
         {
@@ -218,27 +224,35 @@ namespace Incrementalist.Cmd
             await HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
+        private static BuildEngine CreateBuildEngine(RunOptions options, ILogger logger)
+        {
+            return options.Engine switch
+            {
+                Engine.StaticGraph => new StaticGraphBuildEngine(logger, options.Verbose),
+                Engine.Workspace => new WorkspaceBuildEngine(logger),
+                _ => throw new ArgumentOutOfRangeException(nameof(options.Engine), options.Engine, null)
+            };
+        }
+
         private static async Task AnalyzeSolutionDIff(RunOptions options, AbsolutePath workingFolder, ILogger logger, CancellationToken ct)
         {
-            // Locate and register the default instance of MSBuild installed on this machine.
-            MSBuildLocator.RegisterDefaults();
+            using var engine = CreateBuildEngine(options, logger);
 
-            var msBuild = MSBuildWorkspace.Create();
             if (!string.IsNullOrEmpty(options.SolutionFilePath))
             {
                 var normalizedPath =
                     workingFolder.ComputeRelativePathToMe(new AbsolutePath(Path.GetFullPath(options.SolutionFilePath)));
 
-                await ProcessSln(options, normalizedPath, workingFolder, msBuild, logger, ct);
+                await ProcessSln(options, normalizedPath, workingFolder, engine, logger, ct);
             }
 
             else
                 foreach (var sln in SolutionFinder.GetSolutions(workingFolder))
-                    await ProcessSln(options, sln, workingFolder, msBuild, logger, ct);
+                    await ProcessSln(options, sln, workingFolder, engine, logger, ct);
         }
 
         private static async Task ProcessSln(RunOptions options, RelativePath sln, AbsolutePath workingFolder,
-            MSBuildWorkspace msBuild, ILogger logger, CancellationToken ct)
+            BuildEngine engine, ILogger logger, CancellationToken ct)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -252,7 +266,7 @@ namespace Incrementalist.Cmd
                 TimeSpan.FromMinutes(options.TimeoutMinutes));
 
             logger.LogInformation("Beginning dependency analysis...");
-            var emitTask = new EmitDependencyGraphTask(settings, msBuild, logger, ct);
+            var emitTask = new EmitDependencyGraphTask(settings, engine, logger, ct);
             var buildResult = await emitTask.Run();
 
             var analysisTime = stopwatch.Elapsed;
@@ -276,8 +290,8 @@ namespace Incrementalist.Cmd
                 {
                     case FullSolutionBuildResult:
                         buildType = "Full solution build";
-                        projectsToRebuild = msBuild.CurrentSolution.Projects.Where(p => p.FilePath is not null)
-                            .Select(p => new AbsolutePath(p.FilePath!)).ToList();
+                        var solutionFilePath = new AbsolutePath(Path.Join(settings.WorkingDirectory.Path, settings.SolutionFile.Path));
+                        projectsToRebuild = (await engine.CreateSolutionAsync(solutionFilePath, ct)).Projects.Select(p => p.FilePath).ToList();
                         break;
                     case IncrementalBuildResult incremental:
                         buildType = "Incremental build";

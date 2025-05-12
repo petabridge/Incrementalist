@@ -50,7 +50,7 @@ namespace Incrementalist.Tests.Dependencies
                 .WriteFile(sample.ImportedPropsFile);
 
             var projectFile =
-                new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, ProjectId.CreateNewId()));
+                new SlnFileWithPath(projectFilePath, new SlnFile(FileType.Project, null));
             var imports = ProjectImportsFinder.FindProjectImports([projectFile]);
 
             var expectedImport = new ImportedFile(importedPropsFilePath, new[] { projectFile }.ToImmutableList());
@@ -75,9 +75,9 @@ namespace Incrementalist.Tests.Dependencies
 
             var cmd = new FilterAffectedProjectFilesCmd(new TestOutputLogger(_outputHelper), CancellationToken.None,
                 Repository.BasePath, "master");
-            var solutionFiles = new Dictionary<AbsolutePath, SlnFile>()
+            var solutionFiles = new Dictionary<AbsolutePath, SlnFile[]>()
             {
-                [projectFilePath] = new SlnFile(FileType.Project, ProjectId.CreateNewId())
+                [projectFilePath] = [new SlnFile(FileType.Project, null)]
             };
             var filteredAffectedFiles = await cmd.Process(Task.FromResult(solutionFiles));
             Assert.Single(filteredAffectedFiles);

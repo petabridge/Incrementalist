@@ -44,6 +44,11 @@ namespace Incrementalist.Cmd
             Required = false)]
         public bool DryRun { get; set; } = false;
 
+        [Option("engine", Default = Engine.StaticGraph, Required = false,
+            HelpText = $"The engine used to analyze the solutions and projects. " +
+                       $"Either {nameof(Engine.StaticGraph)} or {nameof(Engine.Workspace)}")]
+        public Engine Engine { get; set; }
+
         internal override SlnOptions PrepareForMerge()
         {
             return new RunOptions
@@ -51,8 +56,15 @@ namespace Incrementalist.Cmd
                 DotNetArgs = DotNetArgs,
                 ConfigFile = ConfigFile,
                 DryRun = DryRun,
+                Engine = Engine,
             };
         }
+    }
+
+    public enum Engine
+    {
+        StaticGraph,
+        Workspace,
     }
 
     public abstract class SlnOptions

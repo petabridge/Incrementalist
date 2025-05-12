@@ -8,11 +8,14 @@
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <LangVersion>latest</LangVersion>
         <Description>.NET Core global tool for determining how to run incremental builds based on the current Git diff.</Description>
+        <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser"/>
+        <PackageReference Include="Microsoft.Build"/>
         <PackageReference Include="Microsoft.Build.Locator"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"/>
         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>

@@ -7,6 +7,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Incrementalist.Cmd;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.ProjectSystem;
 using Incrementalist.Tests.Helpers;
@@ -16,17 +17,14 @@ using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Dependencies
 {
-    [Collection(MSBuildCollectionFixture.Name)]
     public class FSharpProjectsTrackingSpecs : IDisposable
     {
         private readonly ITestOutputHelper _outputHelper;
-        private readonly MSBuildWorkspace _workspace;
         public DisposableRepository Repository { get; }
 
-        public FSharpProjectsTrackingSpecs(ITestOutputHelper outputHelper, MSBuildFixture fixture)
+        public FSharpProjectsTrackingSpecs(ITestOutputHelper outputHelper)
         {
             _outputHelper = outputHelper;
-            _workspace = fixture.Workspace;
             Repository = new DisposableRepository();
         }
 
@@ -57,7 +55,8 @@ namespace Incrementalist.Tests.Dependencies
             var logger = new TestOutputLogger(_outputHelper);
             var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath, [],
                 [], "dotnet");
-            var emitTask = new EmitDependencyGraphTask(settings, _workspace, logger, CancellationToken.None);
+            var emitTask = new EmitDependencyGraphTask(settings, new WorkspaceBuildEngine(logger), logger, CancellationToken.None);
+
             var buildResult = await emitTask.Run();
 
             // When all projects are affected, we expect a full solution build

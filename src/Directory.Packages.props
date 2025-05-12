@@ -1,11 +1,16 @@
 <Project>
     <PropertyGroup>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
     <ItemGroup>
         <PackageVersion Include="Libgit2Sharp" Version="0.31.0"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)"/>
         <PackageVersion Include="CommandLineParser" Version="2.9.1"/>
+        <PackageVersion Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)"/>
+        <PackageVersion Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)"/>
+        <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)"/>
+        <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)"/>
         <PackageVersion Include="Microsoft.Build.Locator" Version="1.9.1"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(RoslynVersion)"/>
         <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="9.0.4"/>
