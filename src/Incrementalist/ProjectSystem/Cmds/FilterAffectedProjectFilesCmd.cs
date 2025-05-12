@@ -21,8 +21,8 @@ namespace Incrementalist.ProjectSystem.Cmds
     ///     they were touched via the GitDiff.
     /// </summary>
     public sealed class
-        FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile[]>,
-        Dictionary<AbsolutePath, SlnFile[]>>
+        FilterAffectedProjectFilesCmd : BuildCommandBase<Dictionary<AbsolutePath, SlnFile>,
+        Dictionary<AbsolutePath, SlnFile>>
     {
         private readonly string _targetGitBranch;
         private readonly AbsolutePath _workingDirectory;
@@ -35,8 +35,8 @@ namespace Incrementalist.ProjectSystem.Cmds
             _targetGitBranch = targetGitBranch;
         }
 
-        protected override async Task<Dictionary<AbsolutePath, SlnFile[]>> ProcessImpl(
-            Task<Dictionary<AbsolutePath, SlnFile[]>> previousTask)
+        protected override async Task<Dictionary<AbsolutePath, SlnFile>> ProcessImpl(
+            Task<Dictionary<AbsolutePath, SlnFile>> previousTask)
         {
             var fileDictObj = await previousTask;
 
@@ -45,7 +45,7 @@ namespace Incrementalist.ProjectSystem.Cmds
             {
                 Logger.LogError("Unable to find Git repository located in {WorkingDirectory}. Shutting down.",
                     _workingDirectory);
-                return [];
+                return new Dictionary<AbsolutePath, SlnFile>();
             }
 
             // validate the target branch
@@ -53,20 +53,20 @@ namespace Incrementalist.ProjectSystem.Cmds
             {
                 Logger.LogError("Current git repository doesn't have any branch named [{TargetBranch}]. Shutting down.",
                     _targetGitBranch);
-                return [];
+                return new Dictionary<AbsolutePath, SlnFile>();
             }
 
             var affectedFiles = DiffHelper.ChangedFiles(repo, _targetGitBranch).ToList();
 
-            var projectFiles = fileDictObj.Where(x => x.Value is [{ FileType: FileType.Project }]).ToList();
+            var projectFiles = fileDictObj.Where(x => x.Value.FileType == FileType.Project).ToList();
             var projectFolders = projectFiles.Where(x => Path.GetDirectoryName(x.Key.Path) is not null)
                 .ToLookup(x => new AbsolutePath(Path.GetDirectoryName(x.Key.Path)!), v => Tuple.Create(v.Key, v.Value));
             var projectImports =
                 ProjectImportsFinder.FindProjectImports(projectFiles.Select(pair =>
-                    new SlnFileWithPath(pair.Key, pair.Value[0])));
+                    new SlnFileWithPath(pair.Key, pair.Value)));
 
             // filter out any files that aren't affected by the diff
-            var newDict = new Dictionary<AbsolutePath, SlnFile[]>();
+            var newDict = new Dictionary<AbsolutePath, SlnFile>();
             foreach (var file in affectedFiles)
             {
                 Logger.LogDebug("Affected file: {FilePath}", file);
@@ -86,7 +86,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                     if (SolutionWideChangeDetector.IsSolutionWideFile(file))
                     {
                         Logger.LogInformation("Adding solution-wide file {File} to the set of affected files.", file);
-                        newDict[file] = [new SlnFile(FileType.Other, null)];
+                        newDict[file] = new SlnFile(FileType.Other, null);
                         continue;
                     }
 
@@ -110,7 +110,7 @@ namespace Incrementalist.ProjectSystem.Cmds
                     // Mark all dependant as affected
                     foreach (var dependentProject in import.DependentProjects)
                     {
-                        newDict[dependentProject.Path] = [dependentProject.File];
+                        newDict[dependentProject.Path] = dependentProject.File;
                     }
                 }
             }
