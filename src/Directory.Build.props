@@ -9,7 +9,7 @@
   You can now use the new `run-process` verb to run any process (not just `dotnet`) against affected projects. This enables advanced scenarios, such as running custom scripts or tools before or after your build/test steps.  
 
   _Example:_  
-  
+
   ```shell
   incrementalist run-process --process /bin/bash -- echo 'Hello from Incrementalist!'
   ```
