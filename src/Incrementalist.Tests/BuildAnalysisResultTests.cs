@@ -5,11 +5,9 @@
 // -----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using Microsoft.CodeAnalysis;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Incrementalist.Tests
@@ -28,7 +26,7 @@ namespace Incrementalist.Tests
             Assert.Throws<ArgumentNullException>(() => new FullSolutionBuildResult(null!));
         }
 
-        private AbsolutePath MakeAbsolutePath(string path)
+        private static AbsolutePath MakeAbsolutePath(string path)
         {
             return new AbsolutePath(Path.Combine(Directory.GetCurrentDirectory(), path));
         }
@@ -36,30 +34,12 @@ namespace Incrementalist.Tests
         private static readonly string[] sourceArray = new[] { "Project1.csproj", "Project2.csproj" };
 
         [Fact]
-        public void CreateBuildResult_AllProjectsAffected_ReturnsFullSolutionBuildResult()
+        public async Task CreateBuildResult_AllProjectsAffected_ReturnsFullSolutionBuildResult()
         {
             // Arrange
-            var solutionPath = MakeAbsolutePath("test.sln");
-            var workspace = new AdhocWorkspace();
-            var solutionInfo = SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                solutionPath.Path);
-
-            var solution = workspace.AddSolution(solutionInfo);
-
-            var projectIds = new[] { ProjectId.CreateNewId(), ProjectId.CreateNewId() };
-            foreach (var id in projectIds)
-            {
-                var projectInfo = ProjectInfo.Create(
-                    id,
-                    VersionStamp.Create(),
-                    $"Project{id.Id}",
-                    $"Project{id.Id}",
-                    LanguageNames.CSharp,
-                    filePath: $"Project{id.Id}.csproj");
-                solution = solution.AddProject(projectInfo);
-            }
+            InMemoryProject[] projects = [new(MakeAbsolutePath("Project1.csproj")), new(MakeAbsolutePath("Project2.csproj"))];
+            var engine = new InMemoryBuildEngine(new InMemorySolution(projects));
+            var solution = await engine.CreateSolutionAsync(MakeAbsolutePath("test.sln"));
 
             var affectedProjects = sourceArray.Select(MakeAbsolutePath)
                 .ToList();
@@ -70,34 +50,16 @@ namespace Incrementalist.Tests
             // Assert
             Assert.IsType<FullSolutionBuildResult>(result);
             var fullResult = (FullSolutionBuildResult)result;
-            Assert.Equal(solutionPath, fullResult.SolutionPath);
+            Assert.Equal(solution.FilePath, fullResult.SolutionPath);
         }
 
         [Fact]
-        public void CreateBuildResult_SomeProjectsAffected_ReturnsIncrementalBuildResult()
+        public async Task CreateBuildResult_SomeProjectsAffected_ReturnsIncrementalBuildResult()
         {
             // Arrange
-            var solutionPath = MakeAbsolutePath("test.sln");
-            var workspace = new AdhocWorkspace();
-            var solutionInfo = SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                solutionPath.Path);
-
-            var solution = workspace.AddSolution(solutionInfo);
-
-            var projectIds = new[] { ProjectId.CreateNewId(), ProjectId.CreateNewId(), ProjectId.CreateNewId() };
-            foreach (var id in projectIds)
-            {
-                var projectInfo = ProjectInfo.Create(
-                    id,
-                    VersionStamp.Create(),
-                    $"Project{id.Id}",
-                    $"Project{id.Id}",
-                    LanguageNames.CSharp,
-                    filePath: $"Project{id.Id}.csproj");
-                solution = solution.AddProject(projectInfo);
-            }
+            InMemoryProject[] projects = [new(MakeAbsolutePath("Project1.csproj")), new(MakeAbsolutePath("Project2.csproj")), new(MakeAbsolutePath("Project3.csproj"))];
+            var engine = new InMemoryBuildEngine(new InMemorySolution(projects));
+            var solution = await engine.CreateSolutionAsync(MakeAbsolutePath("test.sln"));
 
             var affectedProjects = new[] { "Project1.csproj", "Project2.csproj" }.Select(MakeAbsolutePath)
                 .ToList(); // Only 2 of 3 projects affected
@@ -114,12 +76,7 @@ namespace Incrementalist.Tests
         [Fact]
         public void CreateBuildResult_NullAffectedProjects_ThrowsArgumentNullException()
         {
-            var workspace = new AdhocWorkspace();
-            var solution = workspace.AddSolution(SolutionInfo.Create(
-                SolutionId.CreateNewId(),
-                VersionStamp.Create(),
-                "test.sln"));
-            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(solution, null!));
+            Assert.Throws<ArgumentNullException>(() => SolutionWideChangeDetector.CreateBuildResult(new InMemorySolution([]), null!));
         }
     }
 }

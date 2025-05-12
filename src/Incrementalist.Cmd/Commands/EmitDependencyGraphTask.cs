@@ -12,8 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Incrementalist.ProjectSystem;
 using Incrementalist.ProjectSystem.Cmds;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 
 namespace Incrementalist.Cmd.Commands
@@ -25,17 +23,17 @@ namespace Incrementalist.Cmd.Commands
     {
         private readonly CancellationToken _ct;
 
-        public EmitDependencyGraphTask(BuildSettings settings, MSBuildWorkspace workspace, ILogger logger, CancellationToken cancellation)
+        public EmitDependencyGraphTask(BuildSettings settings, BuildEngine engine, ILogger logger, CancellationToken cancellation)
         {
             Settings = settings;
-            Workspace = workspace;
+            Engine = engine;
             Logger = new WrappedLogger(logger, nameof(EmitDependencyGraphTask));
             _ct = cancellation;
         }
 
         public BuildSettings Settings { get; }
 
-        public MSBuildWorkspace Workspace { get; }
+        public BuildEngine Engine { get; }
 
         public ILogger Logger { get; }
 
@@ -84,15 +82,10 @@ namespace Incrementalist.Cmd.Commands
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
             linkedCts.CancelAfter(Settings.TimeoutDuration);
             
-            var solutionFilePath = Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path);
+            var solutionFilePath = new AbsolutePath(Path.Join(Settings.WorkingDirectory.Path, Settings.SolutionFile.Path));
             Logger.LogInformation("Opening solution {Solution}...", solutionFilePath);
-            var progress = new Progress<ProjectLoadProgress>(x =>
-            {
-                Logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath,
-                    x.ElapsedTime);
-            });
 
-            var solution = await Workspace.OpenSolutionAsync(solutionFilePath, progress, linkedCts.Token);
+            var solution = await Engine.CreateSolutionAsync(solutionFilePath, linkedCts.Token);
             Logger.LogInformation("Solution opened successfully. Gathering solution files...");
 
             var getFilesCmd = new GatherAllFilesInSolutionCmd(Logger, linkedCts.Token, Settings.WorkingDirectory);
@@ -115,11 +108,11 @@ namespace Incrementalist.Cmd.Commands
             }
 
             // Log the breakdown of modified files by type
-            var modifiedSourceFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Code);
-            var modifiedProjectFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Project);
-            var modifiedSolutionFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Solution);
-            var modifiedScriptFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Script);
-            var modifiedOtherFiles = affectedFiles.Count(x => x.Value.FileType == FileType.Other);
+            var modifiedSourceFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Code));
+            var modifiedProjectFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Project));
+            var modifiedSolutionFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Solution));
+            var modifiedScriptFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Script));
+            var modifiedOtherFiles = affectedFiles.Count(x => x.Value.Any(f => f.FileType == FileType.Other));
             Logger.LogInformation(
                 "Modified files breakdown: {SourceFiles} source files, {ProjectFiles} project files, {SolutionFiles} solution files, {ScriptFiles} script files, {OtherFiles} other files",
                 modifiedSourceFiles, modifiedProjectFiles, modifiedSolutionFiles, modifiedScriptFiles,
@@ -127,8 +120,8 @@ namespace Incrementalist.Cmd.Commands
 
             // Check if any of the affected files require a solution-wide build
             Logger.LogInformation("Analyzing solution-wide impact...");
-            var projectFiles = allFiles.Where(x => x.Value.FileType == FileType.Project)
-                .Select(pair => new SlnFileWithPath(pair.Key, pair.Value))
+            var projectFiles = allFiles.Where(x => x.Value is [{ FileType: FileType.Project }])
+                .Select(pair => new SlnFileWithPath(pair.Key, pair.Value[0]))
                 .ToList();
             var projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
             var importDetector = new SolutionWideChangeDetector(projectImports);
@@ -136,11 +129,11 @@ namespace Incrementalist.Cmd.Commands
             if (importDetector.RequiresFullSolutionBuild(affectedFiles.Keys))
             {
                 Logger.LogInformation("Solution-wide changes detected. Full solution build required");
-                return (new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!)), projectFiles);
+                return (new FullSolutionBuildResult(solution.FilePath), projectFiles);
             }
 
             // Get the list of affected project files directly
-            var directlyAffectedProjects = affectedFiles.Where(x => x.Value.FileType == FileType.Project)
+            var directlyAffectedProjects = affectedFiles.Where(x => x.Value.Any(f => f.FileType == FileType.Project))
                 .Select(x => x.Key)
                 .ToList();
 
@@ -148,7 +141,7 @@ namespace Incrementalist.Cmd.Commands
             if (directlyAffectedProjects.Count == solution.Projects.Count())
             {
                 Logger.LogInformation("All projects are affected. Full solution build required");
-                return (new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!)), projectFiles);
+                return (new FullSolutionBuildResult(solution.FilePath), projectFiles);
             }
 
             /* INCREMENTAL BUILDS */
@@ -174,7 +167,7 @@ namespace Incrementalist.Cmd.Commands
                 if (projectFilePaths.Count == solution.Projects.Count())
                 {
                     Logger.LogInformation("All projects are affected. Full solution build required");
-                    return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath!));
+                    return new FullSolutionBuildResult(solution.FilePath);
                 }
 
                 Logger.LogInformation(

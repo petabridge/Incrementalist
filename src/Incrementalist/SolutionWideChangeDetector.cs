@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Incrementalist.ProjectSystem;
-using Microsoft.CodeAnalysis;
 
 namespace Incrementalist
 {
@@ -39,11 +38,10 @@ namespace Incrementalist
         public SolutionWideChangeDetector(Solution solution)
         {
             ArgumentNullException.ThrowIfNull(solution);
-            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
+            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath.Path);
 
             var projectFiles = solution.Projects
-                .Where(p => p.FilePath != null)
-                .Select(p => new SlnFileWithPath(new AbsolutePath(p.FilePath!), new SlnFile(FileType.Project, p.Id)))
+                .Select(p => new SlnFileWithPath(p.FilePath, new SlnFile(FileType.Project, p)))
                 .ToList();
 
             _projectImports = ProjectImportsFinder.FindProjectImports(projectFiles);
@@ -121,14 +119,14 @@ namespace Incrementalist
         {
             ArgumentNullException.ThrowIfNull(solution);
             ArgumentNullException.ThrowIfNull(affectedProjects);
-            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath);
+            ArgumentException.ThrowIfNullOrEmpty(solution.FilePath.Path);
 
-            var totalProjects = solution.Projects.Count();
+            var totalProjects = solution.Projects.Count;
 
             // If all projects are affected, return a full solution build result
             if (affectedProjects.Count == totalProjects)
             {
-                return new FullSolutionBuildResult(new AbsolutePath(solution.FilePath));
+                return new FullSolutionBuildResult(solution.FilePath);
             }
 
             return new IncrementalBuildResult(affectedProjects);

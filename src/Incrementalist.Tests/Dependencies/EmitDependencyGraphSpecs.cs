@@ -1,23 +1,26 @@
-﻿using System.IO;
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Incrementalist.Cmd;
 using Incrementalist.Cmd.Commands;
 using Incrementalist.Git;
-using Incrementalist.ProjectSystem.Cmds;
+using Incrementalist.ProjectSystem;
 using Incrementalist.Tests.Helpers;
-using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Incrementalist.Tests.Dependencies;
 
-[Collection(MSBuildCollectionFixture.Name)]
-public class EmitDependencyGraphSpecs : IAsyncLifetime
+public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
 {
-    private readonly ITestOutputHelper _outputHelper;
-    private readonly MSBuildWorkspace _workspace;
+    public class Workspace(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new WorkspaceBuildEngine(logger));
+
+    public class StaticGraph(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new StaticGraphBuildEngine(logger, verbose: false));
+
+    private readonly BuildEngine _engine;
     private readonly TestSolutionModel _generatedTestSolution;
     private readonly ILogger _logger;
 
@@ -26,13 +29,12 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
 
     public DisposableRepository Repository { get; }
 
-    public EmitDependencyGraphSpecs(ITestOutputHelper outputHelper, MSBuildFixture fixture)
+    protected EmitDependencyGraphSpecs(ITestOutputHelper outputHelper, Func<ILogger, BuildEngine> buildEngine)
     {
-        _outputHelper = outputHelper;
-        _workspace = fixture.Workspace;
         Repository = new DisposableRepository();
         _generatedTestSolution = CreateSolution();
         _logger = new TestOutputLogger(outputHelper);
+        _engine = buildEngine(_logger);
     }
 
     private BuildSettings GetBuildSettings() =>
@@ -49,13 +51,18 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
             .AddFolder("src", f1Builder =>
             {
                 f1Builder.AddProject(ProjectA,
-                    (_, p1Builder) => { p1Builder.WithFile("HelloWorld.cs", CsharpSamples.HelloClass); });
+                    (_, p1Builder) =>
+                    {
+                        p1Builder.WithFile("HelloWorld.cs", CsharpSamples.HelloClass);
+                        p1Builder.WithTargetFrameworks([TargetFramework.Net8, TargetFramework.Net9, TargetFramework.NetStandard2_0, TargetFramework.NetStandard2_1]);
+                    });
 
                 f1Builder.AddProject(ProjectB, (otherProjects, p2Builder) =>
                 {
                     p2Builder.WithFile("GoodBye.cs", CsharpSamples.GoodbyeClassWithNamespace);
                     var projectA = otherProjects.First(p => p.NameWithoutExtension == ProjectA);
                     p2Builder.WithProjectReference(projectA);
+                    p2Builder.WithTargetFrameworks([TargetFramework.Net8, TargetFramework.Net9, TargetFramework.NetStandard2_0, TargetFramework.NetStandard2_1]);
                 });
 
                 // a third project, C, with no references to anyone else
@@ -69,6 +76,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
                     p3Builder.WithFile("HelloWorldTests.cs", CsharpSamples.BarClass);
                     var projectB = otherProjects.First(p => p.NameWithoutExtension == ProjectB);
                     p3Builder.WithProjectReference(projectB);
+                    p3Builder.WithTargetFrameworks([TargetFramework.Net9]);
                 });
             })
             .Build();
@@ -93,7 +101,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
         Assert.NotEmpty(diffs);
 
-        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger,
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _engine, _logger,
             CancellationToken.None);
         
         // act
@@ -123,7 +131,7 @@ public class EmitDependencyGraphSpecs : IAsyncLifetime
         var diffs = DiffHelper.ChangedFiles(Repository.Repository, PrimaryBranch).ToList();
         Assert.NotEmpty(diffs);
 
-        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _workspace, _logger, CancellationToken.None);
+        var cmd = new EmitDependencyGraphTask(GetBuildSettings(), _engine, _logger, CancellationToken.None);
 
         // act
         var result = await cmd.Run();

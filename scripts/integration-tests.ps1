@@ -7,6 +7,10 @@ param(
     [ValidateSet("Project", "Tool")]
     [string]$ExecutionMode = "Tool",
 
+    [Parameter()]
+    [ValidateSet("StaticGraph", "Workspace")]
+    [string]$BuildEngine = "StaticGraph",
+
     [Parameter(Mandatory = $false)]
     [bool]$VerboseLogging = $false
 )
@@ -411,7 +415,7 @@ function Test-SolutionCheck
 
     $solutionTestOutput = Join-Path $TestResultsDir "incrementalist-affected-files.txt"
     Invoke-IncrementalistTest -TestName "Solution check (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--dry", "-b", "dev", "-f", $solutionTestOutput)
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "--dry", "-b", "dev", "-f", $solutionTestOutput)
     }
 }
 
@@ -420,7 +424,7 @@ function Test-CommandExecution
     param($ProjectPath, $Configuration)
 
     Invoke-IncrementalistTest -TestName "Command execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--", "build", "-c", "Release", "--nologo")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "-b", "dev", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -429,7 +433,7 @@ function Test-ParallelExecution
     param($ProjectPath, $Configuration)
 
     Invoke-IncrementalistTest -TestName "Parallel execution (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--parallel", "--", "build", "-c", "Release", "--nologo")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "-b", "dev", "--parallel", "--", "build", "-c", "Release", "--nologo")
     }
 }
 
@@ -438,7 +442,7 @@ function Test-ErrorHandling
     param($ProjectPath, $Configuration)
 
     Invoke-IncrementalistTest -TestName "Error handling (no cache)" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--fail-on-no-projects", "--", "invalid-command")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "-b", "dev", "--fail-on-no-projects", "--", "invalid-command")
     } -ExpectFailure $true
 }
 
@@ -457,6 +461,7 @@ function Test-ComplexCommandArguments
 
         $incrementalistArgs = @(
             "run",
+            "--engine", $BuildEngine,
             "-b", "dev",
             "--", # Separator for dotnet command arguments
             "test",
@@ -491,7 +496,7 @@ function Test-SimilarDotnetArguments
     }
 
     Invoke-IncrementalistTest -TestName "Similar Incrementalist and dotnet Arguments" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
-        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "-c")
+        Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "-b", "dev", "-c")
     }
 
     # Cleanup
@@ -511,7 +516,7 @@ function Test-GlobTargeting
     Invoke-IncrementalistTest -TestName "Glob targeting" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # First, run a baseline to check if any changes are detected
         Write-Host "Running baseline to check for changes..."
-        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "-f", $baselineOutput)
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "-b", "dev", "-f", $baselineOutput)
         if ($exitCodeBaseline -ne 0)
         {
             throw "Incrementalist baseline command failed with exit code $exitCodeBaseline"
@@ -552,7 +557,7 @@ function Test-GlobTargeting
 
         # Run Incrementalist with target glob
         #dotnet run --project $ProjectPath -c $Configuration --no-build -- -b dev --target-glob "**/Incrementalist.csproj" -f $targetGlobOutput
-        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--dry", "-b", "dev", "--target-glob", "**/Incrementalist.csproj", "-f", $targetGlobOutput)
+        $exitCodeTarget = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "--dry", "-b", "dev", "--target-glob", "**/Incrementalist.csproj", "-f", $targetGlobOutput)
         if ($exitCodeTarget -ne 0)
         {
             throw "Incrementalist command failed with exit code $exitCodeTarget"
@@ -584,7 +589,7 @@ function Test-GlobSkipping
     Invoke-IncrementalistTest -TestName "Glob skipping" -ProjectPath $ProjectPath -Configuration $Configuration -TestScript {
         # 1. Run without skip to get baseline affected projects
         Write-Host "Running baseline to determine affected projects..."
-        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--dry", "-b", "dev", "-f", $baselineOutput)
+        $exitCodeBaseline = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "--dry", "-b", "dev", "-f", $baselineOutput)
         if ($exitCodeBaseline -ne 0)
         {
             throw "Incrementalist command (baseline) failed with exit code $exitCodeBaseline"
@@ -627,7 +632,7 @@ function Test-GlobSkipping
 
         # 2. Run with skip glob
         Write-Host "Running with skip glob..."
-        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "-b", "dev", "--skip-glob", "**/*.Tests.csproj", "-f", $skipGlobOutput)
+        $exitCodeSkip = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @("run", "--engine", $BuildEngine, "-b", "dev", "--skip-glob", "**/*.Tests.csproj", "-f", $skipGlobOutput)
         if ($exitCodeSkip -ne 0)
         {
             throw "Incrementalist command (skip glob) failed with exit code $exitCodeSkip"
@@ -831,6 +836,7 @@ function Test-CreateAndUseConfig
             Write-Host "Running Incrementalist with custom config"
             $exitCode2 = Run-Incrementalist -ProjectPath $ProjectPath -Configuration $Configuration -IncrementalistArgs @(
                 "run",
+                "--engine", $BuildEngine,
                 "--dry", # Dry run to just list affected projects
                 "--config", $tempConfigPath
             )

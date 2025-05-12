@@ -171,6 +171,11 @@ public static class SolutionSerializer
     public static string Serialize(TestSolutionModel testSolution)
     {
         var solutionModel = new SolutionModel();
+
+        solutionModel.AddPlatform("Any CPU");
+        solutionModel.AddBuildType("Debug");
+        solutionModel.AddBuildType("Release");
+
         foreach (var item in testSolution.FlatProjects)
         {
             AddItemToSolution(item);
