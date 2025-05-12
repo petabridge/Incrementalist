@@ -184,6 +184,9 @@ namespace Incrementalist.Cmd
                         case RunOptions runOptions:
                             await AnalyzeSolutionDIff(runOptions, workingFolder, logger, ct);
                             break;
+                        case RunProcessOptions runProcessOptions:
+                            await AnalyzeSolutionDiffProcess(runProcessOptions, workingFolder, logger, ct);
+                            break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(cmdOptions),
                                 $"Unknown command line option type: {cmdOptions.GetType()}");
@@ -224,13 +227,26 @@ namespace Incrementalist.Cmd
             await HandleAffectedFiles(options, affectedFilesStr, affectedFiles.Count, logger);
         }
 
-        private static BuildEngine CreateBuildEngine(RunOptions options, ILogger logger)
+        private static BuildEngine CreateBuildEngine(SlnOptions options, ILogger logger)
         {
-            return options.Engine switch
+            var engine = Engine.StaticGraph;
+            var verbose = false;
+            switch (options)
             {
-                Engine.StaticGraph => new StaticGraphBuildEngine(logger, options.Verbose),
+                case RunOptions runOptions:
+                    engine = runOptions.Engine;
+                    verbose = runOptions.Verbose;
+                    break;
+                case RunProcessOptions runProcessOptions:
+                    engine = runProcessOptions.Engine;
+                    verbose = runProcessOptions.Verbose;
+                    break;
+            }
+            return engine switch
+            {
+                Engine.StaticGraph => new StaticGraphBuildEngine(logger, verbose),
                 Engine.Workspace => new WorkspaceBuildEngine(logger),
-                _ => throw new ArgumentOutOfRangeException(nameof(options.Engine), options.Engine, null)
+                _ => throw new ArgumentOutOfRangeException(nameof(engine), engine, null)
             };
         }
 
@@ -366,6 +382,29 @@ namespace Incrementalist.Cmd
             }
             else
                 logger.LogInformation(affectedFilesStr);
+        }
+
+        // For now, run-process is a discoverable alias for run, but only dotnet commands are supported.
+        private static async Task AnalyzeSolutionDiffProcess(RunProcessOptions options, AbsolutePath workingFolder, ILogger logger, CancellationToken ct)
+        {
+            logger.LogWarning("[run-process] Only dotnet commands are currently supported. This is a discoverability alias for 'run'.");
+            // Forward to AnalyzeSolutionDIff, mapping ProcessName/ProcessArgs to DotNetArgs
+            var runOptions = new RunOptions
+            {
+                SolutionFilePath = options.SolutionFilePath,
+                OutputFile = options.OutputFile,
+                GitBranch = options.GitBranch,
+                WorkingDirectory = options.WorkingDirectory,
+                Verbose = options.Verbose,
+                TimeoutMinutes = options.TimeoutMinutes,
+                ConfigFile = options.ConfigFile,
+                ContinueOnError = options.ContinueOnError,
+                RunInParallel = options.RunInParallel,
+                FailOnNoProjects = options.FailOnNoProjects,
+                Engine = options.Engine,
+                DotNetArgs = new[] { options.ProcessName }.Concat(options.ProcessArgs ?? Array.Empty<string>()).ToArray(),
+            };
+            await AnalyzeSolutionDIff(runOptions, workingFolder, logger, ct);
         }
     }
 }

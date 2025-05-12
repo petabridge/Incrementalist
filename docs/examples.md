@@ -33,3 +33,16 @@ Akka.Management uses this configuration on Linux agents, where the full test sui
 
 * `incrementalist` call: https://github.com/akkadotnet/Akka.Management/blob/ec6234341c59bb1760a807685021931b6a2469d1/build-system/azure-pipeline.template.yaml#L38-L40
 * configuration file: https://github.com/akkadotnet/Akka.Management/blob/ec6234341c59bb1760a807685021931b6a2469d1/.incrementalist/incrementalist.json#L1-L12 - essentially a default configuration file.
+
+## Using the `run-process` Verb
+
+The `run-process` verb is a discoverable alias for the `run` verb that currently only supports dotnet commands. It was introduced to improve CLI discoverability for future support of non-dotnet commands.
+
+### Example: "Run dotnet test with run-process"
+
+```shell
+# This is equivalent to: incrementalist run -b dev -- test -c Release
+incrementalist run-process --process dotnet -b dev -- test -c Release
+```
+
+Currently, the `--process` parameter must be set to `dotnet`, but the verb provides a more discoverable interface for future enhancements.

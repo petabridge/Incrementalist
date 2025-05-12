@@ -29,7 +29,7 @@ public static class SlnOptionsParser
             SlnOptions? options = null;
 
             var r = Parser.Default
-                .ParseArguments<RunOptions, ListFoldersOptions, CreateConfigOptions>(incrementalistArgs)
+                .ParseArguments<RunOptions, ListFoldersOptions, CreateConfigOptions, RunProcessOptions>(incrementalistArgs)
                 .MapResult((RunOptions runOptions) =>
                 {
                     runOptions.DotNetArgs = dotnetArgs;
@@ -42,6 +42,11 @@ public static class SlnOptionsParser
                 }, (CreateConfigOptions creatConfigOptions) =>
                 {
                     options = creatConfigOptions;
+                    return 0;
+                }, (RunProcessOptions runProcessOptions) =>
+                {
+                    runProcessOptions.ProcessArgs = dotnetArgs;
+                    options = runProcessOptions;
                     return 0;
                 }, errors =>
                 {

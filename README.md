@@ -262,6 +262,24 @@ Additional options for `run`:
                         executing any commands. Useful for testing.
 ```
 
+#### `run-process`
+
+Run a custom process against affected projects. Currently a discoverable alias for `run` that only supports dotnet commands.
+
+```
+incrementalist run-process [options] -- [process arguments]
+```
+
+Additional options for `run-process`:
+
+```
+  --process             Required. The name or path of the process to start (e.g. 'dotnet', '/bin/bash', 'mytool').
+                        Currently only 'dotnet' is supported.
+
+  --dry                 Optional. (Default: false) Performs a dry run without
+                        executing any commands. Useful for testing.
+```
+
 ## ⚡ Running Commands
 
 Execute dotnet CLI commands against affected projects using the `run` verb:
