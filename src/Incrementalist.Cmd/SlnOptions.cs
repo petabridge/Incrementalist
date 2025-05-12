@@ -127,6 +127,12 @@ namespace Incrementalist.Cmd
             Required = false)]
         public IEnumerable<string>? TargetGlobs { get; set; }
 
+        [Option("name-application-to-start", Default = "dotnet",
+            HelpText =
+                "The application or document to start the process.",
+            Required = false)]
+        public string? NameApplicationToStart { get; set; }
+
         /// <summary>
         /// Needed for configuration merging.
         /// </summary>
