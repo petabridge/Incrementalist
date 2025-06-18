@@ -23,10 +23,24 @@ namespace Incrementalist.Cmd.Commands
         private readonly CreateConfigOptions _options;
         private readonly ILogger _logger;
 
+        /// <summary>
+        /// The JSON schema URL for Incrementalist configuration files
+        /// </summary>
+        private const string SchemaUrl = "https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json";
+
         public CreateConfigFileTask(CreateConfigOptions options, ILogger logger)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Configuration object that includes the JSON schema reference
+        /// </summary>
+        private class ConfigWithSchema : IncrementalistConfig
+        {
+            [JsonPropertyName("$schema")]
+            public string Schema { get; set; } = SchemaUrl;
         }
 
         /// <summary>
@@ -38,7 +52,7 @@ namespace Incrementalist.Cmd.Commands
             try
             {
                 // Create the config object from the current options
-                var config = new IncrementalistConfig
+                var config = new ConfigWithSchema
                 {
                     GitBranch = _options.GitBranch,
                     SolutionFilePath = _options.SolutionFilePath,

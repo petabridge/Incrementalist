@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json",
+  "title": "Incrementalist Configuration",
+  "description": "JSON schema for Incrementalist configuration file (incrementalist.json)",
+  "type": "object",
+  "properties": {
+    "solutionFilePath": {
+      "type": "string",
+      "description": "The name of the Solution file to be analyzed by Incrementalist.",
+      "examples": ["MySolution.sln", "*.sln"]
+    },
+    "outputFile": {
+      "type": "string",
+      "description": "If specified, writes the output to the named file.",
+      "examples": ["affected-projects.txt", "output.json"]
+    },
+    "listFolders": {
+      "type": "boolean",
+      "description": "List affected folders instead of .NET projects.",
+      "default": false
+    },
+    "gitBranch": {
+      "type": "string",
+      "description": "The git branch to compare against. i.e. the 'dev' or the 'master' branch.",
+      "default": "dev",
+      "examples": ["dev", "master", "main"]
+    },
+    "workingDirectory": {
+      "type": ["string", "null"],
+      "description": "Specify the working directory explicitly. Defaults to using the current working directory.",
+      "examples": ["/path/to/project", "C:\\MyProject"]
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Prints out extensive debug logs during operation.",
+      "default": false
+    },
+    "timeoutMinutes": {
+      "type": "integer",
+      "description": "Specifies the load timeout for the solution in whole minutes. Defaults to 2 minutes.",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 60,
+      "examples": [2, 5, 10]
+    },
+    "continueOnError": {
+      "type": "boolean",
+      "description": "When running commands, continue executing even if some commands fail.",
+      "default": true
+    },
+    "runInParallel": {
+      "type": "boolean",
+      "description": "When running commands, execute them in parallel.",
+      "default": false
+    },
+    "failOnNoProjects": {
+      "type": "boolean",
+      "description": "When running commands, fail if no projects are affected.",
+      "default": false
+    },
+    "noCache": {
+      "type": "boolean",
+      "description": "Ignore any existing cache file and perform a full Roslyn analysis.",
+      "default": false
+    },
+    "skip": {
+      "type": "array",
+      "description": "Glob patterns to exclude projects from the final list. Applied after analyzing dependencies.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        ["**/obj/**", "**/bin/**"],
+        ["**/Tests/**", "**/TestProject/**"]
+      ]
+    },
+    "target": {
+      "type": "array",
+      "description": "Glob patterns to include only matching projects in the final list. Applied after analyzing dependencies.",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        ["src/**/*.csproj", "tests/**/*.csproj"],
+        ["**/*.csproj"]
+      ]
+    },
+    "nameApplicationToStart": {
+      "type": "string",
+      "description": "The application or document to start the process.",
+      "default": "dotnet",
+      "examples": ["dotnet", "msbuild", "nuget"]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "gitBranch": "master",
+      "solutionFilePath": "MySolution.sln",
+      "outputFile": "affected-projects.txt",
+      "listFolders": false,
+      "workingDirectory": null,
+      "verbose": false,
+      "timeoutMinutes": 2,
+      "continueOnError": true,
+      "runInParallel": false,
+      "failOnNoProjects": false,
+      "noCache": false
+    },
+    {
+      "gitBranch": "dev",
+      "solutionFilePath": "*.sln",
+      "verbose": true,
+      "timeoutMinutes": 5,
+      "runInParallel": true,
+      "skip": ["**/obj/**", "**/bin/**"],
+      "target": ["src/**/*.csproj"]
+    }
+  ]
+}

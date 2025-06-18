@@ -6,6 +6,23 @@ Incrementalist now supports configuration files to store commonly used settings.
 
 Incrementalist uses a JSON-based configuration file format. By default, Incrementalist looks for a file named `incrementalist.json` in the `.incrementalist` directory, but you can specify a different file using the `-c` or `--config` command-line option.
 
+### JSON Schema Support
+
+Incrementalist provides a JSON schema that enables IDE IntelliSense, auto-completion, and validation for configuration files. To enable this feature, add the `$schema` property to your configuration file:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json",
+  "gitBranch": "master",
+  "solutionFilePath": "MySolution.sln"
+}
+```
+
+This will provide:
+- **IntelliSense**: Auto-completion of property names and values in supported IDEs (VS Code, Visual Studio, JetBrains IDEs)
+- **Validation**: Real-time error checking for invalid property names, types, and values
+- **Documentation**: Hover tooltips with property descriptions and examples
+
 ## Available Settings
 
 The following settings can be specified in the configuration file:
@@ -23,6 +40,7 @@ The following settings can be specified in the configuration file:
 | `failOnNoProjects` | boolean | Fail if no projects are affected | `--fail-on-no-projects` |
 | `skip` | string array | Glob patterns to exclude projects from the final list | `--skip-glob` |
 | `target` | string array | Glob patterns to include only matching projects in the final list | `--target-glob` |
+| `nameApplicationToStart` | string | The application or document to start the process | `--name-application-to-start` |
 
 ## Sample Configuration File
 
@@ -30,6 +48,7 @@ Here's an example configuration file with all available settings:
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json",
   "gitBranch": "master",
   "solutionFilePath": "MySolution.sln",
   "outputFile": "affected-projects.txt",
@@ -39,8 +58,10 @@ Here's an example configuration file with all available settings:
   "continueOnError": true,
   "runInParallel": false,
   "failOnNoProjects": false,
+  "noCache": false,
   "skip": ["**/bin/**", "**/obj/**"],
-  "target": ["src/**/*.csproj"]
+  "target": ["src/**/*.csproj"],
+  "nameApplicationToStart": "dotnet"
 }
 ```
 
@@ -56,6 +77,7 @@ Command-line arguments take precedence over configuration file settings. For exa
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json",
   "gitBranch": "master",
   "solutionFilePath": "MySolution.sln",
   "verbose": true

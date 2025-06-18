@@ -58,6 +58,37 @@ namespace Incrementalist.Tests.Config
         }
 
         [Fact]
+        public void Config_File_Loading_With_Schema_Property()
+        {
+            // Arrange
+            var configPath = Path.GetTempFileName();
+            var configJson = @"{
+                ""$schema"": ""https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json"",
+                ""gitBranch"": ""master"",
+                ""solutionFilePath"": ""MySolution.sln"",
+                ""verbose"": true
+            }";
+
+            try
+            {
+                // Act - write the config with schema to a file
+                File.WriteAllText(configPath, configJson);
+
+                // Assert - verify it loads correctly and ignores the $schema property
+                Assert.True(IncrementalistConfig.TryLoad(configPath, out var loadedConfig));
+                Assert.NotNull(loadedConfig);
+                Assert.Equal("master", loadedConfig.GitBranch);
+                Assert.Equal("MySolution.sln", loadedConfig.SolutionFilePath);
+                Assert.True(loadedConfig.Verbose);
+            }
+            finally
+            {
+                // Clean up
+                File.Delete(configPath);
+            }
+        }
+
+        [Fact]
         public void Config_File_Loading_NonExistent_File()
         {
             // Act & Assert
@@ -180,6 +211,48 @@ namespace Incrementalist.Tests.Config
 
                 Assert.Equivalent(skipGlobs, loadedConfig.SkipGlob);
                 Assert.Equivalent(targetGlobs, loadedConfig.TargetGlob);
+            }
+            finally
+            {
+                // Clean up
+                if (File.Exists(configPath))
+                    File.Delete(configPath);
+            }
+        }
+
+        [Fact]
+        public async Task CreateConfigFile_Includes_JsonSchema()
+        {
+            // Arrange
+            var configPath = Path.GetTempFileName();
+            var options = new CreateConfigOptions()
+            {
+                ConfigFile = configPath,
+                GitBranch = "master",
+                Verbose = true
+            };
+
+            var createConfigTask = new CreateConfigFileTask(options, NullLogger.Instance);
+
+            try
+            {
+                // Act
+                var exitCode = await createConfigTask.Run();
+                Assert.Equal(0, exitCode);
+
+                // Assert - verify the generated file includes the JSON schema
+                Assert.True(File.Exists(configPath));
+                var configContent = await File.ReadAllTextAsync(configPath);
+                
+                // Check that the $schema property is included
+                Assert.Contains("\"$schema\"", configContent);
+                Assert.Contains("incrementalist.schema.json", configContent);
+                
+                // Verify the config can still be loaded normally
+                Assert.True(IncrementalistConfig.TryLoad(configPath, out var loadedConfig));
+                Assert.NotNull(loadedConfig);
+                Assert.Equal("master", loadedConfig.GitBranch);
+                Assert.True(loadedConfig.Verbose);
             }
             finally
             {

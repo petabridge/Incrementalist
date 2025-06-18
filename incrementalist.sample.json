@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/petabridge/Incrementalist/dev/src/Incrementalist.Cmd/Config/incrementalist.schema.json",
   "gitBranch": "master",
   "solutionFilePath": "MySolution.sln",
   "outputFile": "affected-projects.txt",
