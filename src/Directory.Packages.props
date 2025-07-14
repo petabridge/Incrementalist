@@ -23,6 +23,6 @@
     <ItemGroup>
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)"/>
         <PackageVersion Include="xunit" Version="$(XunitVersion)"/>
-        <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.2"/>
     </ItemGroup>
 </Project>
