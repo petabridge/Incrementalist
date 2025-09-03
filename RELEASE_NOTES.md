@@ -1,4 +1,4 @@
-#### 1.1.0-beta1 May 12 2025 ####
+#### 1.1.0 September 3 2025 ####
 
 **Major New Features & Improvements:**
 
@@ -14,8 +14,8 @@
 * **Significant Performance Boost with Static Graph Engine:**  
   Incrementalist now uses the MSBuild Static Graph engine by default for solution and project parsing. This change should make Incrementalist _significantly_ faster, especially on large solutions. The previous engine is still available via `--engine Workspace` for compatibility and comparison.
 
-* **Dependency Updates:**  
-  - Updated `xunit.runner.visualstudio` to 3.1.0 for improved .NET 8 compatibility and bug fixes.
+* **JSON Schema for Configuration Files:**  
+  Added JSON schema support for `incrementalist.json` configuration files, enabling IDE IntelliSense and validation. This makes it easier to write and maintain configuration files with autocomplete and error checking.
 
 **Bug Fixes:**
 
