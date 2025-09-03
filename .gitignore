@@ -308,3 +308,4 @@ __pycache__/
 # VSCode
 .vscode/
 
+/.claude
