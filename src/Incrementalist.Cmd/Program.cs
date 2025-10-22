@@ -291,7 +291,7 @@ namespace Incrementalist.Cmd
             if (options is { DryRun: false, DotNetArgs.Length: > 0 })
             {
                 var runTask = new RunDotNetCommandTask(settings, logger, options.DotNetArgs,
-                    options.ContinueOnError, options.RunInParallel, ct, options.FailOnNoProjects);
+                    options.ContinueOnError, options.RunInParallel, options.ParallelLimit, ct, options.FailOnNoProjects);
 
                 var exitCode = await runTask.Run(buildResult);
                 if (exitCode != 0)

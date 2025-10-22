@@ -134,6 +134,9 @@ namespace Incrementalist.Cmd
         [Option("parallel", HelpText = "When running commands, execute them in parallel.", Default = false)]
         public bool RunInParallel { get; set; }
 
+        [Option("parallel-limit", HelpText = "When running commands, the number of parallel projects to run.", Default = 0)]
+        public int ParallelLimit { get; set; }
+
         [Option("fail-on-no-projects", HelpText = "When running commands, fail if no projects are affected.",
             Default = false)]
         public bool FailOnNoProjects { get; set; }

@@ -39,7 +39,7 @@ namespace Incrementalist.Cmd.Config
             merged.WorkingDirectory = options.WorkingDirectory ?? config.WorkingDirectory;
             merged.NameApplicationToStart = options.NameApplicationToStart ?? config.NameApplicationToStart;;
 
-            // Merge bool properties (CLI takes precedence)
+            // Merge bool properties (config takes precedence)
             merged.Verbose = config.Verbose.GetValueOrDefault(false);
             merged.ContinueOnError = config.ContinueOnError.GetValueOrDefault(true);
             merged.RunInParallel = config.RunInParallel.GetValueOrDefault(false);
@@ -47,8 +47,9 @@ namespace Incrementalist.Cmd.Config
             merged.SkipGlobs = MergeGlobs(options.SkipGlobs?.ToArray(), config.SkipGlob);
             merged.TargetGlobs = MergeGlobs(options.TargetGlobs?.ToArray(), config.TargetGlob);
 
-            // Merge int properties (CLI takes precedence)
+            // Merge int properties (config takes precedence)
             merged.TimeoutMinutes = config.TimeoutMinutes.GetValueOrDefault(2);
+            merged.ParallelLimit = config.ParallelLimit;
 
             // Override with any non-default CLI values
             if (options.Verbose) merged.Verbose = true;

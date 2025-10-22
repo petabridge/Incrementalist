@@ -82,6 +82,12 @@ namespace Incrementalist.Cmd.Config
         public bool? RunInParallel { get; set; }
 
         /// <summary>
+        /// When running commands, the number of parallel projects to run. Defaults to 0 (limitless).
+        /// </summary>
+        [JsonPropertyName("parallelLimit")]
+        public int ParallelLimit { get; set; }
+
+        /// <summary>
         /// When running commands, fail if no projects are affected.
         /// </summary>
         [JsonPropertyName("failOnNoProjects")]

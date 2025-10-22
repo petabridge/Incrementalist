@@ -31,7 +31,8 @@ namespace Incrementalist.Tests.Config
                 SolutionFilePath = "MySolution.sln",
                 TimeoutMinutes = 5,
                 Verbose = true,
-                RunInParallel = true
+                RunInParallel = true,
+                ParallelLimit = 5
             };
 
             try
@@ -47,6 +48,7 @@ namespace Incrementalist.Tests.Config
                 Assert.Equal(5, loadedConfig.TimeoutMinutes);
                 Assert.True(loadedConfig.Verbose);
                 Assert.True(loadedConfig.RunInParallel);
+                Assert.Equal(5, loadedConfig.ParallelLimit);
                 Assert.Null(loadedConfig.ListFolders);
                 Assert.Null(loadedConfig.ContinueOnError);
             }
@@ -129,6 +131,7 @@ namespace Incrementalist.Tests.Config
                 TimeoutMinutes = 5,
                 Verbose = true,
                 RunInParallel = true,
+                ParallelLimit = 5,
                 OutputFile = "output.txt",
                 SkipGlob = ["**/obj/**", "**/bin/**"],
                 TargetGlob = ["src/**/*.csproj", "tests/**/*.csproj"]
@@ -156,6 +159,7 @@ namespace Incrementalist.Tests.Config
             Assert.Equal("output.txt", merged.OutputFile); // From config
             Assert.True(merged.Verbose); // From config
             Assert.True(merged.RunInParallel); // From config
+            Assert.Equal(5, merged.ParallelLimit); // From config
             Assert.Equivalent(config.SkipGlob, merged.SkipGlobs); // From config
             Assert.Equivalent(config.TargetGlob, merged.TargetGlobs); // From config
 
@@ -179,6 +183,7 @@ namespace Incrementalist.Tests.Config
             Assert.False(options.Verbose);
             Assert.True(options.ContinueOnError);
             Assert.False(options.RunInParallel);
+            Assert.Equal(0, options.ParallelLimit);
             Assert.False(options.FailOnNoProjects);
         }
 
