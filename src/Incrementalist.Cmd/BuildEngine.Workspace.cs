@@ -59,12 +59,8 @@ public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
         });
         var solution = await _msBuild.OpenSolutionAsync(solutionFilePath.Path, progress, cancellationToken);
 
-        // Log loaded projects for debugging
-        logger.LogInformation("Loaded {ProjectCount} projects from solution:", solution.ProjectIds.Count);
-        foreach (var project in solution.Projects)
-        {
-            logger.LogInformation("  - {ProjectPath}", project.FilePath);
-        }
+        // Log loaded project count at debug level
+        logger.LogDebug("Loaded {ProjectCount} projects from solution", solution.ProjectIds.Count);
 
         return new WorkspaceSolution(solution);
     }
