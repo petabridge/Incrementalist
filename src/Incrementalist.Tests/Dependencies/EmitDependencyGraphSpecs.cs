@@ -20,6 +20,10 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
 
     public class StaticGraph(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new StaticGraphBuildEngine(logger, verbose: false));
 
+    public class WorkspaceSlnx(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new WorkspaceBuildEngine(logger), SolutionFormat.Slnx);
+
+    public class StaticGraphSlnx(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new StaticGraphBuildEngine(logger, verbose: false), SolutionFormat.Slnx);
+
     private readonly BuildEngine _engine;
     private readonly TestSolutionModel _generatedTestSolution;
     private readonly ILogger _logger;
@@ -29,10 +33,10 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
 
     public DisposableRepository Repository { get; }
 
-    protected EmitDependencyGraphSpecs(ITestOutputHelper outputHelper, Func<ILogger, BuildEngine> buildEngine)
+    protected EmitDependencyGraphSpecs(ITestOutputHelper outputHelper, Func<ILogger, BuildEngine> buildEngine, SolutionFormat format = SolutionFormat.Sln)
     {
         Repository = new DisposableRepository();
-        _generatedTestSolution = CreateSolution();
+        _generatedTestSolution = CreateSolution(format);
         _logger = new TestOutputLogger(outputHelper);
         _engine = buildEngine(_logger);
     }
@@ -45,7 +49,7 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
     public const string ProjectA = "ProjectA";
     public const string ProjectC = "ProjectC";
 
-    private static TestSolutionModel CreateSolution()
+    private static TestSolutionModel CreateSolution(SolutionFormat format = SolutionFormat.Sln)
     {
         var solutionBuilder = new TestSolutionBuilder("SampleSolution")
             .AddFolder("src", f1Builder =>
@@ -79,6 +83,7 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
                     p3Builder.WithTargetFrameworks([TargetFramework.Net9]);
                 });
             })
+            .WithSolutionFormat(format)
             .Build();
 
         return solutionBuilder;

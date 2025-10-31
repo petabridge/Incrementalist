@@ -44,15 +44,15 @@ namespace Incrementalist.Cmd
             Contract.Assert(File.Exists(slnName), $"Expected to find {slnName} on the file system, but couldn't.");
 
             // Log any solution loading issues
-            _workspace.WorkspaceFailed += (sender, args) =>
+            _workspace.RegisterWorkspaceFailedHandler(args =>
             {
-                var message = $"Issue during solution loading: {sender}: {args.Diagnostic.Message}";
+                var message = $"Issue during solution loading: {args.Diagnostic.Message}";
                 var logLevel = args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure
                     ? LogLevel.Error
                     : LogLevel.Warning;
 
                 Logger.Log(logLevel, message);
-            };
+            });
 
             // Roslyn does not support FSharp projects, but .fsproj has same structure as .csproj files,
             // so can treat them as a known project type to support diff tracking

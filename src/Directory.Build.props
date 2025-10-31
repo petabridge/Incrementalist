@@ -44,8 +44,10 @@
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.9.3</XunitVersion>
     <TestSdkVersion>17.14.1</TestSdkVersion>
-    <MicrosoftBuildVersion>17.11.48</MicrosoftBuildVersion>
-    <RoslynVersion>4.14.0</RoslynVersion>
+    <!-- .slnx support added in 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->
+    <MicrosoftBuildVersion>17.14.28</MicrosoftBuildVersion>
+    <!-- .slnx support added in 5.0.0-2.final: https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0-2.final -->
+    <RoslynVersion>5.0.0-2.final</RoslynVersion>
     <NugetVersion>6.14.0</NugetVersion>
   </PropertyGroup>
   <ItemGroup>
