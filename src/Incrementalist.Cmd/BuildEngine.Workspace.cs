@@ -17,7 +17,37 @@ namespace Incrementalist.Cmd;
 
 public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
 {
-    private readonly MSBuildWorkspace _msBuild = MSBuildWorkspace.Create();
+    private readonly MSBuildWorkspace _msBuild = CreateWorkspace(logger);
+
+    private static MSBuildWorkspace CreateWorkspace(ILogger logger)
+    {
+        var properties = new Dictionary<string, string>
+        {
+            // Required for SDK-style projects
+            ["CheckForSystemRuntimeDependency"] = "true"
+        };
+
+        var workspace = MSBuildWorkspace.Create(properties);
+
+        // Configure workspace to not skip unrecognized projects
+        workspace.SkipUnrecognizedProjects = false;
+
+        // Log any workspace loading issues
+        workspace.RegisterWorkspaceFailedHandler(args =>
+        {
+            var message = $"Issue during workspace loading: {args.Diagnostic.Message}";
+            var logLevel = args.Diagnostic.Kind == Microsoft.CodeAnalysis.WorkspaceDiagnosticKind.Failure
+                ? LogLevel.Error
+                : LogLevel.Warning;
+
+            logger.Log(logLevel, message);
+        });
+
+        // Roslyn does not support FSharp projects, but .fsproj has same structure as .csproj files,
+        // so can treat them as a known project type to support diff tracking
+        workspace.AssociateFileExtensionWithLanguage("fsproj", Microsoft.CodeAnalysis.LanguageNames.CSharp);
+        return workspace;
+    }
 
     public override void Dispose() => _msBuild.Dispose();
 
@@ -28,6 +58,14 @@ public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
             logger.LogDebug("{Operation} project {Project} in {ElapsedTime}", x.Operation, x.FilePath, x.ElapsedTime);
         });
         var solution = await _msBuild.OpenSolutionAsync(solutionFilePath.Path, progress, cancellationToken);
+
+        // Log loaded projects for debugging
+        logger.LogInformation("Loaded {ProjectCount} projects from solution:", solution.ProjectIds.Count);
+        foreach (var project in solution.Projects)
+        {
+            logger.LogInformation("  - {ProjectPath}", project.FilePath);
+        }
+
         return new WorkspaceSolution(solution);
     }
 }
