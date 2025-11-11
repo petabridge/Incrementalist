@@ -43,7 +43,7 @@
   <PropertyGroup>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.9.3</XunitVersion>
-    <TestSdkVersion>17.14.1</TestSdkVersion>
+    <TestSdkVersion>18.0.1</TestSdkVersion>
     <MicrosoftBuildVersion>17.11.48</MicrosoftBuildVersion>
     <RoslynVersion>4.14.0</RoslynVersion>
     <NugetVersion>6.14.0</NugetVersion>
