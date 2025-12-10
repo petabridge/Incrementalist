@@ -14,7 +14,7 @@
         <PackageVersion Include="Microsoft.Build.Locator" Version="1.10.12" />
         <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="$(RoslynVersion)" />
         <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="9.0.8" />
-        <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+        <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.1" />
         <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
         <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
         <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
