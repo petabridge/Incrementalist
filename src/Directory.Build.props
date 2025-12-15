@@ -50,7 +50,7 @@ Fixes #405</PackageReleaseNotes>
     <XunitVersion>2.9.3</XunitVersion>
     <TestSdkVersion>17.14.1</TestSdkVersion>
     <!-- .slnx support added in 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->
-    <MicrosoftBuildVersion>17.14.28</MicrosoftBuildVersion>
+    <MicrosoftBuildVersion>18.0.2</MicrosoftBuildVersion>
     <!-- .slnx support added in 5.0.0-2.final: https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0-2.final -->
     <RoslynVersion>5.0.0</RoslynVersion>
     <NugetVersion>6.14.0</NugetVersion>
