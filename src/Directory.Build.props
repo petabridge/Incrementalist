@@ -52,7 +52,7 @@ Fixes #405</PackageReleaseNotes>
     <!-- .slnx support added in 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->
     <MicrosoftBuildVersion>17.14.28</MicrosoftBuildVersion>
     <!-- .slnx support added in 5.0.0-2.final: https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0-2.final -->
-    <RoslynVersion>5.0.0-2.final</RoslynVersion>
+    <RoslynVersion>5.0.0</RoslynVersion>
     <NugetVersion>6.14.0</NugetVersion>
   </PropertyGroup>
   <ItemGroup>
