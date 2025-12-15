@@ -44,7 +44,7 @@ namespace Incrementalist.Cmd
             Contract.Assert(File.Exists(slnName), $"Expected to find {slnName} on the file system, but couldn't.");
 
             // Log any solution loading issues
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
             _workspace.RegisterWorkspaceFailedHandler(args =>
             {
                 var message = $"Issue during solution loading: {args.Diagnostic.Message}";

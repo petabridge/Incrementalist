@@ -33,7 +33,7 @@ public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
         workspace.SkipUnrecognizedProjects = false;
 
         // Log any workspace loading issues
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
         workspace.RegisterWorkspaceFailedHandler(args =>
         {
             var message = $"Issue during workspace loading: {args.Diagnostic.Message}";

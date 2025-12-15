@@ -20,7 +20,7 @@ namespace Incrementalist.Tests.Helpers;
 public enum SolutionFormat
 {
     Sln,
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
     Slnx
 #endif
 }
@@ -156,7 +156,7 @@ public sealed record TestSolutionModel(string Name, RelativePath BaseDirectory) 
     public FileName FileName => FileFormat switch
     {
         SolutionFormat.Sln => new FileName($"{Name}.sln"),
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
         SolutionFormat.Slnx => new FileName($"{Name}.slnx"),
 #endif
         _ => throw new ArgumentOutOfRangeException(nameof(SolutionFormat))
@@ -188,7 +188,7 @@ public static class SolutionSerializer
         return testSolution.FileFormat switch
         {
             SolutionFormat.Sln => SerializeSlnAsync(solutionModel).Result,
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
             SolutionFormat.Slnx => SerializeSlnxAsync(solutionModel).Result,
 #endif
             _ => throw new ArgumentOutOfRangeException(nameof(testSolution.FileFormat))
@@ -227,7 +227,7 @@ public static class SolutionSerializer
         return Encoding.UTF8.GetString(memoryStream.ToArray());
     }
 
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
     public static async Task<string> SerializeSlnxAsync(SolutionModel testSolution)
     {
         using var memoryStream = new MemoryStream();

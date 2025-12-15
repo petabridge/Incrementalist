@@ -32,7 +32,7 @@ namespace Incrementalist.ProjectSystem
             if (string.IsNullOrEmpty(searchFilter))
             {
                 var slnFiles = Directory.EnumerateFileSystemEntries(folderPath.Path, "*.sln", finalSearchOption);
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
                 // .slnx support requires MSBuild 17.12.6+ and Roslyn 5.0.0+, which require .NET 9.0+
                 var slnxFiles = Directory.EnumerateFileSystemEntries(folderPath.Path, "*.slnx", finalSearchOption);
                 return slnFiles.Concat(slnxFiles).OrderBy(Path.GetFileName)

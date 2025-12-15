@@ -45,7 +45,7 @@ namespace Incrementalist.Tests.ProjectSystem
             Assert.EndsWith("MySolution.sln", solutions.First().Path);
         }
 
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
         /// <summary>
         /// https://github.com/petabridge/Incrementalist/issues/365
         /// .slnx support requires MSBuild 17.12.6+ and Roslyn 5.0.0+, which require .NET 9.0+
