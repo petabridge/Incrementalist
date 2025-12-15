@@ -20,6 +20,12 @@ jobs:
         inputs:
           useGlobalJson: true
           
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 8.0'
+        inputs:
+          packageType: sdk
+          version: 8.0.416
+      
       # Version bump
       - task: PowerShell@2
         displayName: 'Bump version from RELEASE_NOTES.md'
