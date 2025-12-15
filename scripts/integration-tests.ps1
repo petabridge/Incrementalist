@@ -463,6 +463,7 @@ function Test-ComplexCommandArguments
             "run",
             "--engine", $BuildEngine,
             "-b", "dev",
+            "-t", "5", # 5 minute timeout - needed for dual-target (net8.0;net10.0) test runs
             "--", # Separator for dotnet command arguments
             "test",
             "--logger", "console;verbosity=detailed",

@@ -49,7 +49,11 @@ public sealed class StaticGraphSolution : Solution
     {
         _projectGraph = projectGraph;
         FilePath = filePath;
-        Projects = projectGraph.ProjectNodesTopologicallySorted.Select(x => new StaticGraphProject(this, x)).ToList();
+        // Deduplicate by FullPath - multi-targeted projects create separate nodes per target framework
+        Projects = projectGraph.ProjectNodesTopologicallySorted
+            .DistinctBy(x => x.ProjectInstance.FullPath)
+            .Select(x => new StaticGraphProject(this, x))
+            .ToList();
     }
 
     public override AbsolutePath FilePath { get; }
@@ -57,12 +61,19 @@ public sealed class StaticGraphSolution : Solution
 
     public override IReadOnlyCollection<Project> GetTransitiveProjects(Project project)
     {
-        var result = new List<Project>();
+        var result = new HashSet<Project>();
+        // Iterate all nodes for this project (one per target framework)
         foreach (var node in _projectGraph.ProjectNodesTopologicallySorted.Where(x => x.ProjectInstance.FullPath == project.FilePath.Path))
         {
-            result.AddRange(node.ReferencingProjects.Select(x => Projects.Single(p => ((StaticGraphProject)p).Node == x)));
+            foreach (var referencingNode in node.ReferencingProjects)
+            {
+                // Match by FullPath since Projects is deduplicated
+                var proj = Projects.SingleOrDefault(p => p.FilePath.Path == referencingNode.ProjectInstance.FullPath);
+                if (proj != null)
+                    result.Add(proj);
+            }
         }
-        return result;
+        return result.ToList();
     }
 }
 

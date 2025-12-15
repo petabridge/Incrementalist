@@ -45,8 +45,10 @@ namespace Incrementalist.Tests.ProjectSystem
             Assert.EndsWith("MySolution.sln", solutions.First().Path);
         }
 
+#if NET10_0_OR_GREATER
         /// <summary>
         /// https://github.com/petabridge/Incrementalist/issues/365
+        /// .slnx support requires MSBuild 17.12.6+ and Roslyn 5.0.0+, which require .NET 9.0+
         /// </summary>
         [Fact(DisplayName = "Should .slnx solution in root directory")]
         public void Should_Find_Slnx_Solution()
@@ -73,6 +75,7 @@ namespace Incrementalist.Tests.ProjectSystem
             Assert.Single(solutions);
             Assert.EndsWith("MySolution.slnx", solutions.First().Path);
         }
+#endif
 
         [Fact(DisplayName = "Should find multiple solutions in root directory")]
         public void Should_Find_Multiple_Solutions()

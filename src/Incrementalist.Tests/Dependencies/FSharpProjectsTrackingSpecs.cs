@@ -55,7 +55,8 @@ namespace Incrementalist.Tests.Dependencies
             var logger = new TestOutputLogger(_outputHelper);
             var settings = new BuildSettings("master", new RelativePath("FSharpSolution.sln"), Repository.BasePath, [],
                 [], "dotnet");
-            var emitTask = new EmitDependencyGraphTask(settings, new WorkspaceBuildEngine(logger), logger, CancellationToken.None);
+            // Note: Using StaticGraphBuildEngine instead of WorkspaceBuildEngine because Roslyn 5.0+ does not support F# projects
+            var emitTask = new EmitDependencyGraphTask(settings, new StaticGraphBuildEngine(logger, verbose: false), logger, CancellationToken.None);
 
             var buildResult = await emitTask.Run();
 
