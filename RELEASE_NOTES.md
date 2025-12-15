@@ -1,33 +1,35 @@
-#### 1.2.0-beta.1 October 31 2025 ####
+#### 1.2.0-beta.1 December 15 2025 ####
 
-**BETA RELEASE - .NET 9.0 and .slnx Support**
+**BETA RELEASE - Dual-Targeting .NET 8.0 and .NET 10.0 with .slnx Support**
 
-This is a beta release with upgraded dependencies to support the new XML-based .slnx solution format and .NET 9.0.
+This beta release adds dual-targeting support for .NET 8.0 and .NET 10.0, with .slnx solution format support available on .NET 10.0+.
 
 **Major Changes:**
 
-* **Upgraded to .NET 9.0:**
-  Updated target framework from net8.0 to net9.0 to support newer MSBuild and Roslyn dependencies.
+* **Dual-Targeting .NET 8.0 and .NET 10.0:**
+  Incrementalist now targets both net8.0 and net10.0, allowing it to run on either .NET 8.0 or .NET 10.0 SDKs.
 
-* **Added .slnx Solution Format Support:**
-  Full support for the new XML-based .slnx solution format in both Workspace and Static Graph build engines.
+* **Added .slnx Solution Format Support (.NET 10.0+ only):**
+  Full support for the new XML-based .slnx solution format in both Workspace and Static Graph build engines when running on .NET 10.0+. This format is not available on .NET 8.0 due to MSBuild/Roslyn version constraints.
 
-* **Dependency Upgrades:**
-  - Roslyn (Microsoft.CodeAnalysis): 4.14.0 → 5.0.0-2.final (prerelease)
-  - MSBuild: 17.11.48 → 17.14.28
-  - Added Microsoft.CodeAnalysis.Common package
+* **TFM-Conditional Dependency Versions:**
+  MSBuild and Roslyn package versions are now conditional based on the target framework:
+  - .NET 8.0: MSBuild 17.11.48, Roslyn 4.14.0
+  - .NET 10.0: MSBuild 18.0.2, Roslyn 5.0.0 (stable)
+
+* **Multi-Targeted Project Deduplication:**
+  Fixed issue where multi-targeted projects could appear multiple times in the dependency graph. Projects are now properly deduplicated in StaticGraphBuildEngine.
 
 * **Improved F# Project Handling:**
   F# projects now use StaticGraphBuildEngine for better compatibility with Roslyn 5.0+.
 
-**Breaking Changes:**
-
-* Requires .NET 9.0 SDK or later
-* Uses prerelease Roslyn dependency (5.0.0-2.final) until stable Roslyn 5.0 is released
+* **Dependency Upgrades:**
+  - Microsoft.Build.Locator: 1.9.1 → 1.10.12
+  - xunit.runner.visualstudio: 3.1.4 → 3.1.5
 
 **Bug Fixes:**
 
-* Fixed deprecated Workspace.WorkspaceFailed API usage
+* Fixed deprecated Workspace.WorkspaceFailed API usage (replaced with RegisterWorkspaceFailedHandler)
 * Updated F# test samples to use net8.0 target framework
 
 Fixes #405
