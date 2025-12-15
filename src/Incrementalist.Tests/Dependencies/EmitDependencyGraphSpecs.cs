@@ -20,9 +20,12 @@ public abstract class EmitDependencyGraphSpecs : IAsyncLifetime
 
     public class StaticGraph(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new StaticGraphBuildEngine(logger, verbose: false));
 
+#if NET9_0_OR_GREATER
+    // .slnx support requires MSBuild 17.12.6+ and Roslyn 5.0.0+, which require .NET 9.0+
     public class WorkspaceSlnx(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new WorkspaceBuildEngine(logger), SolutionFormat.Slnx);
 
     public class StaticGraphSlnx(ITestOutputHelper outputHelper) : EmitDependencyGraphSpecs(outputHelper, logger => new StaticGraphBuildEngine(logger, verbose: false), SolutionFormat.Slnx);
+#endif
 
     private readonly BuildEngine _engine;
     private readonly TestSolutionModel _generatedTestSolution;

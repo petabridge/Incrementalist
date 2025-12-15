@@ -3,34 +3,36 @@
     <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
     <Authors>Petabridge</Authors>
     <VersionPrefix>1.2.0-beta.1</VersionPrefix>
-    <PackageReleaseNotes>**BETA RELEASE - .NET 9.0 and .slnx Support**
+    <PackageReleaseNotes>**BETA RELEASE - Dual-Target .NET 8.0/.NET 10.0 with .slnx Support**
 
-This is a beta release with upgraded dependencies to support the new XML-based .slnx solution format and .NET 9.0.
+This is a beta release with dual-targeting support for .NET 8.0 and .NET 10.0, and adds support for the new XML-based .slnx solution format on .NET 9.0+.
 
 **Major Changes:**
 
-* **Upgraded to .NET 9.0:**
-  Updated target framework from net8.0 to net9.0 to support newer MSBuild and Roslyn dependencies.
+* **Dual-Targeting .NET 8.0 and .NET 10.0:**
+  The library and CLI tool now target both .NET 8.0 and .NET 10.0 to support a wider range of environments.
 
-* **Added .slnx Solution Format Support:**
+* **Added .slnx Solution Format Support (.NET 9.0+ only):**
   Full support for the new XML-based .slnx solution format in both Workspace and Static Graph build engines.
+  Note: .slnx support requires MSBuild 17.12.6+ and Roslyn 5.0.0+, which are only available on .NET 9.0+.
+  The .NET 8.0 build does not support .slnx files.
 
-* **Dependency Upgrades:**
-  - Roslyn (Microsoft.CodeAnalysis): 4.14.0 → 5.0.0-2.final (prerelease)
-  - MSBuild: 17.11.48 → 17.14.28
-  - Added Microsoft.CodeAnalysis.Common package
+* **TFM-Conditional Dependencies:**
+  - .NET 8.0: MSBuild 17.11.48, Roslyn 4.14.0
+  - .NET 10.0: MSBuild 18.0.2, Roslyn 5.0.0
 
 * **Improved F# Project Handling:**
   F# projects now use StaticGraphBuildEngine for better compatibility with Roslyn 5.0+.
 
-**Breaking Changes:**
+**Important Notes:**
 
-* Requires .NET 9.0 SDK or later
-* Uses prerelease Roslyn dependency (5.0.0-2.final) until stable Roslyn 5.0 is released
+* .slnx solution format support is only available when running on .NET 9.0 or later
+* The .NET 8.0 build only supports traditional .sln solution files
 
 **Bug Fixes:**
 
 * Fixed deprecated Workspace.WorkspaceFailed API usage
+* Fixed multi-targeted project deduplication in StaticGraphBuildEngine
 * Updated F# test samples to use net8.0 target framework
 
 Fixes #405</PackageReleaseNotes>
@@ -49,11 +51,19 @@ Fixes #405</PackageReleaseNotes>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.9.3</XunitVersion>
     <TestSdkVersion>17.14.1</TestSdkVersion>
-    <!-- .slnx support added in 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->
-    <MicrosoftBuildVersion>18.0.2</MicrosoftBuildVersion>
-    <!-- .slnx support added in 5.0.0-2.final: https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0-2.final -->
-    <RoslynVersion>5.0.0</RoslynVersion>
     <NugetVersion>6.14.0</NugetVersion>
+  </PropertyGroup>
+  <!-- .NET 8.0 versions (no .slnx support - MSBuild 17.12.6+ requires .NET 9.0+) -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <MicrosoftBuildVersion>17.11.48</MicrosoftBuildVersion>
+    <RoslynVersion>4.14.0</RoslynVersion>
+  </PropertyGroup>
+  <!-- .NET 9.0+ versions (with .slnx support) -->
+  <!-- .slnx support added in MSBuild 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->
+  <!-- .slnx support added in Roslyn 5.0.0-2.final: https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0-2.final -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net8.0'">
+    <MicrosoftBuildVersion>18.0.2</MicrosoftBuildVersion>
+    <RoslynVersion>5.0.0</RoslynVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />

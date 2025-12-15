@@ -33,6 +33,7 @@ public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
         workspace.SkipUnrecognizedProjects = false;
 
         // Log any workspace loading issues
+#if NET9_0_OR_GREATER
         workspace.RegisterWorkspaceFailedHandler(args =>
         {
             var message = $"Issue during workspace loading: {args.Diagnostic.Message}";
@@ -42,6 +43,17 @@ public sealed class WorkspaceBuildEngine(ILogger logger) : BuildEngine
 
             logger.Log(logLevel, message);
         });
+#else
+        workspace.WorkspaceFailed += (_, args) =>
+        {
+            var message = $"Issue during workspace loading: {args.Diagnostic.Message}";
+            var logLevel = args.Diagnostic.Kind == Microsoft.CodeAnalysis.WorkspaceDiagnosticKind.Failure
+                ? LogLevel.Error
+                : LogLevel.Warning;
+
+            logger.Log(logLevel, message);
+        };
+#endif
 
         // Roslyn does not support FSharp projects, but .fsproj has same structure as .csproj files,
         // so can treat them as a known project type to support diff tracking
