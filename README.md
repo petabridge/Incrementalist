@@ -1,6 +1,6 @@
 # 🔄 Incrementalist
 
-<img src="https://raw.githubusercontent.com/petabridge/Incrementalist/refs/heads/dev/docs/incrementalist-logo-dark.svg" width="90" alt="Incrementalist Logo" />
+![Incrementalist Logo](https://raw.githubusercontent.com/petabridge/Incrementalist/refs/heads/dev/docs/incrementalist-logo-dark.svg)
 
 Incrementalist is a .NET tool that leverages [libgit2sharp](https://github.com/libgit2/libgit2sharp/)
 and [Roslyn](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/) to compute incremental build steps for large
@@ -212,6 +212,9 @@ verb-specific options.
 
   --parallel                  Optional. (Default: false) Execute commands in parallel.
 
+  --parallel-limit            Optional. (Default: 0) When running in parallel, limits the
+                              number of concurrent projects. 0 means no limit.
+
   --fail-on-no-projects       Optional. (Default: false) Fail if no projects are affected.
                         
   --skip-glob                 Optional. Glob pattern to exclude projects from the final
@@ -291,6 +294,9 @@ incrementalist run -b dev -- test -c Release --no-build --nologo
 
 # Run in parallel
 incrementalist run -b dev --parallel -- build -c Release --nologo
+
+# Run in parallel with a limit of 4 concurrent projects
+incrementalist run -b dev --parallel --parallel-limit 4 -- build -c Release --nologo
 
 # Stop on first error
 incrementalist run -b dev --continue-on-error=false -- build -c Release --nologo

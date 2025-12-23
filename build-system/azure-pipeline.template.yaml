@@ -1,7 +1,7 @@
 parameters:
   name: ''
   vmImage: ''
-  timeoutInMinutes: 10
+  timeoutInMinutes: 20
   runIntegrationTests: false
 
 jobs:
