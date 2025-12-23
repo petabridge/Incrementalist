@@ -1,3 +1,40 @@
+#### 1.2.0 December 23 2025 ####
+
+**Stable Release - Parallel Execution Control**
+
+This stable release adds a new feature to control parallelism during build and test operations.
+
+**New Features:**
+
+* **Parallel Limit Control:**
+  Added `--parallel-limit` CLI option and `parallelLimit` configuration setting to limit the degree of parallelism when running tasks in parallel. This helps prevent memory exhaustion and random errors when many projects are affected in large solutions.
+
+  _Example:_
+
+  ```shell
+  incrementalist test --parallel --parallel-limit 4
+  ```
+
+  Or in `incrementalist.json`:
+
+  ```json
+  {
+    "parallelLimit": 4
+  }
+  ```
+
+**Documentation:**
+
+* Added comprehensive documentation for `--parallel-limit` option in README.md and configuration docs
+* Updated JSON schema with validation for parallelLimit setting
+* Improved README.md Markdown compatibility for better NuGet.org rendering
+
+**Other Improvements:**
+
+* Increased PR validation timeout from 10 to 20 minutes to accommodate integration tests on Windows
+
+Fixes #456
+
 #### 1.2.0-beta.1 December 15 2025 ####
 
 **BETA RELEASE - Dual-Targeting .NET 8.0 and .NET 10.0 with .slnx Support**
