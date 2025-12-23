@@ -54,6 +54,13 @@
       "description": "When running commands, execute them in parallel.",
       "default": false
     },
+    "parallelLimit": {
+      "type": "integer",
+      "description": "When running commands in parallel, limits the number of concurrent projects. 0 means no limit.",
+      "default": 0,
+      "minimum": 0,
+      "examples": [0, 2, 4, 8]
+    },
     "failOnNoProjects": {
       "type": "boolean",
       "description": "When running commands, fail if no projects are affected.",
@@ -114,6 +121,7 @@
       "verbose": true,
       "timeoutMinutes": 5,
       "runInParallel": true,
+      "parallelLimit": 4,
       "skip": ["**/obj/**", "**/bin/**"],
       "target": ["src/**/*.csproj"]
     }

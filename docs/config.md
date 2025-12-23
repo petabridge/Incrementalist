@@ -37,6 +37,7 @@ The following settings can be specified in the configuration file:
 | `timeoutMinutes` | number | Timeout for solution loading in minutes | `-t`, `--timeout` |
 | `continueOnError` | boolean | Continue when command execution fails | `--continue-on-error` |
 | `runInParallel` | boolean | Run commands in parallel | `--parallel` |
+| `parallelLimit` | number | Limit concurrent projects when running in parallel (0 = no limit) | `--parallel-limit` |
 | `failOnNoProjects` | boolean | Fail if no projects are affected | `--fail-on-no-projects` |
 | `skip` | string array | Glob patterns to exclude projects from the final list | `--skip-glob` |
 | `target` | string array | Glob patterns to include only matching projects in the final list | `--target-glob` |
@@ -57,6 +58,7 @@ Here's an example configuration file with all available settings:
   "timeoutMinutes": 2,
   "continueOnError": true,
   "runInParallel": false,
+  "parallelLimit": 0,
   "failOnNoProjects": false,
   "noCache": false,
   "skip": ["**/bin/**", "**/obj/**"],
