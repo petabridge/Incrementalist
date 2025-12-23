@@ -1,3 +1,39 @@
+#### 1.2.0-beta.1 December 15 2025 ####
+
+**BETA RELEASE - Dual-Targeting .NET 8.0 and .NET 10.0 with .slnx Support**
+
+This beta release adds dual-targeting support for .NET 8.0 and .NET 10.0, with .slnx solution format support available on .NET 10.0+.
+
+**Major Changes:**
+
+* **Dual-Targeting .NET 8.0 and .NET 10.0:**
+  Incrementalist now targets both net8.0 and net10.0, allowing it to run on either .NET 8.0 or .NET 10.0 SDKs.
+
+* **Added .slnx Solution Format Support (.NET 10.0+ only):**
+  Full support for the new XML-based .slnx solution format in both Workspace and Static Graph build engines when running on .NET 10.0+. This format is not available on .NET 8.0 due to MSBuild/Roslyn version constraints.
+
+* **TFM-Conditional Dependency Versions:**
+  MSBuild and Roslyn package versions are now conditional based on the target framework:
+  - .NET 8.0: MSBuild 17.11.48, Roslyn 4.14.0
+  - .NET 10.0: MSBuild 18.0.2, Roslyn 5.0.0 (stable)
+
+* **Multi-Targeted Project Deduplication:**
+  Fixed issue where multi-targeted projects could appear multiple times in the dependency graph. Projects are now properly deduplicated in StaticGraphBuildEngine.
+
+* **Improved F# Project Handling:**
+  F# projects now use StaticGraphBuildEngine for better compatibility with Roslyn 5.0+.
+
+* **Dependency Upgrades:**
+  - Microsoft.Build.Locator: 1.9.1 → 1.10.12
+  - xunit.runner.visualstudio: 3.1.4 → 3.1.5
+
+**Bug Fixes:**
+
+* Fixed deprecated Workspace.WorkspaceFailed API usage (replaced with RegisterWorkspaceFailedHandler)
+* Updated F# test samples to use net8.0 target framework
+
+Fixes #405
+
 #### 1.1.0 September 3 2025 ####
 
 **Major New Features & Improvements:**
