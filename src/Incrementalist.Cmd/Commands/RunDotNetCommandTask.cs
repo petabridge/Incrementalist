@@ -24,17 +24,19 @@ namespace Incrementalist.Cmd.Commands
         private readonly string[] _dotnetArgs;
         private readonly bool _continueOnError;
         private readonly bool _runInParallel;
+        private readonly int _parallelLimit;
         private readonly bool _failOnNoProjects;
         private readonly CancellationToken _ct;
 
         public RunDotNetCommandTask(BuildSettings settings, ILogger logger, string[] dotnetArgs, bool continueOnError,
-            bool runInParallel, CancellationToken ct, bool failOnNoProjects = false)
+            bool runInParallel, int parallelLimit, CancellationToken ct, bool failOnNoProjects = false)
         {
             _settings = settings;
             _logger = logger;
             _dotnetArgs = dotnetArgs;
             _continueOnError = continueOnError;
             _runInParallel = runInParallel;
+            _parallelLimit = parallelLimit;
             _ct = ct;
             _failOnNoProjects = failOnNoProjects;
         }
@@ -74,17 +76,31 @@ namespace Incrementalist.Cmd.Commands
 
             if (_runInParallel)
             {
+                var semaphore = _parallelLimit > 0 ? new SemaphoreSlim(_parallelLimit) : null;
+
                 var tasks = projects.Select(async project =>
                 {
-                    if (await RunCommandAsync(project, ct) != 0)
+                    if (semaphore is not null)
+                        await semaphore.WaitAsync();
+
+                    try
                     {
-                        failedProjects.Add(project);
-                        if (!_continueOnError)
-                            return;
+                        if (await RunCommandAsync(project, ct) != 0)
+                        {
+                            failedProjects.Add(project);
+                            if (!_continueOnError)
+                                return;
+                        }
+                    }
+                    finally
+                    {
+                        semaphore?.Release();
                     }
                 });
 
                 await Task.WhenAll(tasks);
+
+                semaphore?.Dispose();
             }
             else
             {

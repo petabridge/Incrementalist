@@ -48,7 +48,7 @@ namespace Incrementalist.Tests.Commands
     <OutputType>Library</OutputType>
   </PropertyGroup>
 </Project>");
-            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false, CancellationToken.None);
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false, 0, CancellationToken.None);
 
             // Act
             var result = await task.Run(new IncrementalBuildResult([projectPath]));
@@ -62,7 +62,7 @@ namespace Incrementalist.Tests.Commands
         {
             // Arrange
             var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
-            var task = new RunDotNetCommandTask(settings, _logger, ["build", "--invalid-option"], true, false, CancellationToken.None);
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "--invalid-option"], true, false, 0, CancellationToken.None);
 
             // Act
             var result = await task.Run(new IncrementalBuildResult([
@@ -74,7 +74,7 @@ namespace Incrementalist.Tests.Commands
         }
 
         [Fact]
-        public async Task Should_Run_Commands_In_Parallel()
+        public async Task Should_Run_Commands_In_Parallel_With_No_Limit()
         {
             // Arrange
             var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
@@ -92,7 +92,7 @@ namespace Incrementalist.Tests.Commands
             }
 
             var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true,
-                true, CancellationToken.None);
+                true, 0, CancellationToken.None);
 
             // Act
             var result = await task.Run(new IncrementalBuildResult(projects));
@@ -102,11 +102,38 @@ namespace Incrementalist.Tests.Commands
         }
 
         [Fact]
+        public async Task Should_Run_Commands_In_Parallel_With_Limit()
+        {
+            // Arrange
+            var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
+            var projects = new List<AbsolutePath>();
+            for (int i = 1; i <= 3; i++)
+            {
+                var projectPath = new AbsolutePath(Path.Combine(_repository.BasePath.Path, $"test{i}.csproj"));
+                await File.WriteAllTextAsync(projectPath.Path, @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+</Project>");
+                projects.Add(projectPath);
+            }
+
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true,
+                true, 2, CancellationToken.None);
+
+            // Act
+            var result = await task.Run(new IncrementalBuildResult(projects));
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+        [Fact]
         public async Task Should_Stop_On_First_Failure_When_ContinueOnError_False()
         {
             // Arrange
             var settings = new BuildSettings("master", new RelativePath("test.sln"), _repository.BasePath, [], [], "dotnet");
-            var task = new RunDotNetCommandTask(settings, _logger, ["invalid-command"], false, false, CancellationToken.None);
+            var task = new RunDotNetCommandTask(settings, _logger, ["invalid-command"], false, false, 0, CancellationToken.None);
             var projects = new[] { "project1.csproj", "project2.csproj" }.Select(c =>
                 new AbsolutePath(Path.Combine(_repository.BasePath.Path, c))).ToList();
 
@@ -141,7 +168,7 @@ namespace Incrementalist.Tests.Commands
             await File.WriteAllTextAsync(solutionPath.Path, solutionContent);
 
             var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true,
-                false, CancellationToken.None);
+                false, 0, CancellationToken.None);
 
             // Act
             var result = await task.Run(new FullSolutionBuildResult(solutionPath));
@@ -176,7 +203,7 @@ namespace Incrementalist.Tests.Commands
                                                       </Project>
                                                       """);
 
-            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false, CancellationToken.None);
+            var task = new RunDotNetCommandTask(settings, _logger, ["build", "-c", "Release", "--nologo"], true, false, 0, CancellationToken.None);
 
             // Act
             var result = await task.Run(new FullSolutionBuildResult(solutionPath));
