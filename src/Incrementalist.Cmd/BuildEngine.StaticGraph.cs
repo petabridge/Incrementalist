@@ -34,10 +34,30 @@ public sealed class StaticGraphBuildEngine : BuildEngine
     public override Task<Solution> CreateSolutionAsync(AbsolutePath solutionFilePath, CancellationToken cancellationToken = default)
     {
         var entryPoint = new ProjectGraphEntryPoint(solutionFilePath.Path);
-        var projectCollection = new Microsoft.Build.Evaluation.ProjectCollection();
+        var projectCollection = CreateProjectCollection();
         var degreeOfParallelism = Environment.ProcessorCount;
         var projectGraph = new ProjectGraph([entryPoint], projectCollection, projectInstanceFactory: null, degreeOfParallelism, cancellationToken);
         return Task.FromResult<Solution>(new StaticGraphSolution(solutionFilePath, projectGraph));
+    }
+
+    private static Microsoft.Build.Evaluation.ProjectCollection CreateProjectCollection()
+    {
+        // Use the MSBuild instance discovered by MSBuildLocator to avoid assembly version
+        // mismatches (e.g., Microsoft.Build.Framework v15.1.0.0 vs the SDK's MSBuild 18.x)
+        // that cause type resolution failures like "Could not load type
+        // Microsoft.Build.Shared.DotNetFrameworkArchitecture".
+        if (Microsoft.Build.Locator.MSBuildLocator.IsRegistered)
+        {
+            var instance = Microsoft.Build.Locator.MSBuildLocator.Current;
+            // installationPath points to the SDK directory; parent is the MSBuild directory
+            var msbuildPath = Directory.GetParent(instance.InstallationPath)?.FullName;
+            if (msbuildPath != null)
+            {
+                return new Microsoft.Build.Evaluation.ProjectCollection(msbuildPath);
+            }
+        }
+        // Fallback: use default constructor (works for most cases)
+        return new Microsoft.Build.Evaluation.ProjectCollection();
     }
 }
 
