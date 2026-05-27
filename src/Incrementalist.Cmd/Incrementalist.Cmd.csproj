@@ -20,6 +20,8 @@
         <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
         <PackageReference Include="NuGet.ProjectModel"/>
+        <!-- CVE-2026-26171 / CVE-2026-33116: patched version for .NET 8.0 runtime -->
+        <PackageReference Include="System.Security.Cryptography.Xml" />
     </ItemGroup>
 
     <ItemGroup>

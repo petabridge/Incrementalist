@@ -8,6 +8,8 @@
         <PackageReference Include="Libgit2Sharp"/>
         <PackageReference Include="Microsoft.CodeAnalysis.Common"/>
         <PackageReference Include="Microsoft.Extensions.Logging"/>
+        <!-- CVE-2026-26171 / CVE-2026-33116: patched version for .NET 8.0 runtime -->
+        <PackageReference Include="System.Security.Cryptography.Xml" />
     </ItemGroup>
 
     <ItemGroup>
