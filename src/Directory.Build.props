@@ -2,41 +2,17 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>1.2.0</VersionPrefix>
-    <PackageReleaseNotes>**Stable Release - Parallel Execution Control**
+    <VersionPrefix>1.2.1</VersionPrefix>
+    <PackageReleaseNotes>**Bug Fixes:**
 
-This stable release adds a new feature to control parallelism during build and test operations.
+* **MSBuild Locator Type Mismatch on .NET 10.x:**
+  Fixed MSBuild assembly type mismatch that caused Incrementalist to fail on .NET 10.x SDKs. The MSBuild.Locator now properly discovers SDK 10's MSBuild 18.x assemblies by scanning .NET SDK paths instead of only looking for Visual Studio installations.
 
-**New Features:**
+**Release Infrastructure:**
 
-* **Parallel Limit Control:**
-  Added `--parallel-limit` CLI option and `parallelLimit` configuration setting to limit the degree of parallelism when running tasks in parallel. This helps prevent memory exhaustion and random errors when many projects are affected in large solutions.
+* Extracted the latest release block logic for GitHub release body generation, making release automation more reliable
 
-  _Example:_
-
-  ```shell
-  incrementalist test --parallel --parallel-limit 4
-  ```
-
-  Or in `incrementalist.json`:
-
-  ```json
-  {
-    "parallelLimit": 4
-  }
-  ```
-
-**Documentation:**
-
-* Added comprehensive documentation for `--parallel-limit` option in README.md and configuration docs
-* Updated JSON schema with validation for parallelLimit setting
-* Improved README.md Markdown compatibility for better NuGet.org rendering
-
-**Other Improvements:**
-
-* Increased PR validation timeout from 10 to 20 minutes to accommodate integration tests on Windows
-
-Fixes #456</PackageReleaseNotes>
+Fixes #513</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
     <PackageProjectUrl>

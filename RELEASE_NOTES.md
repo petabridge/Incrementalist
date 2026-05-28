@@ -1,3 +1,16 @@
+#### 1.2.1 May 28 2026 ####
+
+**Bug Fixes:**
+
+* **MSBuild Locator Type Mismatch on .NET 10.x:**
+  Fixed MSBuild assembly type mismatch that caused Incrementalist to fail on .NET 10.x SDKs. The MSBuild.Locator now properly discovers SDK 10's MSBuild 18.x assemblies by scanning .NET SDK paths instead of only looking for Visual Studio installations.
+
+**Release Infrastructure:**
+
+* Extracted the latest release block logic for GitHub release body generation, making release automation more reliable
+
+Fixes #513
+
 #### 1.2.0 December 23 2025 ####
 
 **Stable Release - Parallel Execution Control**
