@@ -19,6 +19,8 @@
         <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
         <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
         <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
+        <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
+        <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
     </ItemGroup>
     <!-- Test Packages -->
     <ItemGroup>
