@@ -62,8 +62,9 @@ Fixes #456</PackageReleaseNotes>
   <!-- .NET 9.0+ versions (with .slnx support) -->
   <!-- .slnx support added in MSBuild 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->
   <!-- .slnx support added in Roslyn 5.0.0-2.final: https://www.nuget.org/packages/Microsoft.CodeAnalysis.Workspaces.MSBuild/5.0.0-2.final -->
+  <!-- MSBuild 18.6.3 matches .NET SDK 10.0.300 / MSBuild shipped with .NET 10 feature band 3 -->
   <PropertyGroup Condition="'$(TargetFramework)' != 'net8.0'">
-    <MicrosoftBuildVersion>18.0.2</MicrosoftBuildVersion>
+    <MicrosoftBuildVersion>18.6.3</MicrosoftBuildVersion>
     <RoslynVersion>5.0.0</RoslynVersion>
   </PropertyGroup>
   <ItemGroup>
