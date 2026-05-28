@@ -16,6 +16,8 @@ public class ModuleInitializer
     {
         // Called in Incrementalist.Cmd in the static constructor of the Program class
         // Must also be called for the tests
+        // AllowQueryAllDotnetLocations must be set before RegisterDefaults() — see Program.cs
+        MSBuildLocator.AllowQueryAllDotnetLocations = true;
         MSBuildLocator.RegisterDefaults();
     }
 }
