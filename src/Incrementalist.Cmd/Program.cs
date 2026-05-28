@@ -34,6 +34,10 @@ namespace Incrementalist.Cmd
         {
             // Required for Microsoft.Build.Graph.ProjectGraph to work.
             // Without this, it would fail with "The SDK 'Microsoft.NET.Sdk' specified could not be found."
+            // AllowQueryAllDotnetLocations must be set before RegisterDefaults() so MSBuildLocator
+            // discovers .NET SDK MSBuild installations on SDK 10.x+, not just VS-installed MSBuild.
+            // Without this, it falls back to the old GAC version (v15.1.0.0) causing type load failures.
+            MSBuildLocator.AllowQueryAllDotnetLocations = true;
             MSBuildLocator.RegisterDefaults();
         }
 
