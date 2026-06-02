@@ -33,7 +33,7 @@ Fixes #513</PackageReleaseNotes>
   <!-- .NET 8.0 versions (no .slnx support - MSBuild 17.12.6+ requires .NET 9.0+) -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <MicrosoftBuildVersion>17.11.48</MicrosoftBuildVersion>
-    <RoslynVersion>4.14.0</RoslynVersion>
+    <RoslynVersion>5.3.0</RoslynVersion>
   </PropertyGroup>
   <!-- .NET 9.0+ versions (with .slnx support) -->
   <!-- .slnx support added in MSBuild 17.12.6: https://github.com/dotnet/msbuild/pull/10794 -->

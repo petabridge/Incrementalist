@@ -20,7 +20,7 @@
         <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
         <PackageVersion Include="NuGet.ProjectModel" Version="$(NugetVersion)" />
         <!-- CVE-2026-26171 / CVE-2026-33116: force patched version for .NET 8.0 consumers -->
-        <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
+        <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.8" />
     </ItemGroup>
     <!-- Test Packages -->
     <ItemGroup>
