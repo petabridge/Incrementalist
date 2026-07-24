@@ -4,7 +4,7 @@
         <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
     <ItemGroup>
-        <PackageVersion Include="Libgit2Sharp" Version="0.31.0" />
+        <PackageVersion Include="Libgit2Sharp" Version="0.32.0" />
         <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="$(RoslynVersion)" />
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
         <PackageVersion Include="CommandLineParser" Version="2.9.1" />
