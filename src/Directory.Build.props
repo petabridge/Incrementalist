@@ -28,7 +28,7 @@ Fixes #513</PackageReleaseNotes>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.9.3</XunitVersion>
     <TestSdkVersion>18.6.0</TestSdkVersion>
-    <NugetVersion>6.14.3</NugetVersion>
+    <NugetVersion>7.9.0</NugetVersion>
   </PropertyGroup>
   <!-- .NET 8.0 versions (no .slnx support - MSBuild 17.12.6+ requires .NET 9.0+) -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
