@@ -1,3 +1,12 @@
+#### 1.2.2 August 18 2026 ####
+
+**Bug Fixes:**
+
+* **SDK 10.0.4xx Compatibility:**
+  Fixed Incrementalist to run on machines with the .NET SDK 10.0.4xx band (MSBuild 18.9.6) installed. The tool now bundles matching MSBuild 18.9.6 and NuGet.Frameworks 7.9.0 assemblies, resolving the NuGet.Frameworks assembly manifest mismatch that caused ProjectGraph evaluation to fail with a "project file could not be loaded" error on the 10.0.4xx SDK band.
+
+Fixes #513, #540
+
 #### 1.2.1 May 28 2026 ####
 
 **Bug Fixes:**

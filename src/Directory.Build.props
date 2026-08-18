@@ -2,17 +2,13 @@
   <PropertyGroup>
     <Copyright>Copyright © 2015-$([System.DateTime]::Now.Year) Petabridge</Copyright>
     <Authors>Petabridge</Authors>
-    <VersionPrefix>1.2.1</VersionPrefix>
+    <VersionPrefix>1.2.2</VersionPrefix>
     <PackageReleaseNotes>**Bug Fixes:**
 
-* **MSBuild Locator Type Mismatch on .NET 10.x:**
-  Fixed MSBuild assembly type mismatch that caused Incrementalist to fail on .NET 10.x SDKs. The MSBuild.Locator now properly discovers SDK 10's MSBuild 18.x assemblies by scanning .NET SDK paths instead of only looking for Visual Studio installations.
+* **SDK 10.0.4xx Compatibility:**
+  Fixed Incrementalist to run on machines with the .NET SDK 10.0.4xx band (MSBuild 18.9.6) installed. The tool now bundles matching MSBuild 18.9.6 and NuGet.Frameworks 7.9.0 assemblies, resolving the NuGet.Frameworks assembly manifest mismatch that caused ProjectGraph evaluation to fail with a "project file could not be loaded" error on the 10.0.4xx SDK band.
 
-**Release Infrastructure:**
-
-* Extracted the latest release block logic for GitHub release body generation, making release automation more reliable
-
-Fixes #513</PackageReleaseNotes>
+Fixes #513, #540</PackageReleaseNotes>
     <tags>build, msbuild, incremental build, roslyn, git</tags>
     <PackageIcon>incrementalist-logo-dark.png</PackageIcon>
     <PackageProjectUrl>
