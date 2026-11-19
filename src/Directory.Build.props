@@ -37,7 +37,7 @@ Fixes #513, #540</PackageReleaseNotes>
   <!-- MSBuild 18.9.6 matches .NET SDK 10.0.400 / MSBuild shipped with .NET 10 feature band 4 -->
   <PropertyGroup Condition="'$(TargetFramework)' != 'net8.0'">
     <MicrosoftBuildVersion>18.9.6</MicrosoftBuildVersion>
-    <RoslynVersion>5.0.0</RoslynVersion>
+    <RoslynVersion>5.9.0</RoslynVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
