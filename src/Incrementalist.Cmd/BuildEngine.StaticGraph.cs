@@ -49,10 +49,12 @@ public sealed class StaticGraphSolution : Solution
     {
         _projectGraph = projectGraph;
         FilePath = filePath;
-        // Deduplicate by FullPath - multi-targeted projects create separate nodes per target framework
+        // Deduplicate by FullPath - multi-targeted projects create separate nodes per target framework.
+        // Group rather than DistinctBy so every node's items reach the project: a framework-conditional
+        // AdditionalFiles entry exists on only one node, and dropping the others would lose it.
         Projects = projectGraph.ProjectNodesTopologicallySorted
-            .DistinctBy(x => x.ProjectInstance.FullPath)
-            .Select(x => new StaticGraphProject(this, x))
+            .GroupBy(x => x.ProjectInstance.FullPath)
+            .Select(g => new StaticGraphProject(this, g.First(), g.ToList()))
             .ToList();
     }
 
@@ -80,6 +82,20 @@ public sealed class StaticGraphSolution : Solution
 public sealed class StaticGraphProject : Project
 {
     public StaticGraphProject(Solution solution, ProjectGraphNode node)
+        : this(solution, node, [node])
+    {
+    }
+
+    /// <summary>
+    ///     Creates a project from every graph node that shares this project's path.
+    /// </summary>
+    /// <remarks>
+    ///     A multi-targeted project produces one node per target framework, and each node can carry
+    ///     different items — an <c>AdditionalFiles</c> entry guarded by a target-framework condition
+    ///     exists on only one node. Collecting documents from a single node would silently drop the
+    ///     others, so items are unioned across all nodes and deduplicated by path.
+    /// </remarks>
+    public StaticGraphProject(Solution solution, ProjectGraphNode node, IReadOnlyCollection<ProjectGraphNode> nodes)
     {
         Node = node;
         FilePath = new AbsolutePath(node.ProjectInstance.FullPath);
@@ -88,12 +104,13 @@ public sealed class StaticGraphProject : Project
         // Compile items are source files; AdditionalFiles are non-source inputs such as
         // appsettings.json or analyzer configs. Both must be tracked or changes to the latter
         // are invisible to affected-project detection.
-        var documents = node.ProjectInstance.Items
-            .Where(x => x.ItemType == "Compile")
-            .Select(x => (Document)new StaticGraphDocument(this, x))
-            .Concat(node.ProjectInstance.Items
-                .Where(x => x.ItemType == "AdditionalFiles")
-                .Select(x => new StaticGraphAdditionalDocument(this, x)))
+        var documents = nodes
+            .SelectMany(n => n.ProjectInstance.Items)
+            .Where(x => x.ItemType is "Compile" or "AdditionalFiles")
+            .Select(x => (Document)(x.ItemType == "Compile"
+                ? new StaticGraphDocument(this, x)
+                : new StaticGraphAdditionalDocument(this, x)))
+            .DistinctBy(d => d.FilePath.Path)
             .ToList();
 
         Documents = documents;

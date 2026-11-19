@@ -70,18 +70,14 @@ namespace Incrementalist.ProjectSystem.Cmds
             foreach (var file in affectedFiles)
             {
                 Logger.LogDebug("Affected file: {FilePath}", file);
-                // this file is in the solution
-                if (fileDictObj.TryGetValue(file, out var value)) newDict[file] = value;
+
+                var foundInSolution = fileDictObj.TryGetValue(file, out var value);
+                if (foundInSolution)
+                {
+                    newDict[file] = value!;
+                }
                 else
                 {
-                    // special case - not all the affected files were in the solution.
-                    // Check to see if these affected files are in the same folder as any of the projects
-                    var directoryName = Path.GetDirectoryName(file.Path);
-                    if (string.IsNullOrEmpty(directoryName))
-                    {
-                        continue;
-                    }
-
                     // Need to see if this file is a solution-wide file
                     if (SolutionWideChangeDetector.IsSolutionWideFile(file))
                     {
@@ -89,21 +85,48 @@ namespace Incrementalist.ProjectSystem.Cmds
                         newDict[file] = [new SlnFile(FileType.Other, null)];
                         continue;
                     }
+                }
 
-                    if (TryFindContainingProjects(projectFolders.Select(c => c.Key), file,
-                            out var containingProjects))
+                /*
+                 * Containment supplements an exact match only for NON-SOURCE files.
+                 *
+                 * An exact document match identifies the project that *registers* the file, which is
+                 * not necessarily every project that *consumes* it. A file can be registered as an
+                 * AdditionalFile by one project while another project owns it as content or a
+                 * resource. Skipping containment there would drop the consuming project.
+                 *
+                 * Source files are different: a .cs file has exactly one owning project, and the exact
+                 * match already found it. Running containment for them would additionally select every
+                 * ancestor project directory, which is wrong -- a nested project's source file does not
+                 * affect the outer project.
+                 */
+                var isSourceFile = foundInSolution &&
+                                   value!.Any(f => f.FileType is FileType.Code or FileType.Script);
+
+                if (!isSourceFile && TryFindContainingProjects(projectFolders.Select(c => c.Key), file,
+                        out var containingProjects))
+                {
+                    foreach (var projectFolder in containingProjects)
                     {
-                        foreach (var projectFolder in containingProjects)
+                        var affectedProjects = projectFolders[projectFolder];
+                        foreach (var (projectPath, project) in affectedProjects)
                         {
-                            var affectedProjects = projectFolders[projectFolder];
-                            foreach (var (projectPath, project) in affectedProjects)
+                            if (foundInSolution)
+                            {
+                                Logger.LogInformation(
+                                    "Adding project {0} to the set of affected files because file {1}, " +
+                                    "found inside project directory [{2}], was modified.", projectPath, file,
+                                    projectFolder);
+                            }
+                            else
                             {
                                 Logger.LogInformation(
                                     "Adding project {0} to the set of affected files because non-code file {1}, " +
                                     "found inside project directory [{2}], was modified.", projectPath, file,
                                     projectFolder);
-                                newDict[projectPath] = project;
                             }
+
+                            newDict[projectPath] = project;
                         }
                     }
                 }
@@ -132,7 +155,7 @@ namespace Incrementalist.ProjectSystem.Cmds
         ///     rather than just the first match, so a file under <c>src/Outer/Inner/</c> attributes to
         ///     both <c>Outer</c> and <c>Inner</c> instead of silently picking one.
         /// </remarks>
-        private static bool TryFindContainingProjects(IEnumerable<AbsolutePath> projectFolders, AbsolutePath file,
+        internal static bool TryFindContainingProjects(IEnumerable<AbsolutePath> projectFolders, AbsolutePath file,
             [NotNullWhen(true)] out IReadOnlyList<AbsolutePath>? containingProjects)
         {
             containingProjects = null;

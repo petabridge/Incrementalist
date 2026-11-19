@@ -69,6 +69,44 @@ namespace Incrementalist.Tests.ProjectSystem
             Assert.True(FilterAffectedProjectFilesCmd.IsUnderDirectory(P("src/Outer/Inner/Inner.cs"), P("src/Outer/Inner")));
         }
 
+        [Theory(DisplayName = "Containment returns EVERY containing project, not just the first")]
+        [InlineData("src/Outer", "src/Outer/Inner")]
+        [InlineData("src/Outer/Inner", "src/Outer")]
+        public void Containment_returns_all_containing_projects(string first, string second)
+        {
+            // Order matters: the old implementation returned on the first match, so a test that
+            // only checks each directory independently would pass even if aggregation regressed.
+            var folders = new[] { new AbsolutePath(P(first)), new AbsolutePath(P(second)) };
+            var file = new AbsolutePath(P("src/Outer/Inner/InnerStrings.resx"));
+
+            Assert.True(FilterAffectedProjectFilesCmd.TryFindContainingProjects(folders, file, out var matches));
+            Assert.NotNull(matches);
+            Assert.Equal(2, matches!.Count);
+            Assert.Contains(matches, m => m.Path == P(first));
+            Assert.Contains(matches, m => m.Path == P(second));
+        }
+
+        [Fact(DisplayName = "Containment returns a single project when only one contains the file")]
+        public void Containment_returns_single_project_when_only_one_matches()
+        {
+            var folders = new[] { new AbsolutePath(P("src/Core")), new AbsolutePath(P("src/Unrelated2")) };
+            var file = new AbsolutePath(P("src/Core/Resources/Strings.resx"));
+
+            Assert.True(FilterAffectedProjectFilesCmd.TryFindContainingProjects(folders, file, out var matches));
+            Assert.Single(matches!);
+            Assert.Equal(P("src/Core"), matches![0].Path);
+        }
+
+        [Fact(DisplayName = "Containment returns false when no project contains the file")]
+        public void Containment_returns_false_when_nothing_matches()
+        {
+            var folders = new[] { new AbsolutePath(P("src/Core")) };
+            var file = new AbsolutePath(P("README.md"));
+
+            Assert.False(FilterAffectedProjectFilesCmd.TryFindContainingProjects(folders, file, out var matches));
+            Assert.Null(matches);
+        }
+
         [Fact(DisplayName = "Containment does not require the file to exist")]
         public void Containment_is_lexical_and_does_not_require_existence()
         {
