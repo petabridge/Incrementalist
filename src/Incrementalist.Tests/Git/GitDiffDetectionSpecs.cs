@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="GitDiffDetectionSpecs.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -72,9 +72,38 @@ namespace Incrementalist.Tests.Git
             Assert.Equal("fuber.txt", Path.GetFileName(file.Path));
         }
 
-        [Fact(DisplayName = "Should detect unstaged changes in working directory")]
-        public void Should_detect_unstaged_changes()
+        [Fact(DisplayName = "Should detect a deletion that is not staged")]
+        public void Should_detect_unstaged_deletion()
         {
+            // Regression test for https://github.com/petabridge/Incrementalist/issues/547
+            // A file removed from the working tree but not yet staged must still count as a change.
+            Repository.WriteFile("fuber.txt", "fuber")
+                .Commit("Fuberized file")
+                .CreateBranch("foo")
+                .CheckoutBranch("foo")
+                .DeleteFile("fuber.txt", stage: false);
+
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
+            Assert.Single(diffedFiles);
+            Assert.Equal("fuber.txt", Path.GetFileName(diffedFiles[0].Path));
+        }
+
+        [Fact(DisplayName = "Should detect a deletion that is staged but not committed")]
+        public void Should_detect_staged_deletion()
+        {
+            Repository.WriteFile("fuber.txt", "fuber")
+                .Commit("Fuberized file")
+                .CreateBranch("foo")
+                .CheckoutBranch("foo")
+                .DeleteFile("fuber.txt", stage: true);
+
+            var diffedFiles = DiffHelper.ChangedFiles(Repository.Repository, "master").ToList();
+            Assert.Single(diffedFiles);
+            Assert.Equal("fuber.txt", Path.GetFileName(diffedFiles[0].Path));
+        }
+
+        [Fact(DisplayName = "Should detect unstaged changes in working directory")]
+        public void Should_detect_unstaged_changes()        {
             // Create and commit a file on master
             Repository.WriteFile("committed.txt", "committed")
                 .Commit("Add committed file");

@@ -56,10 +56,12 @@ namespace Incrementalist.Tests
 
         [Theory]
         [InlineData("Directory.Build.props")]
+        [InlineData("Directory.Build.targets")]
         [InlineData("Directory.Packages.props")]
         [InlineData("global.json")]
         [InlineData("nuget.config")]
         [InlineData("some/path/Directory.Build.props")]
+        [InlineData("some/path/Directory.Build.targets")]
         public void DirectMatch_SolutionWideFiles_ReturnsTrue(string fileName)
         {
             var changes = new[] { GetAbsolutePath(fileName) };
