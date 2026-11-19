@@ -109,7 +109,13 @@ public sealed class WorkspaceProject : Project
         Project = project;
         FilePath = new AbsolutePath(project.FilePath ?? throw new ArgumentException(nameof(project.FilePath)));
         Solution = solution;
-        Documents = project.Documents.Select(x => new WorkspaceDocument(this, x)).ToList();
+
+        // Source documents plus AdditionalFiles (appsettings.json, analyzer configs, etc.).
+        // AdditionalDocuments are not part of project.Documents, so they must be added explicitly
+        // or changes to them are invisible to affected-project detection.
+        Documents = project.Documents.Select(x => (Document)new WorkspaceDocument(this, x))
+            .Concat(project.AdditionalDocuments.Select(x => new WorkspaceAdditionalDocument(this, x)))
+            .ToList();
     }
 
     public Microsoft.CodeAnalysis.Project Project { get; }
@@ -130,4 +136,21 @@ public sealed class WorkspaceDocument : Document
     public override AbsolutePath FilePath { get; }
     public override Project Project { get; }
     public override FileType FileType { get; }
+}
+
+/// <summary>
+///     A non-source file registered as an <c>AdditionalFiles</c> item, such as
+///     <c>appsettings.json</c> or an analyzer configuration file.
+/// </summary>
+public sealed class WorkspaceAdditionalDocument : Document
+{
+    public WorkspaceAdditionalDocument(Project project, Microsoft.CodeAnalysis.TextDocument document)
+    {
+        FilePath = new AbsolutePath(document.FilePath ?? throw new ArgumentException(nameof(document.FilePath)));
+        Project = project;
+    }
+
+    public override AbsolutePath FilePath { get; }
+    public override Project Project { get; }
+    public override FileType FileType => FileType.Other;
 }

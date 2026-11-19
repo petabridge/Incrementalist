@@ -20,6 +20,7 @@ namespace Incrementalist
         private static readonly HashSet<string> AlwaysSolutionWideFiles = new(StringComparer.OrdinalIgnoreCase)
         {
             "Directory.Build.props",
+            "Directory.Build.targets",
             "Directory.Packages.props",
             "global.json",
             "nuget.config"

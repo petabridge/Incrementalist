@@ -12,5 +12,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Incrementalist.Cmd"/>
+        <InternalsVisibleTo Include="Incrementalist.Tests"/>
     </ItemGroup>
 </Project>

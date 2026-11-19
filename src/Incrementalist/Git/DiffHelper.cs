@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="DiffHelper.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -24,15 +24,19 @@ namespace Incrementalist.Git
             // Get all changes between target branch and current state (including both staged and unstaged)
             var status = repo.RetrieveStatus();
 
-            // Add staged changes
-            foreach (var staged in status.Staged)
+            // Add staged changes. LibGit2Sharp reports a staged deletion as Removed rather than
+            // including it in Staged, so both collections are needed.
+            foreach (var staged in status.Staged.Concat(status.Removed))
             {
                 changes.Add(
                     new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, staged.FilePath))));
             }
 
-            // Add unstaged changes
-            foreach (var unstaged in status.Modified.Concat(status.Added).Concat(status.Untracked))
+            // Add unstaged changes. Deleted files must be included: a file removed from the
+            // working tree but not yet staged is still a change that affects its project.
+            // LibGit2Sharp reports these as Missing (DeletedFromWorkdir).
+            foreach (var unstaged in status.Modified.Concat(status.Added).Concat(status.Untracked)
+                         .Concat(status.Missing))
             {
                 changes.Add(
                     new AbsolutePath(Path.GetFullPath(Path.Combine(repo.Info.WorkingDirectory, unstaged.FilePath))));

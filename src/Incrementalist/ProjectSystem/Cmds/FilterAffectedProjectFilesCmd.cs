@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="FilterAffectedProjectFilesCmd.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -90,16 +90,20 @@ namespace Incrementalist.ProjectSystem.Cmds
                         continue;
                     }
 
-                    if (TryFindSubFolder(projectFolders.Select(c => c.Key), new AbsolutePath(directoryName),
-                            out var projectFolder))
+                    if (TryFindContainingProjects(projectFolders.Select(c => c.Key), file,
+                            out var containingProjects))
                     {
-                        var affectedProjects = projectFolders[projectFolder];
-                        foreach (var (projectPath, project) in affectedProjects)
+                        foreach (var projectFolder in containingProjects)
                         {
-                            Logger.LogInformation(
-                                "Adding project {0} to the set of affected files because non-code file {1}, " +
-                                "found inside same directory [{2}], was modified.", projectPath, file, directoryName);
-                            newDict[projectPath] = project;
+                            var affectedProjects = projectFolders[projectFolder];
+                            foreach (var (projectPath, project) in affectedProjects)
+                            {
+                                Logger.LogInformation(
+                                    "Adding project {0} to the set of affected files because non-code file {1}, " +
+                                    "found inside project directory [{2}], was modified.", projectPath, file,
+                                    projectFolder);
+                                newDict[projectPath] = project;
+                            }
                         }
                     }
                 }
@@ -118,21 +122,65 @@ namespace Incrementalist.ProjectSystem.Cmds
             return newDict;
         }
 
-        private static bool TryFindSubFolder(IEnumerable<AbsolutePath> testFolders, AbsolutePath targetFolder,
-            [NotNullWhen(true)] out AbsolutePath? winningFolder)
+        /// <summary>
+        ///     Finds every project directory that lexically contains <paramref name="file" />.
+        /// </summary>
+        /// <remarks>
+        ///     Containment is segment-aware and purely lexical: the file does not need to exist, which
+        ///     matters for deletions. A file directly inside a project directory counts, as does one
+        ///     nested arbitrarily deep. When projects are nested, every containing project is returned
+        ///     rather than just the first match, so a file under <c>src/Outer/Inner/</c> attributes to
+        ///     both <c>Outer</c> and <c>Inner</c> instead of silently picking one.
+        /// </remarks>
+        private static bool TryFindContainingProjects(IEnumerable<AbsolutePath> projectFolders, AbsolutePath file,
+            [NotNullWhen(true)] out IReadOnlyList<AbsolutePath>? containingProjects)
         {
-            winningFolder = null;
-            foreach (var startingFolder in testFolders)
-            foreach (var dir in Directory.EnumerateDirectories(startingFolder.Path))
+            containingProjects = null;
+            var matches = new List<AbsolutePath>();
+
+            foreach (var projectFolder in projectFolders)
             {
-                if (Path.GetFullPath(dir).Equals(targetFolder.Path))
-                {
-                    winningFolder = startingFolder;
-                    return true;
-                }
+                if (IsUnderDirectory(file.Path, projectFolder.Path))
+                    matches.Add(projectFolder);
             }
 
-            return false;
+            if (matches.Count == 0)
+                return false;
+
+            containingProjects = matches;
+            return true;
         }
+
+        /// <summary>
+        ///     Returns <c>true</c> when <paramref name="filePath" /> is the same as, or nested beneath,
+        ///     <paramref name="directoryPath" />.
+        /// </summary>
+        /// <remarks>
+        ///     Compares path segments rather than raw string prefixes so that <c>src/CoreExtra</c> is not
+        ///     treated as being under <c>src/Core</c>. Trailing separators are normalized away first.
+        /// </remarks>
+        internal static bool IsUnderDirectory(string filePath, string directoryPath)
+        {
+            var normalizedFile = Path.GetFullPath(filePath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var normalizedDirectory = Path.GetFullPath(directoryPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (normalizedFile.Equals(normalizedDirectory, PathComparison))
+                return true;
+
+            // Require the separator so that a sibling with a shared prefix does not match.
+            var prefix = normalizedDirectory + Path.DirectorySeparatorChar;
+            return normalizedFile.StartsWith(prefix, PathComparison);
+        }
+
+        /// <summary>
+        ///     Path comparison appropriate for the current platform. Windows and macOS are
+        ///     case-insensitive by default; Linux is case-sensitive.
+        /// </summary>
+        private static StringComparison PathComparison =>
+            OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
     }
 }

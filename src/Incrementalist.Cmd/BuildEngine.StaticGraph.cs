@@ -84,7 +84,18 @@ public sealed class StaticGraphProject : Project
         Node = node;
         FilePath = new AbsolutePath(node.ProjectInstance.FullPath);
         Solution = solution;
-        var documents = node.ProjectInstance.Items.Where(x => x.ItemType == "Compile").Select(x => new StaticGraphDocument(this, x)).ToList();
+
+        // Compile items are source files; AdditionalFiles are non-source inputs such as
+        // appsettings.json or analyzer configs. Both must be tracked or changes to the latter
+        // are invisible to affected-project detection.
+        var documents = node.ProjectInstance.Items
+            .Where(x => x.ItemType == "Compile")
+            .Select(x => (Document)new StaticGraphDocument(this, x))
+            .Concat(node.ProjectInstance.Items
+                .Where(x => x.ItemType == "AdditionalFiles")
+                .Select(x => new StaticGraphAdditionalDocument(this, x)))
+            .ToList();
+
         Documents = documents;
     }
 
@@ -107,4 +118,22 @@ public sealed class StaticGraphDocument : Document
     public override AbsolutePath FilePath { get; }
     public override Project Project { get; }
     public override FileType FileType { get; }
+}
+
+/// <summary>
+///     A non-source file registered as an <c>AdditionalFiles</c> item, such as
+///     <c>appsettings.json</c> or an analyzer configuration file.
+/// </summary>
+public sealed class StaticGraphAdditionalDocument : Document
+{
+    public StaticGraphAdditionalDocument(StaticGraphProject project, ProjectItemInstance projectItemInstance)
+    {
+        var fullPath = projectItemInstance.GetMetadataValue("FullPath");
+        FilePath = new AbsolutePath(fullPath);
+        Project = project;
+    }
+
+    public override AbsolutePath FilePath { get; }
+    public override Project Project { get; }
+    public override FileType FileType => FileType.Other;
 }

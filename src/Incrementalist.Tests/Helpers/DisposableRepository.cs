@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="DisposableRepository.cs" company="Petabridge, LLC">
 //      Copyright (C) 2025 - 2025 Petabridge, LLC <https://petabridge.com>
 // </copyright>
@@ -217,12 +217,23 @@ namespace Incrementalist.Tests.Helpers
         ///     Delete an existing file from the repository.
         /// </summary>
         /// <param name="fileName">The name of the file to delete.</param>
+        /// <param name="stage">
+        ///     When <c>true</c> (the default), the deletion is staged via LibGit2Sharp.
+        ///     Pass <c>false</c> to leave the deletion unstaged in the working tree, which is
+        ///     what a developer's editor would produce before running <c>git add</c>.
+        /// </param>
         /// <returns>The current <see cref="DisposableRepository" />.</returns>
-        public DisposableRepository DeleteFile(string fileName)
+        public DisposableRepository DeleteFile(string fileName, bool stage = true)
         {
             var filePath = Path.Combine(BasePath.Path, fileName);
-            File.Delete(fileName);
-            LibGit2Sharp.Commands.Remove(Repository, filePath);
+
+            // Delete the absolute path. Passing the relative name here would resolve against
+            // the process working directory instead of the repository root.
+            File.Delete(filePath);
+
+            if (stage)
+                LibGit2Sharp.Commands.Remove(Repository, filePath);
+
             return this;
         }
 
